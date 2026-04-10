@@ -1,0 +1,13 @@
+model:
+  name: gaussian
+  hidden_dims: [64, 64]
+  dropout: 0.1
+  checkpoint_name: gaussian_model.pt
+  training:
+    batch_size: 64
+    epochs: 25
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    gradient_clip_norm: 5.0
+    device: cpu
+
