@@ -19,14 +19,17 @@ model:
     batch_size: 32
 
 rl:
-  episodes: 20
+  episodes: 40
   max_steps_per_episode: 16
-  evaluation_episodes: 4
-  replay_capacity: 2000
-  learning_starts: 64
-  target_update_interval: 50
-  epsilon_decay_steps: 400
+  evaluation_episodes: 6
+  replay_capacity: 4000
+  learning_starts: 128
+  target_update_interval: 100
+  epsilon_decay_steps: 900
   batch_size: 32
+  learning_rate: 0.0007
+  gradient_steps: 2
+  reward_clip: 10.0
 
 experiment:
   name: smoke_test

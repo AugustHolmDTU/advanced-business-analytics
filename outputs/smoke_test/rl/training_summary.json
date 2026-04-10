@@ -1,0 +1,10 @@
+{
+  "backend": "torch_dqn",
+  "checkpoint_path": "outputs/smoke_test/rl/best_model.pt",
+  "evaluation": {
+    "mean_reward": -283.95777086615567,
+    "mean_served_demand": 75.23575240373611,
+    "mean_true_demand_total": 351.0,
+    "mean_unmet_demand": 275.7642486691475
+  }
+}

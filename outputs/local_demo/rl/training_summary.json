@@ -1,0 +1,10 @@
+{
+  "backend": "torch_dqn",
+  "checkpoint_path": "outputs/local_demo/rl/best_model.pt",
+  "evaluation": {
+    "mean_reward": -123.4819475442171,
+    "mean_served_demand": 333.7578493654728,
+    "mean_true_demand_total": 684.375,
+    "mean_unmet_demand": 350.61715146899223
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "results": [
+    {
+      "mean_reward": -61.21301626786591,
+      "mean_served_demand": 357.42368870973587,
+      "mean_true_demand_total": 677.75,
+      "mean_unmet_demand": 320.3263115212321,
+      "policy": "rl"
+    },
+    {
+      "mean_reward": 12.357232015579928,
+      "mean_served_demand": 393.4053185582161,
+      "mean_true_demand_total": 677.75,
+      "mean_unmet_demand": 284.34468195587397,
+      "policy": "greedy"
+    },
+    {
+      "mean_reward": 27.199988660961377,
+      "mean_served_demand": 399.8586911559105,
+      "mean_true_demand_total": 677.75,
+      "mean_unmet_demand": 277.8913096114993,
+      "policy": "coverage"
+    },
+    {
+      "mean_reward": -19.839020134508623,
+      "mean_served_demand": 377.85803496837616,
+      "mean_true_demand_total": 677.75,
+      "mean_unmet_demand": 299.8919654637575,
+      "policy": "random"
+    }
+  ]
+}
