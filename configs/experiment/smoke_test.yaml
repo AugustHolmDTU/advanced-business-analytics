@@ -1,0 +1,43 @@
+seed: 11
+environment:
+  num_candidate_sites: 8
+  num_demand_zones: 5
+  max_chargers: 3
+  horizon: 16
+  max_steps: 16
+  disruption:
+    demand_spike_probability: 0.08
+    outage_probability: 0.08
+
+data:
+  num_days: 12
+  val_split: 0.2
+
+model:
+  training:
+    epochs: 8
+    batch_size: 32
+
+rl:
+  episodes: 20
+  max_steps_per_episode: 16
+  evaluation_episodes: 4
+  replay_capacity: 2000
+  learning_starts: 64
+  target_update_interval: 50
+  epsilon_decay_steps: 400
+  batch_size: 32
+
+experiment:
+  name: smoke_test
+  output_root: outputs
+  save_plots: true
+
+evaluation:
+  episodes: 4
+  disruptions: true
+  policies:
+    - rl
+    - greedy
+    - coverage
+    - random
