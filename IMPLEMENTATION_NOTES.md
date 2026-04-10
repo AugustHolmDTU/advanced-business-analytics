@@ -3,6 +3,7 @@
 ## Implemented
 
 - Synthetic city generator with candidate charging sites, demand zones, and travel-time matrix.
+- TomTom Phase 1 snapshot fetcher with geocoding, nearby EV search, charging availability enrichment, route matrix, and plotted station map output.
 - Stochastic digital twin environment with deploy-or-relocate actions, disruption injection, and logging-friendly info outputs.
 - Synthetic supervised dataset generator for demand prediction.
 - `GaussianNLLRegressor` with heteroscedastic `mu(x)` and `sigma(x)` using Gaussian negative log-likelihood.
@@ -14,6 +15,7 @@
 ## Simplifying Assumptions
 
 - Geography is synthetic and small.
+- In TomTom Phase 1, station locations and travel times are real, but zone demand remains synthetic.
 - Travel time is based on Euclidean distance rather than a road network.
 - Each charger has fixed per-step capacity.
 - Demand is generated at zone level and then approximately served through weighted site accessibility.
@@ -35,8 +37,7 @@
 
 ## Recommended Next Extensions
 
-- Replace synthetic coordinates and travel times with OSM or TomTom derived features.
+- Replace synthetic zone demand with real or inferred demand labels.
 - Feed predictive uncertainty into RL more directly, for example through risk-sensitive rewards or scenario sampling from uncertainty intervals.
 - Add budget constraints, charger types, and station-level outages with duration.
 - Expand evaluation to repeated seeds, scenario sweeps, and Slurm array jobs.
-

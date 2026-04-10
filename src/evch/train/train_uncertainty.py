@@ -8,8 +8,8 @@ import numpy as np
 import torch
 
 from evch.config.loader import build_config_parser, load_config
+from evch.data.city import build_city
 from evch.data.features import MODEL_FEATURE_COLUMNS
-from evch.data.synthetic import make_synthetic_city
 from evch.envs.demand import DemandGenerator
 from evch.models.common import Standardizer, make_regression_loaders
 from evch.models.gaussian_nll import GaussianNLLRegressor
@@ -66,15 +66,7 @@ def _build_dataset(config: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, list
     data_cfg = config["data"]
     seed = int(config.get("seed", 0))
 
-    city = make_synthetic_city(
-        num_sites=int(env_cfg["num_candidate_sites"]),
-        num_zones=int(env_cfg["num_demand_zones"]),
-        city_extent_km=float(env_cfg["city_extent_km"]),
-        seed=seed,
-        base_rate_min=float(demand_cfg["base_rate_min"]),
-        base_rate_max=float(demand_cfg["base_rate_max"]),
-        zone_scale_std=float(demand_cfg["zone_scale_std"]),
-    )
+    city = build_city(env_config=env_cfg, demand_config=demand_cfg, seed=seed)
     generator = DemandGenerator(city, demand_cfg, horizon=int(env_cfg["horizon"]), seed=seed)
     frame = generator.generate_supervised_frame(
         num_days=int(data_cfg["num_days"]),
@@ -184,14 +176,17 @@ def main() -> None:
             "interval_coverage_90": float(np.mean((y_val[:, 0] >= lower) & (y_val[:, 0] <= upper))),
             "interval_width_90": float(np.mean(upper - lower)),
         }
-        plot_prediction_intervals(
-            y_true=y_val[:, 0],
-            center=center,
-            lower=lower,
-            upper=upper,
-            path=output_dir / "gaussian_intervals.png",
-            title="Gaussian predictive intervals",
-        )
+        try:
+            plot_prediction_intervals(
+                y_true=y_val[:, 0],
+                center=center,
+                lower=lower,
+                upper=upper,
+                path=output_dir / "gaussian_intervals.png",
+                title="Gaussian predictive intervals",
+            )
+        except Exception as exc:
+            LOGGER.warning("Skipping Gaussian interval plot because matplotlib is unavailable: %s", exc)
     else:
         predictions = model.predict(x_val_std, device=device)
         center = predictions["q50"]
@@ -205,14 +200,17 @@ def main() -> None:
             "interval_width_90": float(np.mean(upper - lower)),
             "crossing_rate": float(predictions["crossing_rate"]),
         }
-        plot_prediction_intervals(
-            y_true=y_val[:, 0],
-            center=center,
-            lower=lower,
-            upper=upper,
-            path=output_dir / "quantile_intervals.png",
-            title="Quantile predictive intervals",
-        )
+        try:
+            plot_prediction_intervals(
+                y_true=y_val[:, 0],
+                center=center,
+                lower=lower,
+                upper=upper,
+                path=output_dir / "quantile_intervals.png",
+                title="Quantile predictive intervals",
+            )
+        except Exception as exc:
+            LOGGER.warning("Skipping quantile interval plot because matplotlib is unavailable: %s", exc)
 
     run.log({f"uncertainty/{key}": value for key, value in metrics.items()})
     write_json(output_dir / "metrics.json", metrics)
@@ -223,4 +221,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 from typing import Any, Callable
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from evch.baselines.policies import BASELINE_POLICIES
@@ -87,13 +86,18 @@ def main() -> None:
     frame.to_csv(output_dir / "policy_comparison.csv", index=False)
     write_json(output_dir / "policy_comparison.json", {"results": results})
     if not frame.empty:
-        plt.figure(figsize=(8, 4))
-        plt.bar(frame["policy"], frame["mean_reward"])
-        plt.ylabel("Mean cumulative reward")
-        plt.title("Policy comparison")
-        plt.tight_layout()
-        plt.savefig(output_dir / "policy_comparison.png", dpi=180)
-        plt.close()
+        try:
+            import matplotlib.pyplot as plt
+
+            plt.figure(figsize=(8, 4))
+            plt.bar(frame["policy"], frame["mean_reward"])
+            plt.ylabel("Mean cumulative reward")
+            plt.title("Policy comparison")
+            plt.tight_layout()
+            plt.savefig(output_dir / "policy_comparison.png", dpi=180)
+            plt.close()
+        except Exception as exc:
+            LOGGER.warning("Skipping policy comparison plot because matplotlib is unavailable: %s", exc)
     LOGGER.info("Saved policy evaluation results to %s", output_dir)
     run.finish()
 

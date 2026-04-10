@@ -3,11 +3,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from evch.config.loader import build_config_parser, load_config
-from evch.data.synthetic import make_synthetic_city
+from evch.data.city import build_city
 from evch.envs.demand import DemandGenerator
 from evch.utils.io import ensure_dir, write_json
 from evch.utils.logging import configure_logging
@@ -31,15 +30,7 @@ def main() -> None:
     experiment_cfg = config["experiment"]
 
     output_dir = ensure_dir(Path(experiment_cfg["output_root"]) / experiment_cfg["name"] / "data")
-    city = make_synthetic_city(
-        num_sites=int(env_cfg["num_candidate_sites"]),
-        num_zones=int(env_cfg["num_demand_zones"]),
-        city_extent_km=float(env_cfg["city_extent_km"]),
-        seed=seed,
-        base_rate_min=float(demand_cfg["base_rate_min"]),
-        base_rate_max=float(demand_cfg["base_rate_max"]),
-        zone_scale_std=float(demand_cfg["zone_scale_std"]),
-    )
+    city = build_city(env_config=env_cfg, demand_config=demand_cfg, seed=seed)
     generator = DemandGenerator(city, demand_cfg, horizon=int(env_cfg["horizon"]), seed=seed)
     frame = generator.generate_supervised_frame(
         num_days=int(data_cfg["num_days"]),
@@ -50,16 +41,21 @@ def main() -> None:
     LOGGER.info("Saved synthetic dataset to %s", csv_path)
 
     fig_path = output_dir / "synthetic_city.png"
-    plt.figure(figsize=(6, 6))
-    plt.scatter(city.zone_coords[:, 0], city.zone_coords[:, 1], s=90, label="Demand zones")
-    plt.scatter(city.site_coords[:, 0], city.site_coords[:, 1], s=65, marker="^", label="Candidate sites")
-    plt.xlabel("X coordinate (km)")
-    plt.ylabel("Y coordinate (km)")
-    plt.title("Synthetic City Layout")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(fig_path, dpi=180)
-    plt.close()
+    try:
+        import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(6, 6))
+        plt.scatter(city.zone_coords[:, 0], city.zone_coords[:, 1], s=90, label="Demand zones")
+        plt.scatter(city.site_coords[:, 0], city.site_coords[:, 1], s=65, marker="^", label="Candidate sites")
+        plt.xlabel("X coordinate (km)")
+        plt.ylabel("Y coordinate (km)")
+        plt.title("City Layout")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(fig_path, dpi=180)
+        plt.close()
+    except Exception as exc:
+        LOGGER.warning("Skipping city-layout plot because matplotlib is unavailable: %s", exc)
 
     write_json(
         output_dir / "dataset_metadata.json",
@@ -73,4 +69,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

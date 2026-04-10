@@ -5,7 +5,8 @@ from typing import Any
 
 import numpy as np
 
-from evch.data.synthetic import SyntheticCity, make_synthetic_city, static_site_accessibility_scores
+from evch.data.city import build_city
+from evch.data.synthetic import SyntheticCity, static_site_accessibility_scores
 from evch.envs.demand import DemandGenerator
 
 try:  # pragma: no cover - covered indirectly when gymnasium is installed
@@ -58,23 +59,14 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
         self.base_seed = seed
         self.rng = np.random.default_rng(seed)
 
-        self.num_sites = int(env_config["num_candidate_sites"])
-        self.num_zones = int(env_config["num_demand_zones"])
+        self.city: SyntheticCity = build_city(env_config=env_config, demand_config=demand_config, seed=seed)
+        self.num_sites = int(self.city.site_coords.shape[0])
+        self.num_zones = int(self.city.zone_coords.shape[0])
         self.max_chargers = min(int(env_config["max_chargers"]), self.num_sites)
         self.charger_capacity = float(env_config["charger_capacity"])
         self.horizon = int(env_config["horizon"])
         self.max_steps = int(env_config.get("max_steps", self.horizon))
         self.service_decay = float(env_config["service_decay"])
-
-        self.city: SyntheticCity = make_synthetic_city(
-            num_sites=self.num_sites,
-            num_zones=self.num_zones,
-            city_extent_km=float(env_config["city_extent_km"]),
-            seed=seed,
-            base_rate_min=float(demand_config["base_rate_min"]),
-            base_rate_max=float(demand_config["base_rate_max"]),
-            zone_scale_std=float(demand_config["zone_scale_std"]),
-        )
         self.demand_generator = DemandGenerator(self.city, demand_config, horizon=self.horizon, seed=seed)
         self.static_site_scores = static_site_accessibility_scores(self.city, self.service_decay)
 
@@ -245,4 +237,3 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
             "reward": reward,
         }
         return self._get_observation(), float(reward), terminated, False, info
-

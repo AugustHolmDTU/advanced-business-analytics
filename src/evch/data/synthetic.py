@@ -12,6 +12,11 @@ class SyntheticCity:
     zone_base_demand: np.ndarray
     zone_scale: np.ndarray
     travel_time_matrix: np.ndarray
+    site_names: list[str] | None = None
+    site_addresses: list[str] | None = None
+    site_latlon: np.ndarray | None = None
+    zone_latlon: np.ndarray | None = None
+    center_latlon: tuple[float, float] | None = None
 
 
 def make_synthetic_city(
@@ -44,4 +49,3 @@ def make_synthetic_city(
 def static_site_accessibility_scores(city: SyntheticCity, decay: float) -> np.ndarray:
     weights = np.exp(-decay * city.travel_time_matrix)
     return weights.T @ city.zone_base_demand
-

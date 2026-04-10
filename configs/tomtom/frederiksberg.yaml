@@ -1,0 +1,14 @@
+tomtom:
+  location_query: Frederiksberg, Denmark
+  country_set: DK
+  language: en-GB
+  radius_m: 3000
+  result_limit: 100
+  search_grid_size: 4
+  boundary_query: Frederiksberg Kommune, Denmark
+  cluster_count: 12
+  fixed_cluster_count: 5
+  travel_mode: car
+  route_type: fastest
+  traffic: historical
+  depart_at: any

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -14,6 +13,8 @@ def plot_prediction_intervals(
     path: str | Path,
     title: str,
 ) -> None:
+    import matplotlib.pyplot as plt
+
     order = np.argsort(y_true)
     y_true = y_true[order]
     center = center[order]

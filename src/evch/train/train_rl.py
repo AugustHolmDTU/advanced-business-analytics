@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 from typing import Any, Callable
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from evch.config.loader import build_config_parser, load_config
@@ -121,14 +120,19 @@ def main() -> None:
     run.log({f"rl_eval/{key}": value for key, value in evaluation.items() if not isinstance(value, list)})
 
     if history:
-        plt.figure(figsize=(8, 4))
-        plt.plot([entry["reward"] for entry in history], label="Episode reward")
-        plt.xlabel("Episode")
-        plt.ylabel("Reward")
-        plt.title("Torch DQN training curve")
-        plt.tight_layout()
-        plt.savefig(output_dir / "training_curve.png", dpi=180)
-        plt.close()
+        try:
+            import matplotlib.pyplot as plt
+
+            plt.figure(figsize=(8, 4))
+            plt.plot([entry["reward"] for entry in history], label="Episode reward")
+            plt.xlabel("Episode")
+            plt.ylabel("Reward")
+            plt.title("Torch DQN training curve")
+            plt.tight_layout()
+            plt.savefig(output_dir / "training_curve.png", dpi=180)
+            plt.close()
+        except Exception as exc:
+            LOGGER.warning("Skipping RL training curve because matplotlib is unavailable: %s", exc)
 
     write_json(
         output_dir / "training_summary.json",
@@ -146,4 +150,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

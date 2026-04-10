@@ -7,6 +7,7 @@ Minimal research codebase for a DTU course project on adaptive EV charging place
 The repository provides a small but extensible setup to:
 
 - simulate EV charging demand in a toy urban area,
+- swap the synthetic city for a TomTom-backed station and routing snapshot,
 - train uncertainty-aware demand models on simulator-generated data,
 - train a single-agent RL policy to place or relocate a limited number of chargers,
 - compare RL against simple heuristic baselines,
@@ -14,6 +15,26 @@ The repository provides a small but extensible setup to:
 - run locally first and scale later via Slurm.
 
 The first version intentionally stays small. It is designed to run end-to-end on synthetic data in minutes, while keeping clean seams for future real-data ingestion and richer digital-twin logic.
+
+## Phase 1 TomTom Integration
+
+Phase 1 adds a hybrid real-data path:
+
+- real charging station discovery from TomTom Nearby Search,
+- real live charger availability from TomTom Charging Availability,
+- real zone-to-station travel times from TomTom Matrix Routing,
+- synthetic demand retained on top of real geography.
+
+This keeps the existing RL and uncertainty pipeline intact while replacing the city layout, candidate sites, and routing matrix with a cached TomTom snapshot.
+
+The snapshot fetcher writes:
+
+- `outputs/<experiment>/tomtom/snapshot.json`
+- `outputs/<experiment>/tomtom/stations.csv`
+- `outputs/<experiment>/tomtom/station_map.svg`
+- `outputs/<experiment>/tomtom/metadata.json`
+
+The default example location is Frederiksberg.
 
 ## Repo Structure
 
@@ -138,6 +159,25 @@ Or run the small local pipeline:
 bash scripts/run_local_pipeline.sh
 ```
 
+Fetch a TomTom-backed Frederiksberg snapshot:
+
+```bash
+export TOMTOM_API_KEY=...
+PYTHONPATH=src python3 -m evch.train.fetch_tomtom_snapshot \
+  --config configs/env/tomtom_frederiksberg.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/experiment/tomtom_frederiksberg.yaml \
+  --config configs/tomtom/frederiksberg.yaml
+```
+
+Run the full Phase 1 hybrid pipeline:
+
+```bash
+export TOMTOM_API_KEY=...
+bash scripts/run_tomtom_phase1.sh
+```
+
 ## Weights & Biases
 
 W&B is controlled through config:
@@ -179,6 +219,7 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 
 - stochastic Gymnasium-compatible charging placement environment,
 - synthetic city and demand generation,
+- TomTom-backed city snapshot fetcher with EV stations, live availability, route matrix, and map output,
 - Gaussian NLL and quantile regressors in PyTorch,
 - local DQN implementation with optional Stable-Baselines3 DQN backend,
 - heuristic baselines,
@@ -190,7 +231,7 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 
 ## What Is Still Placeholder
 
-- real OSM or TomTom ingestion,
+- true real-world demand labels,
 - richer traffic assignment and queueing,
 - explicit uncertainty integration inside the RL state or reward,
 - multi-step relocation planning and constrained deployment budgets,
