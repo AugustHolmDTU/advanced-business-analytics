@@ -1,0 +1,16 @@
+{
+  "available_connectors": 502,
+  "center": {
+    "freeform_address": "Frederiksberg, Copenhagen",
+    "lat": 55.6780025,
+    "lon": 12.535368
+  },
+  "location_query": "Frederiksberg, Denmark",
+  "max_travel_time_minutes": 13.855902671813965,
+  "mean_travel_time_minutes": 6.77724552154541,
+  "num_clusters": 12,
+  "num_stations": 158,
+  "num_zones": 90,
+  "snapshot_path": "outputs/tomtom_frederiksberg/tomtom/snapshot.json",
+  "total_connectors": 799
+}

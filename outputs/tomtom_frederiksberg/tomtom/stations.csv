@@ -1,0 +1,159 @@
+name,address,lat,lon,charging_availability_id,total_connectors,available_connectors,occupied_connectors,reserved_connectors,unknown_connectors,out_of_service_connectors,max_power_kw
+EDF Danmark A/S,"Betty Nansens Allé 2C, 2000 Frederiksberg",55.669846,12.496478,5e4c75e0-8956-463e-8d86-eaed3c72ab37,4,3,1,0,0,0,22.0
+E.ON Drive,"Helge Rodes Allé 6, 2000 Frederiksberg",55.670796,12.503492,d5ad0c70-5ed2-4023-9c03-68021fc5c34d,6,6,0,0,0,0,22.0
+Clever,"Roskildevej 116, 2000 Frederiksberg",55.67265,12.498139,0545d650-d902-483c-89d8-b9def0fe19d3,8,7,1,0,0,0,22.0
+Norlys,"Nordens Plads 2A, 2000 Frederiksberg",55.671949,12.502979,56591dab-64e9-4a7b-a5b8-6f9f89dac70f,4,1,2,0,1,0,300.0
+E.ON Drive,"Rådmand Steins Allé 9, 2000 Frederiksberg",55.672932,12.500913,63d60166-0f5b-43bd-a004-c355e80040fb,6,6,0,0,0,0,22.0
+EWII,"Roskildevej 91, 2000 Frederiksberg",55.672199,12.495947,7de118f1-d0b5-433b-9395-d0ac7a1dd935,6,2,4,0,0,0,400.0
+Clever,"Borgmester Fischers Vej 4, 2000 Frederiksberg",55.6704,12.506894,0381d693-1dad-4d47-9239-d09291541b2b,6,6,0,0,0,0,22.0
+Norlys,"Troels-Lunds Vej 4, 2000 Frederiksberg",55.675255,12.503851,1ddc7aac-de9c-48f4-90a7-1c108edc753a,4,3,1,0,0,0,22.0
+Clever,"Joakim Larsens Vej 9A, 2000 Frederiksberg",55.674702,12.506552,b03cedbf-ff7a-4887-899e-9bf852481847,8,3,5,0,0,0,11.0
+E.ON Drive,"Jens Jessens Vej, 2000 Frederiksberg",55.676567,12.498129,6bd9319f-b465-4ec7-b54f-73aed18d9a43,6,4,2,0,0,0,22.0
+Spirii,"Borgmester Godskesens Plads 1, 2000 Frederiksberg",55.675354,12.506708,eb9c0ba8-1a2e-45ba-ac74-404e276ef41d,6,3,3,0,0,0,22.0
+E.ON Drive,"Peter Bangs Vej 147, 2000 Frederiksberg",55.677639,12.494859,,0,0,0,0,0,0,
+OK,"Hoffmeyersvej 5, 2000 Frederiksberg",55.678258,12.502642,042911fd-fdad-8f19-a965-3d7af09c77c6,8,7,1,0,0,0,40.0
+E.ON Drive,"Azaleavej 11, 2000 Frederiksberg",55.67126,12.515427,e5a7d3f1-cb31-40d2-a467-7e093517665a,6,4,2,0,0,0,22.0
+Clever,"Magnoliavej 3, 2000 Frederiksberg",55.669463,12.516521,7ed7239c-13ba-4b1e-870b-5af6e456f64e,4,1,3,0,0,0,22.0
+DEAS A/S,"Roskildevej 37, 2000 Frederiksberg",55.671837,12.516309,,0,0,0,0,0,0,
+Clever,"Bag Søndermarken 25, 2000 Frederiksberg",55.66769,12.520793,d3491970-3480-4d07-9296-5233c70a4962,8,5,3,0,0,0,22.0
+Norlys,"Roskildevej 30, 2000 Frederiksberg",55.671633,12.523715,30f43ae6-f805-468e-a35a-827e9218169c,2,2,0,0,0,0,22.0
+Clever,"Frederiksvej 37, 2000 Frederiksberg",55.675186,12.514315,995ef7df-f9ba-462c-92cc-31d9180f13c7,4,3,1,0,0,0,22.0
+E.ON Drive,"Frederiksvej 2, 2000 Frederiksberg",55.675292,12.519278,248bd1bc-e660-435e-822d-46b8adfb70af,2,2,0,0,0,0,22.0
+Clever,"Blytsvej 11, 2000 Frederiksberg",55.676973,12.513698,da73ebb9-924b-43b5-8738-0ca8ed71d67c,4,4,0,0,0,0,22.0
+Drivee,"Søndre Fasanvej 49, 2000 Frederiksberg",55.676881,12.520843,3289278d-974c-8c04-adab-dae640e8a81c,4,2,0,0,2,0,11.0
+drivee,"Søndre Fasanvej 41, 2000 Frederiksberg",55.677213,12.521036,,0,0,0,0,0,0,
+drivee,"Søndre Fasanvej 65, 2000 Frederiksberg",55.677013,12.522251,,0,0,0,0,0,0,
+OK,"Roskildevej 10, 2000 Frederiksberg",55.67104,12.529711,14ef7caa-423c-81c9-8229-6bfe9e533d2f,6,6,0,0,0,0,40.0
+Clever,"Peter Bangs Vej 1, 2000 Frederiksberg",55.678563,12.516453,4ccd4198-bdc4-418d-9124-66efaaf20270,8,6,2,0,0,0,22.0
+drivee,"Peter Bangs Vej 33A, 2000 Frederiksberg",55.678647,12.513443,,0,0,0,0,0,0,
+Clever,"Bakkegårds Allé 2, 1804 Frederiksberg C",55.670512,12.532267,8723cfbd-7e60-4777-8cc3-543362a8d1cb,8,1,7,0,0,0,22.0
+Spirii,"Rahbeks Allé 21, 1801 Frederiksberg C",55.668576,12.532891,e28a3154-0e83-433d-a403-f345962f7948,8,7,1,0,0,0,22.0
+Spirii,"Jacobys Allé 13, 1806 Frederiksberg",55.672321,12.531783,bf0c4829-9efe-42bd-a64d-759787f77248,4,1,3,0,0,0,22.0
+OK,"Pile Allé 45, 2000 Frederiksberg",55.668433,12.531062,1f9d1006-c2db-840f-927b-e76aa95ce535,6,4,2,0,0,0,40.0
+EDF Danmark A/S,"Kochsvej 37, 1812 Frederiksberg",55.670609,12.537075,7162b455-dfb9-45c6-8355-ace107431dee,6,4,2,0,0,0,22.0
+E.ON Drive,"Henrik Ibsens Vej 24, 1813 Frederiksberg",55.671965,12.538358,,0,0,0,0,0,0,
+OK,"Henrik Ibsens Vej 24, 1813 Frederiksberg C",55.67184,12.538625,262be790-4c9b-85ed-88c4-8b6ed44cb8da,6,3,2,0,1,0,40.0
+Clever,"Amicisvej 1, 1852 Frederiksberg C",55.674559,12.537558,80c24e85-eddf-400f-bd57-3db0d312b543,2,0,2,0,0,0,22.0
+Clever,"Carit Etlars Vej 2, 1814 Frederiksberg C",55.673555,12.541364,94a6ac55-4fc8-4c68-b16e-b6b45f550d11,8,4,4,0,0,0,22.0
+Clever,"Paludan Müllers Vej 8, 1815 Frederiksberg C",55.672654,12.542335,e53b1de8-9755-4fa8-800f-96ae7f62c54e,6,3,3,0,0,0,11.0
+Clever,"Hollændervej 17, 1855 Frederiksberg C",55.676285,12.534583,c02c5256-4349-46d3-98d3-a8c824f5ccd9,6,3,3,0,0,0,11.0
+OK,"Martensens Allé 2A, 1828 Frederiksberg C",55.674126,12.541669,3bd10f12-8f8b-8b0c-95ae-62d72fcd1eb9,7,5,1,0,1,0,40.0
+E.ON Drive,"Martensens Allé 3, 1828 Frederiksberg",55.674476,12.541641,,0,0,0,0,0,0,
+OK,"Gammel Kongevej 161, 1850 Frederiksberg C",55.677482,12.536085,693a4607-a31d-448c-8bd4-e7237f154ef0,2,1,1,0,0,0,20.0
+Clever,"Martensens Allé 13, 1828 Frederiksberg C",55.67547,12.542233,5281fdc1-deb1-4273-8e95-d0e025c23d0d,8,2,6,0,0,0,11.0
+OK,"Frederiksberg Bredegade 2, 2000 Frederiksberg",55.677984,12.531078,35456202-863d-816f-a783-2edefb681efa,6,3,2,0,1,0,40.0
+Clever,"Henrik Steffens Vej 1, 1866 Frederiksberg C",55.677689,12.537993,73a3d83f-af15-41a9-b51c-6d7690e46c7d,8,0,8,0,0,0,22.0
+E.ON Drive Infrastructure Denmark ApS,"Frederiksberg Bredegade --, 2000 Frederiksberg",55.678335,12.529709,3477c2c0-12a0-8934-90a9-c6cc563fe851,2,0,0,0,0,2,150.0
+Clever,"Frederiksberg Bredegade 14, 2000 Frederiksberg",55.678422,12.529695,517cb790-d9f1-4a78-a550-40a2b5fb7feb,4,1,3,0,0,0,300.0
+EDF Danmark A/S,"John Winthers Plads 2, 2000 Frederiksberg",55.678658,12.529097,1f692572-bb2b-885a-b4e4-ceed39b16342,16,13,3,0,0,0,22.0
+EDF Danmark A/S,"John Winthers Plads 2, 1860 Frederiksberg",55.678659,12.529097,8c1656d0-c03b-423e-b89a-7bc2ad8f0d68,16,13,3,0,0,0,22.0
+OK,"Sankt Thomas Allé 10, 1824 Frederiksberg C",55.674509,12.547467,1664dc24-94a5-8c00-9fbe-df8c14ac23aa,4,3,1,0,0,0,40.0
+EDF Danmark A/S,"Gammel Kongevej 60, 1850 Frederiksberg C",55.673787,12.554078,3fcefc0e-ef8a-4a2e-bba9-1f9518231d77,10,5,5,0,0,0,22.0
+Clever,"Sankt Thomas Allé 14, 1824 Frederiksberg C",55.67479,12.547574,a9d46417-5c00-4038-91ab-3ead85384bc5,8,3,5,0,0,0,11.0
+Clever,"Sankt Thomas Allé 19, 1824 Frederiksberg",55.674918,12.547339,,0,0,0,0,0,0,
+Clever,"Prinsesse Maries Allé 13, 1908 Frederiksberg",55.675308,12.55388,9e3f8499-2517-4a09-8a40-69ad14c7b5ce,8,3,5,0,0,0,22.0
+OK,"Forhåbningsholms Allé 18, 1904 Frederiksberg C",55.676164,12.550462,3cafa78f-f746-8705-a2b3-68755ba23268,8,7,1,0,0,0,40.0
+Clever,"Carl Plougs Vej 1, 1913 Frederiksberg",55.678095,12.551831,f030f3cf-5b2d-478b-8f60-059e4835a207,4,3,1,0,0,0,22.0
+OK,"Carl Plougs Vej 6, 1913 Frederiksberg",55.678513,12.552221,2569ef62-59fd-806c-baee-95879a24833b,4,3,1,0,0,0,40.0
+Clever,"Mørk Hansens Vej 2, 2000 Frederiksberg",55.679096,12.497579,08d3ec18-3fa3-49b0-8576-caea4690cec5,8,0,8,0,0,0,11.0
+OK,"Sønderjyllands Allé 2, 2000 Frederiksberg",55.680067,12.498724,ce4efdc2-6dcf-4e30-bab6-d50f599949c8,1,1,0,0,0,0,40.0
+Virta,"A.D. Jørgensens Vej 8, 2000 Frederiksberg",55.678945,12.494733,,0,0,0,0,0,0,
+OK,"Peter Bangs Vej 194, 2000 Frederiksberg",55.678551,12.494485,178baa6f-1438-8bfa-ac7d-ea0c7bd73998,6,6,0,0,0,0,40.0
+OK,"Julius Valentiners Vej 20, 2000 Frederiksberg",55.67961,12.50556,227627d1-17c2-85f3-ac21-3f994d6a3dab,4,4,0,0,0,0,40.0
+Norlys,"Christian Paulsens Vej 32, 2000 Frederiksberg",55.681581,12.496777,0f4d1569-f57f-4568-b1c6-9706a33ce348,2,2,0,0,0,0,22.0
+E.ON Drive,"Nis Lorenzens Vej 9, 2000 Frederiksberg",55.682173,12.498217,d7c75596-ded5-46fa-8e45-dabefb0f85ed,6,4,1,0,0,1,22.0
+OK,"Julius Valentiners Vej 20, 2000 Frederiksberg",55.680176,12.506038,3791ef35-56bf-8566-9794-6a5e1d26d1e7,6,6,0,0,0,0,40.0
+Clever,"Flintholm Allé 4A, 2000 Frederiksberg",55.682593,12.502068,e2f13ee3-4f9e-4bba-bc66-67c55af7c2cc,4,2,2,0,0,0,22.0
+Clever,"Julius Valentiners Vej 39, 2000 Frederiksberg",55.681652,12.506652,b2a241ff-623a-481a-b81e-3635de8c5ead,6,5,1,0,0,0,22.0
+COMPANY NAME-SITE Vælg ladepunkt og se pris,"Dirch Passers Allé 1, 2000 Frederiksberg",55.682608,12.505175,,0,0,0,0,0,0,
+Astronom Hansensgade 9 (Tønder Gymnasium),"Flintholm Allé 22, 2000 Frederiksberg",55.684496,12.500803,,0,0,0,0,0,0,
+Clever,"Peter Bangs Vej 44, 2000 Frederiksberg",55.678934,12.51121,c9c3fe45-9837-4045-a66f-1b56cc06f470,4,4,0,0,0,0,22.0
+OK,"Flintholm Allé 49, 2000 Frederiksberg",55.684884,12.500529,1fdd39ad-8a24-869c-82d0-25d54cb0b8a3,4,2,2,0,0,0,40.0
+COMPANY NAME-SITE Vælg ladepunkt og se pris,"Dirch Passers Allé 76, 2000 Frederiksberg",55.684884,12.500529,,0,0,0,0,0,0,
+OK,"P.G. Ramms Allé 1, 2000 Frederiksberg",55.679157,12.511653,17b65927-d450-817e-a315-8440ff2d6507,2,0,2,0,0,0,40.0
+Clever,"P.G. Ramms Allé 1, 2000 Frederiksberg",55.679401,12.511586,a5ca9b48-9ea3-4ded-b12e-9993b7c11cee,8,6,2,0,0,0,22.0
+Norlys,"Osvald Helmuths Vej 4, 2000 Frederiksberg",55.684509,12.505016,007ec6e0-72d1-8c0b-968a-2038f77dd099,8,6,2,0,0,0,22.0
+Clever,"Lauritz Sørensens Vej 10, 2000 Frederiksberg",55.682656,12.510158,43579215-62f6-4e82-8d3b-cbd2df2cf421,8,5,3,0,0,0,22.0
+E.ON Drive,"Osvald Helmuths Vej 14, 2000 Frederiksberg",55.685046,12.505039,514d9083-512f-44a2-9dca-c145c53c4baf,6,0,1,0,5,0,22.0
+DEAS A/S,"C.F. Richs Vej 103, 2000 Frederiksberg",55.685921,12.503396,90578838-cdf1-4659-b3bd-56f268da88a6,4,2,2,0,0,0,22.0
+Clever,"Orla Lehmanns Vej 2, 2000 Frederiksberg",55.679555,12.520263,ddcb128f-0e6e-4f06-8e11-5dabf3f5e233,8,7,1,0,0,0,11.0
+OK,"Finsensvej 33, 2000 Frederiksberg",55.681365,12.516168,d82557f3-722f-443e-a90e-05836c9cbbde,6,5,1,0,0,0,20.0
+Clever,"Eversvej 1, 2000 Frederiksberg",55.681682,12.517291,f1601561-b5a9-4c8e-86be-b3d95ae07a99,6,4,2,0,0,0,22.0
+Clever,"Wilkensvej 26A, 2000 Frederiksberg",55.682426,12.51424,4592bc03-8793-4942-ab37-3b45baca3ba3,8,8,0,0,0,0,22.0
+OK,"Kilevej 3, 2000 Frederiksberg",55.681375,12.522813,0dddbb2f-acd4-8b58-9149-89bde45a932c,4,2,2,0,0,0,40.0
+Clever,"Nordre Fasanvej 25, 2000 Frederiksberg",55.681871,12.522072,4e623e62-773f-4078-a21f-5b1cff3d92b0,4,0,3,0,0,1,300.0
+Spirii,"Dalgas Have 2, 2000 Frederiksberg",55.683506,12.518119,3549d157-212c-8023-af4c-f939cbd2c144,4,2,2,0,0,0,22.0
+E.ON Drive,"Kilevej 14, 2000 Frederiksberg",55.681229,12.524221,,0,0,0,0,0,0,
+Clever,"Howitzvej 57, 2000 Frederiksberg",55.680104,12.525337,bd36dbdc-9e4b-47a7-bd77-4a9e8474acee,4,3,0,0,0,1,22.0
+Spirii,"Dalgas Have 70, 2000 Frederiksberg",55.684318,12.513111,f5a3cecc-2c6b-4964-83c1-97c086949d41,4,2,2,0,0,0,22.0
+Clever,"Lyøvej 4, 2000 Frederiksberg",55.682864,12.524145,3e928fc5-7965-464b-9533-cbc650f9ef6b,4,3,1,0,0,0,22.0
+Clever,"La Cours Vej 6, 2000 Frederiksberg",55.684704,12.517025,5c2611ad-30a7-4c27-b487-6701121f9d06,6,4,2,0,0,0,22.0
+А1 Еко,"Lyøvej 14, 2000 Frederiksberg",55.682534,12.52528,97fea467-bf77-4801-a881-4144b7fff6b6,5,3,2,0,0,0,22.0
+Norlys,"Howitzvej 32, 2000 Frederiksberg",55.680119,12.52834,855c1d55-5603-495b-b232-52bd124362c8,1,1,0,0,0,0,22.0
+Clever,"Thurøvej 3, 2000 Frederiksberg",55.683511,12.524898,457ea062-4f01-4728-960a-9f055fd59f73,4,2,1,0,1,0,11.0
+Clever,"Howitzvej 26, 2000 Frederiksberg",55.679885,12.529706,b248e413-e4f4-41ba-8655-225876a5810a,2,0,2,0,0,0,22.0
+"Frederiksberg Hospital (vej 9, opgang 10)","Tesdorpfsvej 19, 2000 Frederiksberg",55.685861,12.520669,,0,0,0,0,0,0,
+E.ON Drive,"Tesdorpfsvej 19, 2000 Frederiksberg",55.685864,12.520733,035b1055-3a96-8bc8-809b-d5a6b00bbde0,2,1,1,0,0,0,22.0
+Clever,"Sagasvej 10, 1862 Frederiksberg C",55.67935,12.535201,8a46c5b1-672f-473c-a2f4-3e4070f13844,4,3,1,0,0,0,22.0
+Clever,"Falkoner Allé 9, 2000 Frederiksberg",55.680117,12.532274,14026d60-a95c-4a02-b6e7-90fd044cf614,8,7,0,0,0,1,22.0
+E.ON Drive,"Falkoner Allé 21, 2000 Frederiksberg",55.681638,12.532665,c135e581-9caa-46d8-91cd-9697d0f5f34c,6,2,4,0,0,0,22.0
+E.ON Drive,"Solbjerg Plads 3, 2000 Frederiksberg",55.68193,12.530355,,0,0,0,0,0,0,
+Virta,"Solbjerg Plads 3, 2000 Frederiksberg",55.682278,12.531151,,0,0,0,0,0,0,
+Rolfsvej 3,"Rolfsvej 3, 2000 Frederiksberg",55.68309,12.535429,,0,0,0,0,0,0,
+OK,"Rolfsvej 9, 2000 Frederiksberg",55.683195,12.534937,08fe718a-f446-833e-812a-f1a8c3e89a13,6,5,1,0,0,0,40.0
+Clever,"Yrsavej 9, 2000 Frederiksberg",55.68335,12.531583,45782418-0430-42aa-b1d2-bcecdfba1c38,8,2,6,0,0,0,11.0
+E.ON Drive,"Dyrlægevej 2, 1870 Frederiksberg",55.678531,12.541972,476addfa-a7e0-4247-8f7f-0cf2c6c85ae7,4,4,0,0,0,0,22.0
+Clever,"Sankt Nikolaj Vej 4, 1953 Frederiksberg C",55.682973,12.536806,9527a0ff-ffdb-4edd-b5e3-f39c7ec6268b,8,6,2,0,0,0,22.0
+EDF Danmark A/S,"Helgesvej 21, 2000 Frederiksberg",55.684265,12.533535,96792f28-58ac-4fae-852e-4ace28082599,4,3,1,0,0,0,22.0
+Clever,"N.J. Fjords Allé 17, 1957 Frederiksberg C",55.682347,12.541112,f6fb6d5d-d925-4bd0-8ced-b9c42cddc136,6,3,3,0,0,0,22.0
+Clever,"Helgesvej 29, 2000 Frederiksberg",55.684672,12.531753,6753563b-8af4-4fe5-be50-e2fb009cd2c7,2,2,0,0,0,0,22.0
+Spirii,"Roarsvej 19, 2000 Frederiksberg",55.684556,12.535095,4c765c81-5246-40e5-9d8e-694299d24fdc,6,3,3,0,0,0,22.0
+Clever,"Bentzonsvej 7, 2000 Frederiksberg",55.68424,12.52819,d192f29d-fc0e-49ed-9bef-6fa07d55ead4,6,3,3,0,0,0,22.0
+OK,"Aksel Møllers Have 26, 2000 Frederiksberg",55.684945,12.531896,22a42af0-ffeb-873a-8888-0912305d7af7,4,2,1,0,0,1,40.0
+Norlys,"Rolighedsvej 26, 1958 Frederiksberg C",55.682313,12.542436,346613f3-b2fc-8b89-b1b8-5187e5e688d2,3,3,0,0,0,0,22.0
+E.ON Drive,"Langelands Plads, 2000 Frederiksberg",55.685005,12.529641,,0,0,0,0,0,0,
+EDF Danmark A/S,"Aksel Møllers Have 18, 2000 Frederiksberg",55.685359,12.532279,6f795eee-2dae-47ca-9c17-fc5b7b9c6282,12,7,5,0,0,0,22.0
+OK,"Langelands Plads 1, 2000 Frederiksberg",55.685261,12.529813,1e5a2e01-3e69-48e0-8e53-684133e303ed,20,16,4,0,0,0,40.0
+Clever,"Amalievej 17, 1875 Frederiksberg",55.67878,12.546202,b9b5e1af-ff97-47c6-8d09-8d864935cf38,8,4,4,0,0,0,11.0
+EDF Danmark A/S,"Harsdorffsvej 4A, 1874 Frederiksberg",55.67926,12.546257,d9a9f51c-d62c-4653-8090-8b7b9de283ad,4,2,2,0,0,0,22.0
+Clever,"Doktor Abildgårds Allé 2, 1955 Frederiksberg",55.68449,12.54126,23fd7f2f-9572-83cd-8307-735a488ae039,4,3,1,0,0,0,22.0
+Clever,"L.I. Brandes Allé 1, 1956 Frederiksberg C",55.684222,12.542308,ef51fe39-6769-4b77-9005-4c199bf21ddb,6,2,4,0,0,0,11.0
+Clever,"Forchhammersvej 29, 1920 Frederiksberg C",55.680365,12.549694,28fd1994-0065-40ea-993b-ce5a418924f6,8,3,5,0,0,0,22.0
+Spirii,"Julius Thomsens Plads 1, 1925 Frederiksberg",55.68016,12.553026,245f17e0-b6a5-4b08-a8f4-f55e8eb3b538,4,3,0,0,0,1,400.0
+Clever,"Julius Thomsens Plads 2, 1925 Frederiksberg C",55.680397,12.552694,1bbed8b5-e0f3-4564-8921-85a45110bba2,8,3,5,0,0,0,22.0
+OK,"Forchhammersvej 2, 1920 Frederiksberg",55.679419,12.554315,1d63431a-6439-858a-8cbb-37cbff11d705,6,3,3,0,0,0,40.0
+OK,"Steenstrups Allé 13, 1924 Frederiksberg",55.68134,12.551721,2de4e80c-0496-8273-b7f6-ad2eb9bb6057,4,3,1,0,0,0,40.0
+Norlys,"Vodroffsvej 32, 1900 Frederiksberg",55.679055,12.555157,bb404bb5-d215-4bed-bae8-12be90b2decc,4,3,1,0,0,0,11.0
+Clever,"Fuglevangsvej 10, 1962 Frederiksberg",55.682261,12.548138,97359a22-cd67-450f-a3ba-1d08ee04f18b,8,6,2,0,0,0,22.0
+Norlys,"Vodroffsvej 55, 1900 Frederiksberg",55.680692,12.555318,175c18a9-6f30-4ff1-9f2a-7cca5a358d29,6,5,1,0,0,0,11.0
+Clever,"Steenwinkelsvej 13, 1966 Frederiksberg C",55.683374,12.550318,c04c9a25-694f-4af6-b3e2-abd1ce34056f,4,2,2,0,0,0,22.0
+Spirii,"Adolph Steens Allé 9, 1971 Frederiksberg",55.684108,12.552714,98cc886d-e066-43b2-a75e-91d5c841d106,7,3,4,0,0,0,22.0
+drivee,"Åboulevard 29, 1960 Frederiksberg",55.68452,12.552494,,0,0,0,0,0,0,
+Clever,"Ingemannsvej 30, 1964 Frederiksberg",55.684875,12.548784,8715ab06-3e5c-4a2e-b1c0-026716bab061,6,4,2,0,0,0,22.0
+Clever,"Bülowsvej 41, 1870 Frederiksberg C",55.685099,12.545561,49cb3748-855d-4dcd-b06f-eb0dbd34ce7e,10,9,1,0,0,0,22.0
+Norlys,"Bernhard Bangs Allé 45, 2000 Frederiksberg",55.68609,12.506561,74fff369-15d3-463a-bc8a-a7944747eb36,4,4,0,0,0,0,22.0
+Clever,"Moltkesvej 24, 2000 Frederiksberg",55.686507,12.509255,6d3a671c-cc5a-4918-bbdc-de779807efde,8,5,3,0,0,0,22.0
+Clever,"Femte Juni Plads 12, 2000 Frederiksberg",55.68809,12.513806,b571aaed-0331-4876-8eb4-6692c5b61b27,4,3,1,0,0,0,22.0
+Circle K,"Godthåbsvej 144, 2000 Frederiksberg",55.690003,12.519068,1fc8ee2d-7a15-4e3e-a083-3aa29c2ed7cc,3,2,1,0,0,0,400.0
+E.ON Drive,"Skadestuevej 15, 2000 Frederiksberg",55.687245,12.523863,4960647a-c89b-45e4-866b-c1e0e75cd95b,2,1,1,0,0,0,22.0
+OK,"Godthåbsvænget 12, 2000 Frederiksberg",55.690952,12.52045,09cde0f6-c8ec-8c00-be96-74497d89e658,8,5,3,0,0,0,40.0
+Clever,"Skadestuevej 3, 2000 Frederiksberg",55.687109,12.525941,13ceeb5b-db98-8379-b830-06f1c755739f,2,2,0,0,0,0,50.0
+Clever,"Guldborgvej 41, 2000 Frederiksberg",55.687506,12.528114,a4154ea1-b199-4355-a8c3-4003061cf818,6,4,2,0,0,0,22.0
+OK,"Holger Danskes Vej 108, 2000 Frederiksberg",55.688721,12.528801,15f4c08c-703b-8dac-be0f-f8b5b69a3f1e,6,4,2,0,0,0,40.0
+OK,"Bogøvej 7, 2000 Frederiksberg",55.687807,12.531404,2fe2dcfa-e36e-8947-b80a-32e908c560ae,6,6,0,0,0,0,40.0
+NRGi,"Kong Georgs Vej, 2000 Frederiksberg",55.688496,12.533306,,0,0,0,0,0,0,
+Clever,"Holger Danskes Vej 19, 2000 Frederiksberg",55.686671,12.537486,8dd9ae14-1f42-45cf-aa03-65936e0fab36,6,2,4,0,0,0,22.0
+Clever,"Kong Georgs Vej 69, 2000 Frederiksberg",55.68913,12.530219,93cfe675-8329-458b-98c6-10f1dcd7211d,8,5,3,0,0,0,22.0
+Clever,"Dronning Olgas Vej 3, 2000 Frederiksberg",55.687426,12.540143,8edc7080-ce71-4725-b3c3-b41c8fdf9d1e,6,2,4,0,0,0,22.0
+Clever,"Ane Katrines Vej 2, 2000 Frederiksberg",55.691008,12.535414,7937ae06-7770-4c57-96b3-f6dbf910ab6a,8,5,3,0,0,0,11.0
+Clever,"Nitivej 10, 2000 Frederiksberg",55.69163,12.534013,1aec3794-e3ab-89bc-a96c-accc9484daf7,10,7,3,0,0,0,22.0
+Clever,"Priorvej 1, 2000 Frederiksberg",55.692284,12.533154,a03719ef-2bca-4afd-ad86-5860f1354c42,8,4,4,0,0,0,22.0
+OK,"Ane Katrines Vej 34, 2000 Frederiksberg",55.692711,12.534551,1ef34f27-0d74-8d5f-9708-1c811e4b1b61,6,4,1,0,0,1,40.0
+OK,"Nordre Fasanvej 175, 2000 Frederiksberg",55.693445,12.532599,fe1e8357-82b6-4270-a9ff-ea46c181b940,2,2,0,0,0,0,75.0
+Clever,"Kristian Zahrtmanns Plads 81, 2000 Frederiksberg",55.692552,12.526135,7c5ced4e-bff5-432c-a708-43b4dd01865a,4,1,3,0,0,0,22.0
+EDF Danmark A/S,"Munkensvej 1, 2000 Frederiksberg",55.693573,12.534029,5fac8bc5-2bc8-4ec9-aa4f-63ddcecc2d25,8,6,2,0,0,0,22.0
+EDF Danmark A/S,"Munkensvej 1, 2000 Frederiksberg",55.693573,12.534029,33f87206-b4d6-8baf-b77f-9e576ab2c885,6,3,3,0,0,0,22.0
+Norlys,"Ternevej 17, 2000 Frederiksberg",55.69409,12.5242,1d1785e2-af39-41f6-9fd6-372a18311fb1,4,3,1,0,0,0,22.0
+Clever,"Drosselvej 81, 2000 Frederiksberg",55.694647,12.528648,49a321b7-3fc4-40d0-a5e5-ea6e9d541138,6,2,4,0,0,0,22.0
+Norlys,"Borups Alle 126A, 2000 Frederiksberg",55.695125,12.532193,0a8ead70-aa94-888d-aad4-6554aeb097c5,4,3,1,0,0,0,300.0
+E.ON Drive,"Hillerødgade 27, 2200 Frederiksberg",55.696727,12.537085,5cbb3caf-fde9-4ac8-8615-9bdac02cf056,6,5,1,0,0,0,22.0

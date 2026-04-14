@@ -1,0 +1,10 @@
+{
+  "backend": "torch_dqn",
+  "checkpoint_path": "outputs/tomtom_frederiksberg/rl/best_model.pt",
+  "evaluation": {
+    "mean_reward": -1007.4853191584349,
+    "mean_served_demand": 146.45475417375565,
+    "mean_true_demand_total": 1032.375,
+    "mean_unmet_demand": 885.9202487170696
+  }
+}
