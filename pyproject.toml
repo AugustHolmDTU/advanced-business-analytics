@@ -30,6 +30,8 @@ dev = [
 
 [project.scripts]
 evch-generate-data = "evch.train.generate_synthetic_data:main"
+evch-fetch-tomtom = "evch.train.fetch_tomtom_snapshot:main"
+evch-build-tomtom-priors = "evch.train.build_tomtom_calibration_priors:main"
 evch-train-uncertainty = "evch.train.train_uncertainty:main"
 evch-train-rl = "evch.train.train_rl:main"
 evch-eval = "evch.train.evaluate_policies:main"
@@ -40,4 +42,3 @@ packages = ["src/evch"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-

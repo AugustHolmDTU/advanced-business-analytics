@@ -1,0 +1,15 @@
+site_id,label,type,x_km,y_km,connector_proxy,power_proxy_kw,availability_proxy
+0,City Hub 1,city_hub,21.066702,9.520038,10.0,22.0,0.5
+1,City Hub 2,city_hub,23.345608,9.405383,10.0,22.0,0.5
+2,City Hub 3,city_hub,140.60603,14.34294,2.0,22.0,0.5
+3,City Hub 4,city_hub,244.4,-10.375245,2.0,11.0,0.25
+4,Service Area 1,service_area,63.69603,-1.4960794,6.0,40.0,1.0
+5,Service Area 2,service_area,102.89237,-1.1601439,6.0,50.0,0.25
+6,Service Area 3,service_area,115.590866,-1.3304791,2.0,11.0,0.0
+7,Service Area 4,service_area,175.15242,-0.7395807,2.0,22.0,1.0
+8,Service Area 5,service_area,195.1145,-0.58993655,4.0,22.0,1.0
+9,Exit 1,highway_exit,43.401962,-5.436937,1.0,22.0,0.5
+10,Exit 2,highway_exit,76.25387,-5.087364,4.0,22.0,0.5
+11,Exit 3,highway_exit,168.95204,-2.7167208,6.0,22.0,0.0
+12,Exit 4,highway_exit,170.75024,2.594302,6.0,300.0,0.25
+13,Exit 5,highway_exit,198.89908,3.165595,2.0,300.0,1.0

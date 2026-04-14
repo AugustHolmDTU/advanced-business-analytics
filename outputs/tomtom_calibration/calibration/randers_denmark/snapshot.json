@@ -1,0 +1,761 @@
+{
+  "center": {
+    "freeform_address": "Randers",
+    "lat": 56.4648597,
+    "lon": 10.047079
+  },
+  "location_query": "Randers, Denmark",
+  "search_radius_m": 5000,
+  "site_coords_km": [
+    [
+      -0.9340288639068604,
+      -0.49011456966400146
+    ],
+    [
+      -0.928500771522522,
+      -0.49834299087524414
+    ],
+    [
+      -0.9164931774139404,
+      -0.23892487585544586
+    ],
+    [
+      -0.6799797415733337,
+      -0.2012297362089157
+    ],
+    [
+      -0.6557027697563171,
+      -0.8414909839630127
+    ],
+    [
+      -0.6425321698188782,
+      -0.5341477990150452
+    ],
+    [
+      -0.5647306442260742,
+      -0.13351193070411682
+    ],
+    [
+      -0.5221685767173767,
+      -0.28306931257247925
+    ],
+    [
+      -0.5106831789016724,
+      0.69355708360672
+    ],
+    [
+      -0.48828354477882385,
+      -0.7193987965583801
+    ],
+    [
+      -0.48762163519859314,
+      0.10422314703464508
+    ],
+    [
+      -0.36305880546569824,
+      -0.23825769126415253
+    ],
+    [
+      -0.3511998951435089,
+      -0.17409813404083252
+    ],
+    [
+      -0.3259504437446594,
+      -0.13840451836585999
+    ],
+    [
+      -0.289413183927536,
+      -0.5440441966056824
+    ],
+    [
+      0.006388400215655565,
+      0.3588598966598511
+    ],
+    [
+      0.019720658659934998,
+      -0.761208176612854
+    ],
+    [
+      0.19919301569461823,
+      0.9735462665557861
+    ],
+    [
+      0.5461015701293945,
+      0.10833736509084702
+    ],
+    [
+      1.0428708791732788,
+      0.14870117604732513
+    ]
+  ],
+  "site_latlon": [
+    [
+      56.460453033447266,
+      10.031874656677246
+    ],
+    [
+      56.46037673950195,
+      10.031965255737305
+    ],
+    [
+      56.462711334228516,
+      10.032159805297852
+    ],
+    [
+      56.463050842285156,
+      10.036009788513184
+    ],
+    [
+      56.45729064941406,
+      10.036405563354492
+    ],
+    [
+      56.46005630493164,
+      10.036620140075684
+    ],
+    [
+      56.46365737915039,
+      10.037885665893555
+    ],
+    [
+      56.46231460571289,
+      10.038578987121582
+    ],
+    [
+      56.47109603881836,
+      10.038764953613281
+    ],
+    [
+      56.45838928222656,
+      10.039131164550781
+    ],
+    [
+      56.465797424316406,
+      10.039140701293945
+    ],
+    [
+      56.46271514892578,
+      10.041169166564941
+    ],
+    [
+      56.463294982910156,
+      10.041361808776855
+    ],
+    [
+      56.46361541748047,
+      10.041772842407227
+    ],
+    [
+      56.45996856689453,
+      10.042367935180664
+    ],
+    [
+      56.46808624267578,
+      10.0471830368042
+    ],
+    [
+      56.45801544189453,
+      10.04740047454834
+    ],
+    [
+      56.47361373901367,
+      10.050321578979492
+    ],
+    [
+      56.46583557128906,
+      10.05596923828125
+    ],
+    [
+      56.4661979675293,
+      10.064056396484375
+    ]
+  ],
+  "stations": [
+    {
+      "address": "Vestergade 5, 8900 Randers",
+      "available_connectors": 2,
+      "charging_availability_id": "1b1e83a8-1ca2-8a98-9efe-33538e8197a0",
+      "lat": 56.460452,
+      "lon": 10.031875,
+      "max_power_kw": 22.0,
+      "name": "PowerGo",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 2,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Vestergade 5, 8900 Randers C",
+      "available_connectors": 0,
+      "charging_availability_id": "2e66b6e7-50d2-4b76-8f60-4f629c60ea9a",
+      "lat": 56.460378,
+      "lon": 10.031965,
+      "max_power_kw": 22.0,
+      "name": "Clever",
+      "occupied_connectors": 2,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 2,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Vestervold 31, 8900 Randers C",
+      "available_connectors": 4,
+      "charging_availability_id": "eee1150f-8f55-4bb4-9488-71d3678a3c8d",
+      "lat": 56.462711,
+      "lon": 10.03216,
+      "max_power_kw": 22.0,
+      "name": "E.ON Drive",
+      "occupied_connectors": 2,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "M\u00f8llegade 6, 8900 Randers",
+      "available_connectors": 4,
+      "charging_availability_id": "b9d4a915-15e4-4e29-95c6-0ac48d977b7c",
+      "lat": 56.46305,
+      "lon": 10.03601,
+      "max_power_kw": 22.0,
+      "name": "E.ON Drive",
+      "occupied_connectors": 2,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Laksetorvet 1, 8900 Randers",
+      "available_connectors": 2,
+      "charging_availability_id": "c200e9ad-e860-439d-a5d6-59802c74b49d",
+      "lat": 56.457292,
+      "lon": 10.036406,
+      "max_power_kw": 22.0,
+      "name": "PowerGo",
+      "occupied_connectors": 2,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Torvegade 11, 8900 Randers C",
+      "available_connectors": 0,
+      "charging_availability_id": null,
+      "lat": 56.460056,
+      "lon": 10.03662,
+      "max_power_kw": null,
+      "name": "Tesla Destination",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 0,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Biografgade 3, 8900 Randers",
+      "available_connectors": 1,
+      "charging_availability_id": "0e839344-1f2e-44e0-9e0b-5f4af0362fd3",
+      "lat": 56.463659,
+      "lon": 10.037886,
+      "max_power_kw": 22.0,
+      "name": "PowerGo",
+      "occupied_connectors": 1,
+      "out_of_service_connectors": 1,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 1
+    },
+    {
+      "address": "Nordregrave 3, 8900 Randers C",
+      "available_connectors": 4,
+      "charging_availability_id": "42a9332a-b049-4291-bdd8-806b9c4ef23c",
+      "lat": 56.462314,
+      "lon": 10.038579,
+      "max_power_kw": 22.0,
+      "name": "Spirii",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Nattergalvej 35A, 8930 Randers N\u00d8",
+      "available_connectors": 1,
+      "charging_availability_id": "850b7e08-f100-4dfe-8f44-0d5a4a1bcce6",
+      "lat": 56.471097,
+      "lon": 10.038765,
+      "max_power_kw": 22.0,
+      "name": "Clever",
+      "occupied_connectors": 3,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Trangstr\u00e6de 2, 8900 Randers",
+      "available_connectors": 6,
+      "charging_availability_id": "e0e6592e-2f5b-49d4-8f65-d58ea4a1a632",
+      "lat": 56.45839,
+      "lon": 10.039131,
+      "max_power_kw": 22.0,
+      "name": "E.ON Drive",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Gammel Hadsundvej 3, 8900 Randers",
+      "available_connectors": 2,
+      "charging_availability_id": "95591234-cb67-448a-9149-f9a075200ce7",
+      "lat": 56.465797,
+      "lon": 10.039141,
+      "max_power_kw": 22.0,
+      "name": "PowerGo",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 2,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Sandgade 12, 8900 Randers C",
+      "available_connectors": 0,
+      "charging_availability_id": null,
+      "lat": 56.462717,
+      "lon": 10.041169,
+      "max_power_kw": null,
+      "name": "sandgade 12, 3. mf. - Verdo",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 0,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Dragonvej 1, 8900 Randers",
+      "available_connectors": 1,
+      "charging_availability_id": "3baaa5f2-4674-46f1-8c17-2f40da03a22c",
+      "lat": 56.463294,
+      "lon": 10.041362,
+      "max_power_kw": 22.0,
+      "name": "PowerGo",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 2,
+      "unknown_connectors": 1
+    },
+    {
+      "address": "Dragonvej 1, 8900 Randers",
+      "available_connectors": 1,
+      "charging_availability_id": "0e1713a7-e03d-4494-a8ab-8be73cf98340",
+      "lat": 56.463615,
+      "lon": 10.041773,
+      "max_power_kw": 11.0,
+      "name": "Norlys",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 1,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Fischersgade 26, 8900 Randers",
+      "available_connectors": 0,
+      "charging_availability_id": null,
+      "lat": 56.459967,
+      "lon": 10.042368,
+      "max_power_kw": null,
+      "name": "Q-Park Fischersgade 26",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 0,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "\u00d8stervangsvej 26A, 8930 Randers",
+      "available_connectors": 4,
+      "charging_availability_id": "b50494d2-af57-41c7-b0f3-d913a2a0e7c9",
+      "lat": 56.468087,
+      "lon": 10.047183,
+      "max_power_kw": 22.0,
+      "name": "PowerGo",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Kulholmsvej 12, 8930 Randers N\u00d8",
+      "available_connectors": 0,
+      "charging_availability_id": null,
+      "lat": 56.458014,
+      "lon": 10.0474,
+      "max_power_kw": null,
+      "name": "Kulholmsvej 12 - Verdo",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 0,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Dronningborg Boulevard 33, 8930 Randers",
+      "available_connectors": 2,
+      "charging_availability_id": "66f070cc-5823-453b-84a2-280495271bc8",
+      "lat": 56.473615,
+      "lon": 10.050322,
+      "max_power_kw": 22.0,
+      "name": "PowerGo",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 2,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Udbyh\u00f8jvej 62, 8930 Randers",
+      "available_connectors": 1,
+      "charging_availability_id": "bd81b8d0-cb79-4513-a574-32536b4a7d8c",
+      "lat": 56.465834,
+      "lon": 10.055969,
+      "max_power_kw": 22.0,
+      "name": "Uno-X",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 1,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Toldbodgade 48, 8930 Randers",
+      "available_connectors": 0,
+      "charging_availability_id": null,
+      "lat": 56.466197,
+      "lon": 10.064056,
+      "max_power_kw": null,
+      "name": "drivee",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 0,
+      "unknown_connectors": 0
+    }
+  ],
+  "travel_time_matrix_minutes": [
+    [
+      9.733333587646484,
+      9.75,
+      10.733333587646484,
+      11.583333015441895,
+      11.300000190734863,
+      12.833333015441895,
+      12.183333396911621,
+      6.845939636230469,
+      11.800000190734863,
+      12.116666793823242,
+      11.949999809265137,
+      12.083333015441895,
+      12.166666984558105,
+      11.716666221618652,
+      12.183333396911621,
+      13.066666603088379,
+      13.25,
+      14.133333206176758,
+      14.033333778381348,
+      13.550000190734863
+    ],
+    [
+      2.9166667461395264,
+      2.933333396911621,
+      4.266666889190674,
+      5.116666793823242,
+      5.566666603088379,
+      6.016666889190674,
+      5.7166666984558105,
+      4.010555744171143,
+      6.300000190734863,
+      6.383333206176758,
+      5.483333110809326,
+      5.599999904632568,
+      5.699999809265137,
+      5.25,
+      6.449999809265137,
+      6.75,
+      7.516666889190674,
+      8.633333206176758,
+      7.733333110809326,
+      7.816666603088379
+    ],
+    [
+      15.333333015441895,
+      15.350000381469727,
+      14.783333778381348,
+      14.516666412353516,
+      14.566666603088379,
+      14.550000190734863,
+      14.416666984558105,
+      4.891790866851807,
+      15.233333587646484,
+      13.983333587646484,
+      14.133333206176758,
+      13.449999809265137,
+      13.350000381469727,
+      13.033333778381348,
+      12.633333206176758,
+      13.566666603088379,
+      15.350000381469727,
+      14.183333396911621,
+      12.216666221618652,
+      10.0
+    ],
+    [
+      21.049999237060547,
+      21.066667556762695,
+      19.91666603088379,
+      19.33333396911621,
+      20.78333282470703,
+      21.066667556762695,
+      19.16666603088379,
+      7.739650726318359,
+      17.816667556762695,
+      20.200000762939453,
+      18.866666793823242,
+      18.200000762939453,
+      18.08333396911621,
+      17.766666412353516,
+      19.149999618530273,
+      18.316667556762695,
+      20.16666603088379,
+      16.766666412353516,
+      16.616666793823242,
+      14.800000190734863
+    ],
+    [
+      13.066666603088379,
+      13.083333015441895,
+      12.5,
+      12.233333587646484,
+      12.283333778381348,
+      12.283333778381348,
+      12.083333015441895,
+      6.969383716583252,
+      10.75,
+      11.716666221618652,
+      11.800000190734863,
+      11.116666793823242,
+      11.0,
+      10.683333396911621,
+      10.350000381469727,
+      11.233333587646484,
+      13.083333015441895,
+      9.683333396911621,
+      9.533333778381348,
+      7.7166666984558105
+    ],
+    [
+      12.899999618530273,
+      12.933333396911621,
+      11.766666412353516,
+      11.199999809265137,
+      12.649999618530273,
+      12.933333396911621,
+      11.016666412353516,
+      6.956643581390381,
+      9.916666984558105,
+      12.066666603088379,
+      10.733333587646484,
+      10.050000190734863,
+      9.949999809265137,
+      9.633333206176758,
+      11.016666412353516,
+      10.166666984558105,
+      13.433333396911621,
+      8.933333396911621,
+      8.483333587646484,
+      8.899999618530273
+    ],
+    [
+      10.350000381469727,
+      10.366666793823242,
+      9.216666221618652,
+      10.333333015441895,
+      13.033333778381348,
+      12.0,
+      10.516666412353516,
+      6.537187576293945,
+      8.75,
+      12.816666603088379,
+      10.25,
+      10.616666793823242,
+      10.5,
+      10.050000190734863,
+      11.75,
+      9.449999809265137,
+      14.183333396911621,
+      10.333333015441895,
+      12.116666793823242,
+      13.199999809265137
+    ],
+    [
+      7.800000190734863,
+      7.816666603088379,
+      8.800000190734863,
+      9.649999618530273,
+      9.366666793823242,
+      10.899999618530273,
+      10.25,
+      6.076385498046875,
+      9.866666793823242,
+      10.183333396911621,
+      10.0,
+      10.133333206176758,
+      10.233333587646484,
+      9.783333778381348,
+      10.233333587646484,
+      11.133333206176758,
+      11.300000190734863,
+      12.199999809265137,
+      12.100000381469727,
+      11.616666793823242
+    ],
+    [
+      10.466666221618652,
+      10.483333587646484,
+      11.483333587646484,
+      12.283333778381348,
+      9.699999809265137,
+      12.316666603088379,
+      12.133333206176758,
+      6.092293739318848,
+      13.016666412353516,
+      10.333333015441895,
+      11.833333015441895,
+      11.166666984558105,
+      11.050000190734863,
+      10.733333587646484,
+      10.383333206176758,
+      11.283333778381348,
+      11.449999809265137,
+      14.133333206176758,
+      12.25,
+      11.766666412353516
+    ],
+    [
+      13.399999618530273,
+      13.433333396911621,
+      14.416666984558105,
+      15.216666221618652,
+      12.633333206176758,
+      15.25,
+      15.066666603088379,
+      6.565234661102295,
+      15.949999809265137,
+      13.266666412353516,
+      14.783333778381348,
+      14.100000381469727,
+      13.983333587646484,
+      13.666666984558105,
+      13.333333015441895,
+      14.216666221618652,
+      14.399999618530273,
+      17.066667556762695,
+      15.183333396911621,
+      14.699999809265137
+    ]
+  ],
+  "zone_coords_km": [
+    [
+      -5.0,
+      0.0
+    ],
+    [
+      -1.6666666269302368,
+      0.0
+    ],
+    [
+      1.6666666269302368,
+      0.0
+    ],
+    [
+      5.0,
+      0.0
+    ],
+    [
+      4.099999904632568,
+      0.0
+    ],
+    [
+      2.049999952316284,
+      3.55070424079895
+    ],
+    [
+      -2.049999952316284,
+      3.55070424079895
+    ],
+    [
+      -4.099999904632568,
+      5.02105196325029e-16
+    ],
+    [
+      -2.049999952316284,
+      -3.55070424079895
+    ],
+    [
+      2.049999952316284,
+      -3.55070424079895
+    ]
+  ],
+  "zone_latlon": [
+    [
+      56.46485900878906,
+      9.96568489074707
+    ],
+    [
+      56.46485900878906,
+      10.01994800567627
+    ],
+    [
+      56.46485900878906,
+      10.074210166931152
+    ],
+    [
+      56.46485900878906,
+      10.128473281860352
+    ],
+    [
+      56.46485900878906,
+      10.113821983337402
+    ],
+    [
+      56.49679183959961,
+      10.080451011657715
+    ],
+    [
+      56.49679183959961,
+      10.013707160949707
+    ],
+    [
+      56.46485900878906,
+      9.98033618927002
+    ],
+    [
+      56.432926177978516,
+      10.013707160949707
+    ],
+    [
+      56.432926177978516,
+      10.080451011657715
+    ]
+  ]
+}

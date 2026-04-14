@@ -1,0 +1,21 @@
+site_id,label,type,x_km,y_km
+0,Norlys,standard_station,-0.44061968,0.23534438
+1,EDF Danmark A/S,major_hub,-0.393167,0.072888374
+2,EDF Danmark A/S,major_hub,-0.393167,0.07299957
+3,Clever,major_hub,-0.35567582,0.046646338
+4,Clever,standard_station,-0.35497954,0.20932473
+5,E.ON Drive Infrastructure Denmark ApS,major_hub,-0.35479847,0.036972363
+6,E.ON Drive,standard_station,-0.3142822,0.43671867
+7,OK,standard_station,-0.26896843,-0.002057109
+8,Virta,standard_station,-0.26437706,0.47541457
+9,Clever,major_hub,-0.193978,0.235122
+10,E.ON Drive,standard_station,-0.169461,0.40424973
+11,Clever,standard_station,-0.049217902,-0.19097754
+12,Clever,standard_station,-0.01047015,0.14983538
+13,OK,standard_station,0.044953752,-0.057877038
+14,Clever,major_hub,0.090151966,0.55269516
+15,Clever,standard_station,0.13731156,-0.38290027
+16,Clever,major_hub,0.1645792,-0.034859657
+17,E.ON Drive,standard_station,0.3933134,-0.39212945
+18,E.ON Drive,standard_station,0.41404545,0.0587666
+19,Clever,major_hub,0.430426,-0.28160155

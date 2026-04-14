@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720">
+<rect x="0" y="0" width="960" height="720" fill="#f8fafc" />
+<text x="52" y="44" font-size="26" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Randers, Denmark</text>
+<text x="52" y="72" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#475569">TomTom-grounded snapshot with real station positions, connector availability, and route times.</text>
+<circle cx="56.0" cy="360.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="338.7" cy="360.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="621.3" cy="360.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="904.0" cy="360.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="827.7" cy="360.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="653.8" cy="56.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="306.2" cy="56.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="132.3" cy="360.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="306.2" cy="664.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="653.8" cy="664.0" r="5.5" fill="#94a3b8" opacity="0.65" />
+<circle cx="400.8" cy="402.0" r="6.8" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="409.8" y="394.0" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">PowerGo</text>
+<circle cx="401.3" cy="402.7" r="6.8" fill="#b91c1c" stroke="#0f172a" stroke-width="1.2" />
+<text x="410.3" y="394.7" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Clever</text>
+<circle cx="402.3" cy="380.5" r="8.4" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="411.3" y="372.5" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">E.ON Drive</text>
+<circle cx="422.3" cy="377.2" r="8.4" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="431.3" y="369.2" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">E.ON Drive</text>
+<circle cx="424.4" cy="432.0" r="7.6" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="433.4" y="424.0" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">PowerGo</text>
+<circle cx="425.5" cy="405.7" r="6.0" fill="#b91c1c" stroke="#0f172a" stroke-width="1.2" />
+<text x="434.5" y="397.7" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Tesla Destination</text>
+<circle cx="432.1" cy="371.4" r="7.6" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="441.1" y="363.4" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">PowerGo</text>
+<circle cx="435.7" cy="384.2" r="7.6" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="444.7" y="376.2" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Spirii</text>
+<circle cx="436.7" cy="300.6" r="7.6" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="445.7" y="292.6" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Clever</text>
+<circle cx="438.6" cy="421.6" r="8.4" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="447.6" y="413.6" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">E.ON Drive</text>
+<circle cx="438.6" cy="351.1" r="6.8" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="447.6" y="343.1" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">PowerGo</text>
+<circle cx="449.2" cy="380.4" r="6.0" fill="#b91c1c" stroke="#0f172a" stroke-width="1.2" />
+<text x="458.2" y="372.4" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">sandgade 12, 3. mf. - Verdo</text>
+<circle cx="450.2" cy="374.9" r="6.8" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="459.2" y="366.9" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">PowerGo</text>
+<circle cx="452.4" cy="371.8" r="6.4" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="461.4" y="363.8" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Norlys</text>
+<circle cx="455.5" cy="406.6" r="6.0" fill="#b91c1c" stroke="#0f172a" stroke-width="1.2" />
+<text x="464.5" y="398.6" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Q-Park Fischersgade 26</text>
+<circle cx="480.5" cy="329.3" r="7.6" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="489.5" y="321.3" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">PowerGo</text>
+<circle cx="481.7" cy="425.2" r="6.0" fill="#b91c1c" stroke="#0f172a" stroke-width="1.2" />
+<text x="490.7" y="417.2" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Kulholmsvej 12 - Verdo</text>
+<circle cx="496.9" cy="276.6" r="6.8" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="505.9" y="268.6" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">PowerGo</text>
+<circle cx="526.3" cy="350.7" r="6.4" fill="#0f766e" stroke="#0f172a" stroke-width="1.2" />
+<text x="535.3" y="342.7" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">Uno-X</text>
+<circle cx="568.4" cy="347.3" r="6.0" fill="#b91c1c" stroke="#0f172a" stroke-width="1.2" />
+<text x="577.4" y="339.3" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#0f172a">drivee</text>
+<text x="52" y="694" font-size="12" font-family="Helvetica, Arial, sans-serif" fill="#4b5563">Gray circles: synthetic demand zones. Green/red circles: TomTom stations sized by connectors and colored by available connectors.</text>
+</svg>

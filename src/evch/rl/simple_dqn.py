@@ -19,6 +19,7 @@ class Transition:
     action: int
     reward: float
     next_observation: np.ndarray
+    next_action_mask: np.ndarray
     done: bool
 
 
@@ -72,6 +73,7 @@ class SimpleDQNAgent:
         self.epsilon_decay_steps = int(config["epsilon_decay_steps"])
         self.tau = float(config.get("tau", 1.0))
         self.reward_clip = float(config.get("reward_clip", 0.0))
+        self.heuristic_prior_strength = float(config.get("heuristic_prior_strength", 0.0))
 
         self.q_network = QNetwork(obs_dim, action_dim, list(config["hidden_dims"])).to(self.device)
         self.target_network = QNetwork(obs_dim, action_dim, list(config["hidden_dims"])).to(self.device)
@@ -80,17 +82,50 @@ class SimpleDQNAgent:
         self.replay_buffer = ReplayBuffer(int(config["replay_capacity"]))
         self.total_steps = 0
 
+    def _valid_action_mask(self, env: Any | None = None) -> np.ndarray | None:
+        if env is None or not hasattr(env, "valid_action_mask"):
+            return None
+        mask = np.asarray(env.valid_action_mask(), dtype=bool)
+        if mask.shape != (self.action_dim,):
+            raise ValueError("Environment valid_action_mask shape does not match action dimension.")
+        return mask
+
+    @staticmethod
+    def _masked_argmax(q_values: np.ndarray, action_mask: np.ndarray | None) -> int:
+        if action_mask is None:
+            return int(np.argmax(q_values))
+        valid_indices = np.flatnonzero(action_mask)
+        if valid_indices.size == 0:
+            return int(np.argmax(q_values))
+        return int(valid_indices[int(np.argmax(q_values[valid_indices]))])
+
+    def _heuristic_prior_tensor(self, observations: torch.Tensor) -> torch.Tensor:
+        if self.heuristic_prior_strength <= 0.0:
+            return torch.zeros((observations.shape[0], self.action_dim), dtype=observations.dtype, device=observations.device)
+        num_sites = self.action_dim - 1
+        allocations = observations[:, :num_sites]
+        normalized_site_scores = observations[:, 2 * num_sites : 3 * num_sites]
+        occupied_scores = normalized_site_scores * allocations
+        noop_prior = occupied_scores.max(dim=1, keepdim=True).values
+        return torch.cat([normalized_site_scores, noop_prior], dim=1) * self.heuristic_prior_strength
+
     def _epsilon(self) -> float:
         progress = min(self.total_steps / max(self.epsilon_decay_steps, 1), 1.0)
         return self.epsilon_start + progress * (self.epsilon_end - self.epsilon_start)
 
-    def act(self, observation: np.ndarray, deterministic: bool = False) -> int:
+    def act(self, observation: np.ndarray, deterministic: bool = False, env: Any | None = None) -> int:
+        action_mask = self._valid_action_mask(env)
         if not deterministic and self.rng.random() < self._epsilon():
+            if action_mask is None:
+                return int(self.rng.integers(self.action_dim))
+            valid_indices = np.flatnonzero(action_mask)
+            if valid_indices.size > 0:
+                return int(self.rng.choice(valid_indices))
             return int(self.rng.integers(self.action_dim))
         with torch.no_grad():
             tensor_obs = torch.from_numpy(observation.astype(np.float32)).unsqueeze(0)
-            q_values = self.q_network(tensor_obs)
-        return int(torch.argmax(q_values, dim=1).item())
+            q_values = (self.q_network(tensor_obs) + self._heuristic_prior_tensor(tensor_obs)).squeeze(0).cpu().numpy()
+        return self._masked_argmax(q_values, action_mask)
 
     def update(self) -> float | None:
         if len(self.replay_buffer) < max(self.batch_size, self.learning_starts):
@@ -102,11 +137,14 @@ class SimpleDQNAgent:
         if self.reward_clip > 0.0:
             rewards = torch.clamp(rewards, min=-self.reward_clip, max=self.reward_clip)
         next_observations = torch.from_numpy(np.stack([t.next_observation for t in batch]).astype(np.float32))
+        next_action_masks = torch.from_numpy(np.stack([t.next_action_mask for t in batch]).astype(bool))
         dones = torch.tensor([t.done for t in batch], dtype=torch.float32).unsqueeze(1)
 
         q_values = self.q_network(observations).gather(1, actions)
         with torch.no_grad():
-            next_actions = self.q_network(next_observations).argmax(dim=1, keepdim=True)
+            next_q_online = self.q_network(next_observations) + self._heuristic_prior_tensor(next_observations)
+            masked_online = next_q_online.masked_fill(~next_action_masks, float("-inf"))
+            next_actions = masked_online.argmax(dim=1, keepdim=True)
             next_q = self.target_network(next_observations).gather(1, next_actions)
             targets = rewards + self.gamma * (1.0 - dones) * next_q
 
@@ -137,14 +175,18 @@ class SimpleDQNAgent:
             invalid_actions = 0.0
             losses: list[float] = []
             for _ in range(max_steps):
-                action = self.act(observation, deterministic=False)
+                action = self.act(observation, deterministic=False, env=env)
                 next_observation, reward, terminated, truncated, info = env.step(action)
+                next_action_mask = self._valid_action_mask(env)
+                if next_action_mask is None:
+                    next_action_mask = np.ones(self.action_dim, dtype=bool)
                 self.replay_buffer.push(
                     Transition(
                         observation=observation.copy(),
                         action=action,
                         reward=float(reward),
                         next_observation=next_observation.copy(),
+                        next_action_mask=next_action_mask.copy(),
                         done=bool(terminated or truncated),
                     )
                 )
@@ -198,4 +240,3 @@ class SimpleDQNAgent:
         agent.q_network.load_state_dict(payload["state_dict"])
         agent.target_network.load_state_dict(payload["state_dict"])
         return agent
-

@@ -1,31 +1,31 @@
 {
   "results": [
     {
-      "mean_reward": -61.21301626786591,
-      "mean_served_demand": 357.42368870973587,
-      "mean_true_demand_total": 677.75,
-      "mean_unmet_demand": 320.3263115212321,
+      "mean_reward": -212.56198480192214,
+      "mean_served_demand": 94.59313816667236,
+      "mean_true_demand_total": 1710.25,
+      "mean_unmet_demand": 1615.6568726301193,
       "policy": "rl"
     },
     {
-      "mean_reward": 12.357232015579928,
-      "mean_served_demand": 393.4053185582161,
-      "mean_true_demand_total": 677.75,
-      "mean_unmet_demand": 284.34468195587397,
+      "mean_reward": -208.02416080037852,
+      "mean_served_demand": 116.4039554328956,
+      "mean_true_demand_total": 1710.25,
+      "mean_unmet_demand": 1593.8460483551025,
       "policy": "greedy"
     },
     {
-      "mean_reward": 27.199988660961377,
-      "mean_served_demand": 399.8586911559105,
-      "mean_true_demand_total": 677.75,
-      "mean_unmet_demand": 277.8913096114993,
+      "mean_reward": -209.6958692349178,
+      "mean_served_demand": 108.637577698737,
+      "mean_true_demand_total": 1710.25,
+      "mean_unmet_demand": 1601.6124303340912,
       "policy": "coverage"
     },
     {
-      "mean_reward": -19.839020134508623,
-      "mean_served_demand": 377.85803496837616,
-      "mean_true_demand_total": 677.75,
-      "mean_unmet_demand": 299.8919654637575,
+      "mean_reward": -213.99257740201074,
+      "mean_served_demand": 89.7201443387421,
+      "mean_true_demand_total": 1710.25,
+      "mean_unmet_demand": 1620.529863834381,
       "policy": "random"
     }
   ]

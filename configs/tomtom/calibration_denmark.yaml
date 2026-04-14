@@ -1,0 +1,15 @@
+tomtom_calibration:
+  country_set: DK
+  language: en-GB
+  radius_m: 5000
+  result_limit: 20
+  zone_probe_count: 10
+  travel_mode: car
+  route_type: fastest
+  traffic: historical
+  depart_at: any
+  locations:
+    - Roskilde, Denmark
+    - Køge, Denmark
+    - Vejle, Denmark
+    - Randers, Denmark

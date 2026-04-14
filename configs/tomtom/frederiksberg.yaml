@@ -1,0 +1,10 @@
+tomtom:
+  location_query: Frederiksberg, Denmark
+  country_set: DK
+  language: en-GB
+  radius_m: 3500
+  result_limit: 20
+  travel_mode: car
+  route_type: fastest
+  traffic: historical
+  depart_at: any

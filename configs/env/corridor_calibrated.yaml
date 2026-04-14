@@ -1,0 +1,47 @@
+seed: 11
+environment:
+  layout: corridor
+  num_candidate_sites: 14
+  num_demand_zones: 10
+  max_chargers: 3
+  charger_capacity: 14.0
+  horizon: 24
+  max_steps: 24
+  service_decay: 0.055
+  deployment_cost: 0.35
+  relocation_cost: 0.7
+  unmet_penalty: 1.7
+  outage_penalty: 0.25
+  reward_scale: 0.08
+  utilization_bonus: 1.2
+  coverage_bonus: 0.08
+  invalid_action_penalty: 1.0
+  city_extent_km: 260.0
+  corridor_length_km: 260.0
+  randomize_on_reset: true
+  reset_seed_stride: 101
+  start_filled: false
+  corridor:
+    calibration_priors_path: outputs/tomtom_calibration/calibration/priors.json
+    num_cities: 3
+    urban_influence_km: 16.0
+    site_mix:
+      city_hub: 0.28
+      service_area: 0.34
+      highway_exit: 0.38
+    zone_mix:
+      city: 0.42
+      suburb: 0.24
+      corridor: 0.22
+      logistics: 0.12
+  disruption:
+    demand_spike_probability: 0.16
+    demand_spike_multiplier: 1.75
+    outage_probability: 0.08
+    observation_noise_scale: 0.35
+    travel_slowdown_probability: 0.18
+    travel_slowdown_multiplier: 1.5
+    travel_slowdown_fraction: 0.2
+    road_closure_probability: 0.06
+    road_closure_fraction: 0.1
+    road_closure_penalty_minutes: 24.0
