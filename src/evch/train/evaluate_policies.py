@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import logging
 from pathlib import Path
 from typing import Any, Callable
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from evch.baselines.policies import BASELINE_POLICIES
@@ -18,6 +19,26 @@ from evch.utils.seeding import set_global_seed
 from evch.utils.wandb import init_wandb
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _maybe_plot_policy_comparison(frame: pd.DataFrame, path: Path) -> bool:
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(8, 4))
+        plt.bar(frame["policy"], frame["mean_reward"])
+        plt.ylabel("Mean cumulative reward")
+        plt.title("Policy comparison")
+        plt.tight_layout()
+        plt.savefig(path, dpi=180)
+        plt.close()
+        return True
+    except Exception as exc:  # pragma: no cover - depends on local plotting stack
+        LOGGER.warning("Skipping policy comparison plot because matplotlib is unavailable: %s", exc)
+        if path.exists():
+            path.unlink()
+        return False
 
 
 def _load_rl_policy(checkpoint_path: str) -> Callable[[Any, Any, bool], int]:
@@ -35,7 +56,7 @@ def _load_rl_policy(checkpoint_path: str) -> Callable[[Any, Any, bool], int]:
     agent = SimpleDQNAgent.load(checkpoint_path)
 
     def policy(observation: Any, _env: Any, deterministic: bool = True) -> int:
-        return agent.act(observation, deterministic=deterministic)
+        return agent.act(observation, deterministic=deterministic, env=_env)
 
     return policy
 
@@ -87,13 +108,7 @@ def main() -> None:
     frame.to_csv(output_dir / "policy_comparison.csv", index=False)
     write_json(output_dir / "policy_comparison.json", {"results": results})
     if not frame.empty:
-        plt.figure(figsize=(8, 4))
-        plt.bar(frame["policy"], frame["mean_reward"])
-        plt.ylabel("Mean cumulative reward")
-        plt.title("Policy comparison")
-        plt.tight_layout()
-        plt.savefig(output_dir / "policy_comparison.png", dpi=180)
-        plt.close()
+        _maybe_plot_policy_comparison(frame, output_dir / "policy_comparison.png")
     LOGGER.info("Saved policy evaluation results to %s", output_dir)
     run.finish()
 

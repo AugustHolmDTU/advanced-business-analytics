@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import logging
 from pathlib import Path
 from typing import Any, Callable
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from evch.config.loader import build_config_parser, load_config
@@ -17,6 +18,27 @@ from evch.utils.seeding import set_global_seed
 from evch.utils.wandb import init_wandb
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> bool:
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(8, 4))
+        plt.plot([entry["reward"] for entry in history], label="Episode reward")
+        plt.xlabel("Episode")
+        plt.ylabel("Reward")
+        plt.title("Torch DQN training curve")
+        plt.tight_layout()
+        plt.savefig(path, dpi=180)
+        plt.close()
+        return True
+    except Exception as exc:  # pragma: no cover - depends on local plotting stack
+        LOGGER.warning("Skipping RL training plot because matplotlib is unavailable: %s", exc)
+        if path.exists():
+            path.unlink()
+        return False
 
 
 def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Path) -> tuple[str, str]:
@@ -75,7 +97,7 @@ def _make_rl_policy(backend: str, checkpoint_path: str) -> Callable[[np.ndarray,
     agent = SimpleDQNAgent.load(checkpoint_path)
 
     def policy(observation: np.ndarray, _env: Any, deterministic: bool = True) -> int:
-        return agent.act(observation, deterministic=deterministic)
+        return agent.act(observation, deterministic=deterministic, env=_env)
 
     return policy
 
@@ -121,14 +143,7 @@ def main() -> None:
     run.log({f"rl_eval/{key}": value for key, value in evaluation.items() if not isinstance(value, list)})
 
     if history:
-        plt.figure(figsize=(8, 4))
-        plt.plot([entry["reward"] for entry in history], label="Episode reward")
-        plt.xlabel("Episode")
-        plt.ylabel("Reward")
-        plt.title("Torch DQN training curve")
-        plt.tight_layout()
-        plt.savefig(output_dir / "training_curve.png", dpi=180)
-        plt.close()
+        _maybe_plot_training_curve(history, output_dir / "training_curve.png")
 
     write_json(
         output_dir / "training_summary.json",
@@ -146,4 +161,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

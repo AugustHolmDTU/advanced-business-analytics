@@ -1,0 +1,761 @@
+{
+  "center": {
+    "freeform_address": "Vejle",
+    "lat": 55.7092482,
+    "lon": 9.5359118
+  },
+  "location_query": "Vejle, Denmark",
+  "search_radius_m": 5000,
+  "site_coords_km": [
+    [
+      -0.458983838558197,
+      0.2747408151626587
+    ],
+    [
+      -0.3939175605773926,
+      -0.19683752954006195
+    ],
+    [
+      -0.3524964451789856,
+      0.0706978291273117
+    ],
+    [
+      -0.28974199295043945,
+      -0.4340166449546814
+    ],
+    [
+      -0.22588041424751282,
+      0.3972777724266052
+    ],
+    [
+      -0.14006105065345764,
+      0.24705323576927185
+    ],
+    [
+      -0.13736900687217712,
+      0.1406395435333252
+    ],
+    [
+      -0.11908220499753952,
+      -0.27345094084739685
+    ],
+    [
+      -0.10698916018009186,
+      -0.11955694854259491
+    ],
+    [
+      -0.05944133177399635,
+      -0.3412799537181854
+    ],
+    [
+      -0.026046965271234512,
+      0.4830091893672943
+    ],
+    [
+      -0.008444773964583874,
+      -0.02726503275334835
+    ],
+    [
+      0.10863973945379257,
+      0.1450873464345932
+    ],
+    [
+      0.11039390414953232,
+      0.13808205723762512
+    ],
+    [
+      0.20755672454833984,
+      0.15275980532169342
+    ],
+    [
+      0.2244195193052292,
+      -0.28034502267837524
+    ],
+    [
+      0.23055888712406158,
+      -0.2731173634529114
+    ],
+    [
+      0.3969501256942749,
+      -0.20584432780742645
+    ],
+    [
+      0.42155885696411133,
+      0.0403415746986866
+    ],
+    [
+      0.47117844223976135,
+      -0.029600130394101143
+    ]
+  ],
+  "site_latlon": [
+    [
+      55.71171951293945,
+      9.528585433959961
+    ],
+    [
+      55.70747756958008,
+      9.529623985290527
+    ],
+    [
+      55.70988464355469,
+      9.530284881591797
+    ],
+    [
+      55.705345153808594,
+      9.53128719329834
+    ],
+    [
+      55.71282196044922,
+      9.532305717468262
+    ],
+    [
+      55.71147155761719,
+      9.533676147460938
+    ],
+    [
+      55.710514068603516,
+      9.533719062805176
+    ],
+    [
+      55.706787109375,
+      9.534010887145996
+    ],
+    [
+      55.70817184448242,
+      9.53420352935791
+    ],
+    [
+      55.706180572509766,
+      9.53496265411377
+    ],
+    [
+      55.713592529296875,
+      9.53549575805664
+    ],
+    [
+      55.70900344848633,
+      9.53577709197998
+    ],
+    [
+      55.71055221557617,
+      9.537646293640137
+    ],
+    [
+      55.71049118041992,
+      9.537673950195312
+    ],
+    [
+      55.71062088012695,
+      9.539224624633789
+    ],
+    [
+      55.70672607421875,
+      9.539493560791016
+    ],
+    [
+      55.706790924072266,
+      9.539591789245605
+    ],
+    [
+      55.7073974609375,
+      9.542247772216797
+    ],
+    [
+      55.70960998535156,
+      9.542640686035156
+    ],
+    [
+      55.708980560302734,
+      9.54343318939209
+    ]
+  ],
+  "stations": [
+    {
+      "address": "Nyboesgade 33, 7100 Vejle",
+      "available_connectors": 3,
+      "charging_availability_id": "de3679c2-ed6b-4009-ab12-516d65b7b41c",
+      "lat": 55.711719,
+      "lon": 9.528585,
+      "max_power_kw": 22.0,
+      "name": "EWII",
+      "occupied_connectors": 3,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Blegbanken 3, 7100 Vejle",
+      "available_connectors": 5,
+      "charging_availability_id": "a2166145-c344-4100-96e0-d7bde63b2253",
+      "lat": 55.707478,
+      "lon": 9.529624,
+      "max_power_kw": 11.0,
+      "name": "APCOA",
+      "occupied_connectors": 1,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Flegborg 10, 7100 Vejle",
+      "available_connectors": 0,
+      "charging_availability_id": null,
+      "lat": 55.709884,
+      "lon": 9.530285,
+      "max_power_kw": null,
+      "name": "Clever",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 0,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "S\u00f8ndertorv 2, 7100 Vejle",
+      "available_connectors": 1,
+      "charging_availability_id": "4061ccbb-68db-4b49-a9e0-1cdcf536ae2e",
+      "lat": 55.705345,
+      "lon": 9.531287,
+      "max_power_kw": 22.0,
+      "name": "Clever",
+      "occupied_connectors": 1,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 2,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Odinsgade 43, 7100 Vejle",
+      "available_connectors": 5,
+      "charging_availability_id": "3094e181-d90c-8887-9eb6-93fed9163458",
+      "lat": 55.712821,
+      "lon": 9.532306,
+      "max_power_kw": 22.0,
+      "name": "Clever",
+      "occupied_connectors": 3,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 8,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Ved Anl\u00e6get 18, 7100 Vejle",
+      "available_connectors": 1,
+      "charging_availability_id": "2582324b-2ad1-46bc-96a6-b64055bedcb9",
+      "lat": 55.71147,
+      "lon": 9.533676,
+      "max_power_kw": 11.0,
+      "name": "Clever",
+      "occupied_connectors": 5,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Ved Anl\u00e6get 12, 7100 Vejle",
+      "available_connectors": 5,
+      "charging_availability_id": "80b605b2-ba9c-4d67-a175-a8d3032401aa",
+      "lat": 55.710513,
+      "lon": 9.533719,
+      "max_power_kw": 300.0,
+      "name": "Clever",
+      "occupied_connectors": 1,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Fiskergade 2, 7100 Vejle",
+      "available_connectors": 4,
+      "charging_availability_id": "3261bd7c-6afb-8830-9368-3971875a423a",
+      "lat": 55.706789,
+      "lon": 9.534011,
+      "max_power_kw": 22.0,
+      "name": "NRGi Erhverv",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Gr\u00f8nnegade 9, 7100 Vejle",
+      "available_connectors": 6,
+      "charging_availability_id": "c2f6e39a-9a07-4595-8607-822a9effd729",
+      "lat": 55.708173,
+      "lon": 9.534204,
+      "max_power_kw": 22.0,
+      "name": "EWII",
+      "occupied_connectors": 2,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 8,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Borgvold 12A, 7100 Vejle",
+      "available_connectors": 3,
+      "charging_availability_id": "333b2122-1f3b-4f59-a9fb-49e05ee689a5",
+      "lat": 55.706179,
+      "lon": 9.534963,
+      "max_power_kw": 22.0,
+      "name": "Clever",
+      "occupied_connectors": 5,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 8,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Gunhilds Plads 8, 7100 Vejle",
+      "available_connectors": 3,
+      "charging_availability_id": "b66e3bea-0023-448b-b52d-4cceb9cb5671",
+      "lat": 55.713592,
+      "lon": 9.535496,
+      "max_power_kw": 22.0,
+      "name": "EWII",
+      "occupied_connectors": 3,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "D\u00e6mningen 23, 7100 Vejle",
+      "available_connectors": 0,
+      "charging_availability_id": "11dc74b2-383a-4c26-9389-0e9def21d544",
+      "lat": 55.709003,
+      "lon": 9.535777,
+      "max_power_kw": 11.0,
+      "name": "APCOA",
+      "occupied_connectors": 2,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 2,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Volmersgade 25, 7100 Vejle",
+      "available_connectors": 3,
+      "charging_availability_id": "b0f7420d-9576-430f-9ddc-c5a1b3f1dfbf",
+      "lat": 55.710553,
+      "lon": 9.537646,
+      "max_power_kw": 22.0,
+      "name": "EWII",
+      "occupied_connectors": 3,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Volmersgade 7, 7100 Vejle",
+      "available_connectors": 1,
+      "charging_availability_id": "55dda59b-78f0-4534-8c37-8402ebda00e0",
+      "lat": 55.71049,
+      "lon": 9.537674,
+      "max_power_kw": 22.0,
+      "name": "Clever",
+      "occupied_connectors": 5,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Jernbanegade 28, 7100 Vejle",
+      "available_connectors": 3,
+      "charging_availability_id": "38a8fda9-b4c1-8603-9ecc-ead2e97d1437",
+      "lat": 55.710622,
+      "lon": 9.539225,
+      "max_power_kw": 40.0,
+      "name": "OK",
+      "occupied_connectors": 1,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Jyllandsgade 5Q, 7100 Vejle",
+      "available_connectors": 2,
+      "charging_availability_id": "1ae3bb60-e202-8044-9600-ae44dce7b2fe",
+      "lat": 55.706727,
+      "lon": 9.539494,
+      "max_power_kw": 300.0,
+      "name": "Clever",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 2,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Jyllandsgade 6, 7100 Vejle",
+      "available_connectors": 4,
+      "charging_availability_id": "96feb9d2-dd01-47d6-a69d-fa84efd0ddcf",
+      "lat": 55.706792,
+      "lon": 9.539592,
+      "max_power_kw": 400.0,
+      "name": "EWII",
+      "occupied_connectors": 0,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Havnepladsen 11, 7100 Vejle",
+      "available_connectors": 2,
+      "charging_availability_id": "052b5f63-b8ea-410b-9da5-e04ea09cfb5f",
+      "lat": 55.707397,
+      "lon": 9.542248,
+      "max_power_kw": 22.0,
+      "name": "EWII",
+      "occupied_connectors": 4,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 6,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "Fjordgade 5, 7100 Vejle",
+      "available_connectors": 1,
+      "charging_availability_id": "4366e058-11e9-408f-949a-e7efd1989483",
+      "lat": 55.709611,
+      "lon": 9.542641,
+      "max_power_kw": 22.0,
+      "name": "EWII",
+      "occupied_connectors": 3,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 4,
+      "unknown_connectors": 0
+    },
+    {
+      "address": "\u00d8sterbrogade 27, 7100 Vejle",
+      "available_connectors": 4,
+      "charging_availability_id": "f68f7af0-207d-4cf6-bd8c-7c7b85d2df7c",
+      "lat": 55.708982,
+      "lon": 9.543433,
+      "max_power_kw": 300.0,
+      "name": "Clever",
+      "occupied_connectors": 8,
+      "out_of_service_connectors": 0,
+      "reserved_connectors": 0,
+      "total_connectors": 12,
+      "unknown_connectors": 0
+    }
+  ],
+  "travel_time_matrix_minutes": [
+    [
+      8.433333396911621,
+      8.666666984558105,
+      10.183333396911621,
+      9.866666793823242,
+      9.199999809265137,
+      9.933333396911621,
+      10.949999809265137,
+      10.516666412353516,
+      10.350000381469727,
+      9.766666412353516,
+      8.649999618530273,
+      10.766666412353516,
+      10.883333206176758,
+      10.866666793823242,
+      11.166666984558105,
+      11.233333587646484,
+      11.649999618530273,
+      12.600000381469727,
+      12.350000381469727,
+      12.616666793823242
+    ],
+    [
+      5.266666889190674,
+      4.5333333015441895,
+      6.050000190734863,
+      7.166666507720947,
+      6.233333110809326,
+      6.75,
+      7.7833333015441895,
+      6.933333396911621,
+      6.2166666984558105,
+      6.449999809265137,
+      7.5333333015441895,
+      6.633333206176758,
+      7.866666793823242,
+      7.833333492279053,
+      8.0,
+      7.099999904632568,
+      7.516666889190674,
+      8.466666221618652,
+      8.233333587646484,
+      8.683333396911621
+    ],
+    [
+      8.566666603088379,
+      5.683333396911621,
+      7.449999809265137,
+      8.683333396911621,
+      7.416666507720947,
+      8.433333396911621,
+      9.449999809265137,
+      4.9666666984558105,
+      4.933333396911621,
+      4.4666666984558105,
+      6.333333492279053,
+      4.550000190734863,
+      3.316666603088379,
+      3.299999952316284,
+      3.066666603088379,
+      3.9000000953674316,
+      4.599999904632568,
+      4.099999904632568,
+      3.049999952316284,
+      3.549999952316284
+    ],
+    [
+      14.216666221618652,
+      11.316666603088379,
+      13.100000381469727,
+      14.316666603088379,
+      13.066666603088379,
+      14.083333015441895,
+      15.100000381469727,
+      10.616666793823242,
+      10.583333015441895,
+      10.100000381469727,
+      11.983333587646484,
+      10.183333396911621,
+      8.966666221618652,
+      8.949999809265137,
+      8.716666221618652,
+      9.533333778381348,
+      10.25,
+      9.75,
+      8.699999809265137,
+      9.199999809265137
+    ],
+    [
+      13.733333587646484,
+      10.833333015441895,
+      12.616666793823242,
+      13.833333015441895,
+      12.583333015441895,
+      13.600000381469727,
+      14.616666793823242,
+      10.133333206176758,
+      10.100000381469727,
+      9.616666793823242,
+      11.5,
+      9.716666221618652,
+      8.483333587646484,
+      8.466666221618652,
+      8.233333587646484,
+      9.050000190734863,
+      9.766666412353516,
+      9.266666412353516,
+      8.216666221618652,
+      8.716666221618652
+    ],
+    [
+      9.466666221618652,
+      10.116666793823242,
+      10.050000190734863,
+      12.416666984558105,
+      8.316666603088379,
+      9.366666793823242,
+      10.399999618530273,
+      9.050000190734863,
+      9.366666793823242,
+      8.550000190734863,
+      7.233333110809326,
+      7.7166666984558105,
+      7.5333333015441895,
+      7.5,
+      7.816666603088379,
+      9.100000381469727,
+      8.583333015441895,
+      8.366666793823242,
+      8.383333206176758,
+      7.883333206176758
+    ],
+    [
+      7.25,
+      8.566666603088379,
+      8.483333587646484,
+      10.850000381469727,
+      6.75,
+      7.800000190734863,
+      8.816666603088379,
+      10.25,
+      10.0,
+      9.75,
+      6.483333110809326,
+      8.899999618530273,
+      8.716666221618652,
+      8.699999809265137,
+      9.016666412353516,
+      10.75,
+      11.149999618530273,
+      10.949999809265137,
+      10.466666221618652,
+      10.466666221618652
+    ],
+    [
+      6.816666603088379,
+      6.383333206176758,
+      7.900000095367432,
+      7.583333492279053,
+      7.766666889190674,
+      8.300000190734863,
+      9.333333015441895,
+      8.233333587646484,
+      8.066666603088379,
+      7.483333110809326,
+      7.199999809265137,
+      8.483333587646484,
+      9.449999809265137,
+      9.416666984558105,
+      9.733333587646484,
+      8.949999809265137,
+      9.366666793823242,
+      10.316666603088379,
+      10.083333015441895,
+      10.533333778381348
+    ],
+    [
+      10.866666793823242,
+      9.199999809265137,
+      10.366666793823242,
+      9.933333396911621,
+      11.100000381469727,
+      11.333333015441895,
+      12.366666793823242,
+      10.050000190734863,
+      10.883333206176758,
+      9.283333778381348,
+      11.983333587646484,
+      10.566666603088379,
+      11.783333778381348,
+      11.766666412353516,
+      11.966666221618652,
+      11.066666603088379,
+      11.483333587646484,
+      12.399999618530273,
+      12.183333396911621,
+      12.633333206176758
+    ],
+    [
+      12.533333778381348,
+      10.5,
+      11.666666984558105,
+      11.233333587646484,
+      12.399999618530273,
+      12.649999618530273,
+      13.666666984558105,
+      9.933333396911621,
+      11.183333396911621,
+      9.183333396911621,
+      11.899999618530273,
+      10.449999809265137,
+      11.666666984558105,
+      11.649999618530273,
+      11.866666793823242,
+      10.949999809265137,
+      10.649999618530273,
+      11.100000381469727,
+      12.083333015441895,
+      12.300000190734863
+    ]
+  ],
+  "zone_coords_km": [
+    [
+      -5.0,
+      0.0
+    ],
+    [
+      -1.6666666269302368,
+      0.0
+    ],
+    [
+      1.6666666269302368,
+      0.0
+    ],
+    [
+      5.0,
+      0.0
+    ],
+    [
+      4.099999904632568,
+      0.0
+    ],
+    [
+      2.049999952316284,
+      3.55070424079895
+    ],
+    [
+      -2.049999952316284,
+      3.55070424079895
+    ],
+    [
+      -4.099999904632568,
+      5.02105196325029e-16
+    ],
+    [
+      -2.049999952316284,
+      -3.55070424079895
+    ],
+    [
+      2.049999952316284,
+      -3.55070424079895
+    ]
+  ],
+  "zone_latlon": [
+    [
+      55.70924758911133,
+      9.456098556518555
+    ],
+    [
+      55.70924758911133,
+      9.509307861328125
+    ],
+    [
+      55.70924758911133,
+      9.562516212463379
+    ],
+    [
+      55.70924758911133,
+      9.615724563598633
+    ],
+    [
+      55.70924758911133,
+      9.601358413696289
+    ],
+    [
+      55.741180419921875,
+      9.568634986877441
+    ],
+    [
+      55.741180419921875,
+      9.503188133239746
+    ],
+    [
+      55.70924758911133,
+      9.470465660095215
+    ],
+    [
+      55.67731475830078,
+      9.503188133239746
+    ],
+    [
+      55.67731475830078,
+      9.568634986877441
+    ]
+  ]
+}

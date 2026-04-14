@@ -1,0 +1,21 @@
+name,address,lat,lon,charging_availability_id,total_connectors,available_connectors,occupied_connectors,reserved_connectors,unknown_connectors,out_of_service_connectors,max_power_kw
+Spirii,"Kildegården, 4000 Roskilde",55.637787,12.069717,3000f194-816f-81eb-ac59-c1d7cc04952c,4,4,0,0,0,0,22.0
+E.ON Drive,"Rådmandshaven 10, 4000 Roskilde",55.636494,12.073361,85347e6d-5c7f-4d5b-a67c-5e82627ba3fd,8,4,3,0,0,1,22.0
+Spirii,"Gustav Wieds Plads, 4000 Roskilde",55.643238,12.074086,0c6d340d-773e-8d85-a0e8-d6335f489502,4,4,0,0,0,0,22.0
+OK,"Ringstedgade 58, 4000 Roskilde",55.635837,12.075013,762def9a-8314-4dbe-b758-506f0349a7e2,2,2,0,0,0,0,40.0
+Clever,"Bønnelyckes Plads 1, 4000 Roskilde",55.638305,12.075999,e68987a7-90d5-403e-9bb5-6bab25ebc445,6,2,3,0,1,0,22.0
+Clever,"Weysegangen 6, 4000 Roskilde",55.642749,12.076902,41809c61-725e-4bb2-ada6-165059d60bb3,4,1,3,0,0,0,22.0
+Norlys,"Skovbogade 3, 4000 Roskilde",55.636807,12.076929,a1f54058-3b55-4a0f-a84d-b612d73a316a,4,3,1,0,0,0,22.0
+EDF Danmark A/S,"Maglekildevej 5, 4000 Roskilde",55.64286,12.076986,3f67c5dd-448a-80ad-8362-400513ca4c5c,4,0,0,0,0,4,22.0
+E.ON Drive,"Schmeltz Plads, 4000 Roskilde",55.64004,12.079063,1a2cd92d-a6f9-433c-803e-adc8c137612e,12,8,4,0,0,0,22.0
+Clever,"Tinghusvej 5, 4000 Roskilde",55.63698,12.079397,d8ecd8a3-907b-4dd0-80d8-b39ecf15fa9d,4,2,2,0,0,0,22.0
+Clever,"Stationscentret 13, 4000 Roskilde",55.637265,12.082179,c7ab4302-e632-4eff-9803-5fb76d31b39b,6,3,3,0,0,0,300.0
+Pair Recharge,"Algade 13, 4000 Roskilde",55.641601,12.0833,,0,0,0,0,0,0,
+Clever,"Grønnegade 17A, 4000 Roskilde",55.63939,12.083549,64be24ed-5cbe-489b-a8e0-f50718a6673a,4,0,4,0,0,0,22.0
+Clever,"Algade 12, 4000 Roskilde",55.640372,12.083732,53f9c9a1-3d15-4b70-9abb-1c53e74b2f2f,8,6,2,0,0,0,22.0
+E.ON Drive,"Sankt Ols Gade 4, 4000 Roskilde",55.642029,12.084084,e896e4ab-48b3-42cd-9715-04961748eff6,10,4,6,0,0,0,150.0
+Norlys,"Algade 51, 4000 Roskilde",55.640978,12.089047,3a3c0b9c-a986-8713-a7d2-029b1509e414,1,1,0,0,0,0,22.0
+Clever,"Ny Østergade 12, 4000 Roskilde",55.637989,12.090109,79f838ea-3d00-43cd-8644-8807577ae083,12,6,6,0,0,0,22.0
+Norlys,"Sortebrødre Plads, 4000 Roskilde",55.641029,12.090149,a15e2a12-0094-4901-8694-aa4acb4239f4,6,4,2,0,0,0,50.0
+Spirii,"Sortebrødreplads 1, 4000 Roskilde",55.640946,12.090729,3010ddf0-df0f-879b-a1b2-b7f35e7a0d6d,6,6,0,0,0,0,22.0
+EWII,"Dronning Margrethes Vej 28, 4000 Roskilde",55.64125,12.091419,5d6d19c2-5bac-401e-b693-5d8aebac63c0,10,9,1,0,0,0,240.0

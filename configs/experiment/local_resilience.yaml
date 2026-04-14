@@ -1,0 +1,12 @@
+experiment:
+  name: local_resilience
+  output_root: outputs
+  save_plots: true
+evaluation:
+  episodes: 8
+  disruptions: true
+  policies:
+    - rl
+    - greedy
+    - coverage
+    - random

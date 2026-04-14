@@ -42,11 +42,14 @@ The environment models:
 
 - demand zones with coordinates and base demand rates,
 - candidate charging sites with coordinates,
-- a travel-time matrix derived from Euclidean distance,
+- either a toy urban layout or a long-distance corridor with city hubs, service areas, and exits,
+- or a TomTom-grounded snapshot with real station coordinates, connector availability, and routing times,
+- a travel-time matrix derived from synthetic road structure,
 - stochastic zone demand with morning and evening peaks,
 - optional disruptions:
   - demand spikes,
   - temporary station outages,
+  - corridor slowdowns and road-closure penalties,
   - noisy observations.
 
 The first RL-friendly action space is discrete:
@@ -96,6 +99,19 @@ PYTHONPATH=src python -m evch.train.generate_synthetic_data \
   --config configs/env/base.yaml \
   --config configs/demand/base.yaml \
   --config configs/experiment/local_demo.yaml
+```
+
+For the corridor-focused resilience setup, swap `configs/env/base.yaml` for `configs/env/corridor.yaml`.
+
+For a TomTom-grounded hybrid setup, first fetch a cached snapshot and then point the training scripts at `configs/env/tomtom_frederiksberg.yaml`.
+
+```bash
+export TOMTOM_API_KEY=...
+PYTHONPATH=src python3 -m evch.train.fetch_tomtom_snapshot \
+  --config configs/env/tomtom_frederiksberg.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/experiment/tomtom_frederiksberg.yaml \
+  --config configs/tomtom/frederiksberg.yaml
 ```
 
 Train an uncertainty model:

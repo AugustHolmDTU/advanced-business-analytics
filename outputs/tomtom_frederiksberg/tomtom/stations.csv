@@ -1,0 +1,21 @@
+name,address,lat,lon,charging_availability_id,total_connectors,available_connectors,occupied_connectors,reserved_connectors,unknown_connectors,out_of_service_connectors,max_power_kw
+Norlys,"Howitzvej 32, 2000 Frederiksberg",55.680119,12.52834,855c1d55-5603-495b-b232-52bd124362c8,1,1,0,0,0,0,22.0
+EDF Danmark A/S,"John Winthers Plads 2, 2000 Frederiksberg",55.678658,12.529097,1f692572-bb2b-885a-b4e4-ceed39b16342,16,15,1,0,0,0,22.0
+EDF Danmark A/S,"John Winthers Plads 2, 1860 Frederiksberg",55.678659,12.529097,8c1656d0-c03b-423e-b89a-7bc2ad8f0d68,16,2,14,0,0,0,22.0
+Clever,"Frederiksberg Bredegade 14, 2000 Frederiksberg",55.678422,12.529695,517cb790-d9f1-4a78-a550-40a2b5fb7feb,4,0,2,0,2,0,300.0
+Clever,"Howitzvej 26, 2000 Frederiksberg",55.679885,12.529706,b248e413-e4f4-41ba-8655-225876a5810a,2,0,2,0,0,0,22.0
+E.ON Drive Infrastructure Denmark ApS,"Frederiksberg Bredegade --, 2000 Frederiksberg",55.678335,12.529709,3477c2c0-12a0-8934-90a9-c6cc563fe851,2,2,0,0,0,0,150.0
+E.ON Drive,"Solbjerg Plads 3, 2000 Frederiksberg",55.68193,12.530355,,0,0,0,0,0,0,
+OK,"Frederiksberg Bredegade 2, 2000 Frederiksberg",55.677984,12.531078,35456202-863d-816f-a783-2edefb681efa,6,1,4,0,1,0,40.0
+Virta,"Solbjerg Plads 3, 2000 Frederiksberg",55.682278,12.531151,,0,0,0,0,0,0,
+Clever,"Falkoner Allé 9, 2000 Frederiksberg",55.680117,12.532274,14026d60-a95c-4a02-b6e7-90fd044cf614,8,1,7,0,0,0,22.0
+E.ON Drive,"Falkoner Allé 21, 2000 Frederiksberg",55.681638,12.532665,c135e581-9caa-46d8-91cd-9697d0f5f34c,6,3,1,0,2,0,22.0
+Clever,"Hollændervej 17, 1855 Frederiksberg C",55.676285,12.534583,c02c5256-4349-46d3-98d3-a8c824f5ccd9,6,2,4,0,0,0,11.0
+Clever,"Sagasvej 10, 1862 Frederiksberg C",55.67935,12.535201,8a46c5b1-672f-473c-a2f4-3e4070f13844,4,1,3,0,0,0,22.0
+OK,"Gammel Kongevej 161, 1850 Frederiksberg C",55.677482,12.536085,693a4607-a31d-448c-8bd4-e7237f154ef0,2,2,0,0,0,0,20.0
+Clever,"Sankt Nikolaj Vej 4, 1953 Frederiksberg C",55.682973,12.536806,9527a0ff-ffdb-4edd-b5e3-f39c7ec6268b,8,6,2,0,0,0,22.0
+Clever,"Amicisvej 1, 1852 Frederiksberg C",55.674559,12.537558,80c24e85-eddf-400f-bd57-3db0d312b543,2,1,1,0,0,0,22.0
+Clever,"Henrik Steffens Vej 1, 1866 Frederiksberg C",55.677689,12.537993,73a3d83f-af15-41a9-b51c-6d7690e46c7d,8,3,5,0,0,0,22.0
+E.ON Drive,"Martensens Allé 3, 1828 Frederiksberg",55.674476,12.541641,,0,0,0,0,0,0,
+E.ON Drive,"Dyrlægevej 2, 1870 Frederiksberg",55.678531,12.541972,476addfa-a7e0-4247-8f7f-0cf2c6c85ae7,4,2,0,0,2,0,22.0
+Clever,"Martensens Allé 13, 1828 Frederiksberg C",55.67547,12.542233,5281fdc1-deb1-4273-8e95-d0e025c23d0d,8,0,8,0,0,0,11.0

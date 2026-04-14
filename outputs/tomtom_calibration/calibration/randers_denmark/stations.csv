@@ -1,0 +1,21 @@
+name,address,lat,lon,charging_availability_id,total_connectors,available_connectors,occupied_connectors,reserved_connectors,unknown_connectors,out_of_service_connectors,max_power_kw
+PowerGo,"Vestergade 5, 8900 Randers",56.460452,10.031875,1b1e83a8-1ca2-8a98-9efe-33538e8197a0,2,2,0,0,0,0,22.0
+Clever,"Vestergade 5, 8900 Randers C",56.460378,10.031965,2e66b6e7-50d2-4b76-8f60-4f629c60ea9a,2,0,2,0,0,0,22.0
+E.ON Drive,"Vestervold 31, 8900 Randers C",56.462711,10.03216,eee1150f-8f55-4bb4-9488-71d3678a3c8d,6,4,2,0,0,0,22.0
+E.ON Drive,"Møllegade 6, 8900 Randers",56.46305,10.03601,b9d4a915-15e4-4e29-95c6-0ac48d977b7c,6,4,2,0,0,0,22.0
+PowerGo,"Laksetorvet 1, 8900 Randers",56.457292,10.036406,c200e9ad-e860-439d-a5d6-59802c74b49d,4,2,2,0,0,0,22.0
+Tesla Destination,"Torvegade 11, 8900 Randers C",56.460056,10.03662,,0,0,0,0,0,0,
+PowerGo,"Biografgade 3, 8900 Randers",56.463659,10.037886,0e839344-1f2e-44e0-9e0b-5f4af0362fd3,4,1,1,0,1,1,22.0
+Spirii,"Nordregrave 3, 8900 Randers C",56.462314,10.038579,42a9332a-b049-4291-bdd8-806b9c4ef23c,4,4,0,0,0,0,22.0
+Clever,"Nattergalvej 35A, 8930 Randers NØ",56.471097,10.038765,850b7e08-f100-4dfe-8f44-0d5a4a1bcce6,4,1,3,0,0,0,22.0
+E.ON Drive,"Trangstræde 2, 8900 Randers",56.45839,10.039131,e0e6592e-2f5b-49d4-8f65-d58ea4a1a632,6,6,0,0,0,0,22.0
+PowerGo,"Gammel Hadsundvej 3, 8900 Randers",56.465797,10.039141,95591234-cb67-448a-9149-f9a075200ce7,2,2,0,0,0,0,22.0
+"sandgade 12, 3. mf. - Verdo","Sandgade 12, 8900 Randers C",56.462717,10.041169,,0,0,0,0,0,0,
+PowerGo,"Dragonvej 1, 8900 Randers",56.463294,10.041362,3baaa5f2-4674-46f1-8c17-2f40da03a22c,2,1,0,0,1,0,22.0
+Norlys,"Dragonvej 1, 8900 Randers",56.463615,10.041773,0e1713a7-e03d-4494-a8ab-8be73cf98340,1,1,0,0,0,0,11.0
+Q-Park Fischersgade 26,"Fischersgade 26, 8900 Randers",56.459967,10.042368,,0,0,0,0,0,0,
+PowerGo,"Østervangsvej 26A, 8930 Randers",56.468087,10.047183,b50494d2-af57-41c7-b0f3-d913a2a0e7c9,4,4,0,0,0,0,22.0
+Kulholmsvej 12 - Verdo,"Kulholmsvej 12, 8930 Randers NØ",56.458014,10.0474,,0,0,0,0,0,0,
+PowerGo,"Dronningborg Boulevard 33, 8930 Randers",56.473615,10.050322,66f070cc-5823-453b-84a2-280495271bc8,2,2,0,0,0,0,22.0
+Uno-X,"Udbyhøjvej 62, 8930 Randers",56.465834,10.055969,bd81b8d0-cb79-4513-a574-32536b4a7d8c,1,1,0,0,0,0,22.0
+drivee,"Toldbodgade 48, 8930 Randers",56.466197,10.064056,,0,0,0,0,0,0,
