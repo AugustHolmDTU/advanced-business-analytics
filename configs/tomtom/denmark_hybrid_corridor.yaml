@@ -1,0 +1,15 @@
+denmark_hybrid_corridor:
+  name: denmark_hybrid_corridor
+  timezone: Europe/Copenhagen
+  country_set: DK
+  language: en-GB
+  candidate_site_count: 18
+  demand_zone_count: 10
+  snapshot_rounds: 3
+  snapshot_interval_seconds: 0
+  append_history: true
+  routing:
+    travel_mode: car
+    route_type: fastest
+    traffic: historical
+    depart_at: any

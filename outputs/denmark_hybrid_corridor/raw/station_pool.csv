@@ -1,0 +1,81 @@
+name,address,lat,lon,charging_availability_id,total_connectors,available_connectors,occupied_connectors,reserved_connectors,unknown_connectors,out_of_service_connectors,max_power_kw,site_type
+Spirii,"Kildegården, 4000 Roskilde",55.637787,12.069717,3000f194-816f-81eb-ac59-c1d7cc04952c,4,4,0,0,0,0,22.0,city_hub
+E.ON Drive,"Rådmandshaven 10, 4000 Roskilde",55.636494,12.073361,85347e6d-5c7f-4d5b-a67c-5e82627ba3fd,8,4,3,0,0,1,22.0,city_hub
+Spirii,"Gustav Wieds Plads, 4000 Roskilde",55.643238,12.074086,0c6d340d-773e-8d85-a0e8-d6335f489502,4,4,0,0,0,0,22.0,city_hub
+OK,"Ringstedgade 58, 4000 Roskilde",55.635837,12.075013,762def9a-8314-4dbe-b758-506f0349a7e2,2,2,0,0,0,0,40.0,city_hub
+Clever,"Bønnelyckes Plads 1, 4000 Roskilde",55.638305,12.075999,e68987a7-90d5-403e-9bb5-6bab25ebc445,6,2,3,0,1,0,22.0,city_hub
+Clever,"Weysegangen 6, 4000 Roskilde",55.642749,12.076902,41809c61-725e-4bb2-ada6-165059d60bb3,4,1,3,0,0,0,22.0,city_hub
+Norlys,"Skovbogade 3, 4000 Roskilde",55.636807,12.076929,a1f54058-3b55-4a0f-a84d-b612d73a316a,4,3,1,0,0,0,22.0,city_hub
+EDF Danmark A/S,"Maglekildevej 5, 4000 Roskilde",55.64286,12.076986,3f67c5dd-448a-80ad-8362-400513ca4c5c,4,0,0,0,0,4,22.0,city_hub
+E.ON Drive,"Schmeltz Plads, 4000 Roskilde",55.64004,12.079063,1a2cd92d-a6f9-433c-803e-adc8c137612e,12,8,4,0,0,0,22.0,city_hub
+Clever,"Tinghusvej 5, 4000 Roskilde",55.63698,12.079397,d8ecd8a3-907b-4dd0-80d8-b39ecf15fa9d,4,2,2,0,0,0,22.0,city_hub
+Clever,"Stationscentret 13, 4000 Roskilde",55.637265,12.082179,c7ab4302-e632-4eff-9803-5fb76d31b39b,6,3,3,0,0,0,300.0,city_hub
+Pair Recharge,"Algade 13, 4000 Roskilde",55.641601,12.0833,,0,0,0,0,0,0,,city_hub
+Clever,"Grønnegade 17A, 4000 Roskilde",55.63939,12.083549,64be24ed-5cbe-489b-a8e0-f50718a6673a,4,0,4,0,0,0,22.0,city_hub
+Clever,"Algade 12, 4000 Roskilde",55.640372,12.083732,53f9c9a1-3d15-4b70-9abb-1c53e74b2f2f,8,6,2,0,0,0,22.0,city_hub
+E.ON Drive,"Sankt Ols Gade 4, 4000 Roskilde",55.642029,12.084084,e896e4ab-48b3-42cd-9715-04961748eff6,10,4,6,0,0,0,150.0,city_hub
+Norlys,"Algade 51, 4000 Roskilde",55.640978,12.089047,3a3c0b9c-a986-8713-a7d2-029b1509e414,1,1,0,0,0,0,22.0,city_hub
+Clever,"Ny Østergade 12, 4000 Roskilde",55.637989,12.090109,79f838ea-3d00-43cd-8644-8807577ae083,12,6,6,0,0,0,22.0,city_hub
+Norlys,"Sortebrødre Plads, 4000 Roskilde",55.641029,12.090149,a15e2a12-0094-4901-8694-aa4acb4239f4,6,4,2,0,0,0,50.0,city_hub
+Spirii,"Sortebrødreplads 1, 4000 Roskilde",55.640946,12.090729,3010ddf0-df0f-879b-a1b2-b7f35e7a0d6d,6,6,0,0,0,0,22.0,city_hub
+EWII,"Dronning Margrethes Vej 28, 4000 Roskilde",55.64125,12.091419,5d6d19c2-5bac-401e-b693-5d8aebac63c0,10,9,1,0,0,0,240.0,city_hub
+PowerGo,"Vestergade 5, 8900 Randers",56.460452,10.031875,1b1e83a8-1ca2-8a98-9efe-33538e8197a0,2,2,0,0,0,0,22.0,city_hub
+Clever,"Vestergade 5, 8900 Randers C",56.460378,10.031965,2e66b6e7-50d2-4b76-8f60-4f629c60ea9a,2,0,2,0,0,0,22.0,city_hub
+E.ON Drive,"Vestervold 31, 8900 Randers C",56.462711,10.03216,eee1150f-8f55-4bb4-9488-71d3678a3c8d,6,4,2,0,0,0,22.0,city_hub
+E.ON Drive,"Møllegade 6, 8900 Randers",56.46305,10.03601,b9d4a915-15e4-4e29-95c6-0ac48d977b7c,6,4,2,0,0,0,22.0,city_hub
+PowerGo,"Laksetorvet 1, 8900 Randers",56.457292,10.036406,c200e9ad-e860-439d-a5d6-59802c74b49d,4,2,2,0,0,0,22.0,city_hub
+Tesla Destination,"Torvegade 11, 8900 Randers C",56.460056,10.03662,,0,0,0,0,0,0,,city_hub
+PowerGo,"Biografgade 3, 8900 Randers",56.463659,10.037886,0e839344-1f2e-44e0-9e0b-5f4af0362fd3,4,1,1,0,1,1,22.0,city_hub
+Spirii,"Nordregrave 3, 8900 Randers C",56.462314,10.038579,42a9332a-b049-4291-bdd8-806b9c4ef23c,4,4,0,0,0,0,22.0,city_hub
+Clever,"Nattergalvej 35A, 8930 Randers NØ",56.471097,10.038765,850b7e08-f100-4dfe-8f44-0d5a4a1bcce6,4,1,3,0,0,0,22.0,city_hub
+E.ON Drive,"Trangstræde 2, 8900 Randers",56.45839,10.039131,e0e6592e-2f5b-49d4-8f65-d58ea4a1a632,6,6,0,0,0,0,22.0,city_hub
+PowerGo,"Gammel Hadsundvej 3, 8900 Randers",56.465797,10.039141,95591234-cb67-448a-9149-f9a075200ce7,2,2,0,0,0,0,22.0,city_hub
+"sandgade 12, 3. mf. - Verdo","Sandgade 12, 8900 Randers C",56.462717,10.041169,,0,0,0,0,0,0,,city_hub
+PowerGo,"Dragonvej 1, 8900 Randers",56.463294,10.041362,3baaa5f2-4674-46f1-8c17-2f40da03a22c,2,1,0,0,1,0,22.0,city_hub
+Norlys,"Dragonvej 1, 8900 Randers",56.463615,10.041773,0e1713a7-e03d-4494-a8ab-8be73cf98340,1,1,0,0,0,0,11.0,city_hub
+Q-Park Fischersgade 26,"Fischersgade 26, 8900 Randers",56.459967,10.042368,,0,0,0,0,0,0,,city_hub
+PowerGo,"Østervangsvej 26A, 8930 Randers",56.468087,10.047183,b50494d2-af57-41c7-b0f3-d913a2a0e7c9,4,4,0,0,0,0,22.0,city_hub
+Kulholmsvej 12 - Verdo,"Kulholmsvej 12, 8930 Randers NØ",56.458014,10.0474,,0,0,0,0,0,0,,city_hub
+PowerGo,"Dronningborg Boulevard 33, 8930 Randers",56.473615,10.050322,66f070cc-5823-453b-84a2-280495271bc8,2,2,0,0,0,0,22.0,city_hub
+Uno-X,"Udbyhøjvej 62, 8930 Randers",56.465834,10.055969,bd81b8d0-cb79-4513-a574-32536b4a7d8c,1,1,0,0,0,0,22.0,city_hub
+drivee,"Toldbodgade 48, 8930 Randers",56.466197,10.064056,,0,0,0,0,0,0,,city_hub
+OK,"Gymnasievej 151, 4600 Køge",55.453172,12.162234,ed573b54-015e-4dae-ad71-dd88505cb7f3,4,2,2,0,0,0,40.0,highway_exit
+OK,"Parkvej 51, 4600 Køge",55.45055,12.164646,cbde9e66-b014-46de-9178-001548615b4a,12,6,2,0,0,4,20.0,highway_exit
+OK,"Marksvinget 19, 4600 Hastrup",55.448087,12.165222,c7e51a5b-35ef-4fa8-85a7-8a632a1bdb1c,2,0,2,0,0,0,40.0,highway_exit
+Norlys,"Gymnasievej 27, 4600 Køge",55.45409,12.167143,d5b8b360-ed1b-4bde-bc95-8153af53d974,4,4,0,0,0,0,300.0,highway_exit
+Circle K,"Vordingborgvej 9, 4600 Hastrup",55.446462,12.173246,fe189006-7766-4261-8a75-d3e50a86cd84,6,3,2,0,0,1,300.0,highway_exit
+Norlys,"Kongsberg Allé 4, 4600 Køge",55.454384,12.174371,5f87f356-8448-4865-87b6-6e55b1cb7d5a,2,2,0,0,0,0,22.0,highway_exit
+EWII,"Rasmussensvej 23, 4600 Hastrup",55.446232,12.175893,08ada6b1-d075-479a-9fba-facef0ce3649,2,0,1,0,1,0,22.0,highway_exit
+OK,"Vestergade 25A, 4600 Køge",55.45643,12.177198,7daa37e4-e41b-4c7e-8607-f4ce240aee7a,2,0,1,0,0,1,75.0,highway_exit
+EWII,"Ved Stadion 2B, 4600 Køge",55.466509,12.177414,58a179bd-525f-4c7d-bc17-4bfef44bbdb9,8,3,5,0,0,0,300.0,highway_exit
+EWII,"Kongsberg Allé 4, 4600 Køge",55.453055,12.179146,2e46e76e-419e-4a83-a2d2-1ad0c2c8efeb,2,1,1,0,0,0,22.0,highway_exit
+Clever,"Blegdammen 3, 4600 Køge",55.454567,12.179796,9bf5e5fe-f1af-46cf-9ad6-778db686f4fd,4,0,4,0,0,0,22.0,highway_exit
+E.ON Drive,"Torvet 1, 4600 Køge",55.456691,12.180651,4878d3d8-3793-464d-b85c-28034c34429f,2,2,0,0,0,0,22.0,highway_exit
+Q8,"Nørre Boulevard 50, 4600 Køge",55.463934,12.183875,34b70715-bf8c-8ff5-a15a-0f8e28b00615,2,1,1,0,0,0,200.0,highway_exit
+Clever,"Nørregade 24G, 4600 Køge",55.458135,12.184379,1c8115ff-7e15-8ee9-a182-fc3f6e27f48f,7,4,3,0,0,0,22.0,highway_exit
+Pair Recharge,"Toldbodvej 20, 4600 Køge",55.452,12.1851,,0,0,0,0,0,0,,highway_exit
+EWII,"Toldbodvej 14, 4600 Køge",55.453787,12.185609,bc6771db-d9aa-42be-8687-eb3eca352f26,10,10,0,0,0,0,300.0,highway_exit
+Clever,"Tangmosevej 95, 4600 Køge",55.471744,12.18579,38d12a26-0009-8b72-a99e-e0d411e9daf9,2,2,0,0,0,0,300.0,highway_exit
+Clever,"Toldbodvej 19, 4600 Køge",55.451407,12.186305,3874ff00-6716-8aa6-b421-f8bfc6bdecd2,2,2,0,0,0,0,200.0,highway_exit
+Clever,"Strandkvanen 6, 4600 Køge",55.452616,12.190943,0b6ce470-e300-887f-ab5e-e25289955edd,10,5,5,0,0,0,22.0,highway_exit
+EWII,"Strandvejen 111, 4600 Køge",55.446805,12.192322,0124d2ba-1c59-8032-9b82-1ca6564b9730,10,7,3,0,0,0,240.0,highway_exit
+EWII,"Nyboesgade 33, 7100 Vejle",55.711719,9.528585,de3679c2-ed6b-4009-ab12-516d65b7b41c,6,3,3,0,0,0,22.0,service_area
+APCOA,"Blegbanken 3, 7100 Vejle",55.707478,9.529624,a2166145-c344-4100-96e0-d7bde63b2253,6,5,1,0,0,0,11.0,service_area
+Clever,"Flegborg 10, 7100 Vejle",55.709884,9.530285,,0,0,0,0,0,0,,service_area
+Clever,"Søndertorv 2, 7100 Vejle",55.705345,9.531287,4061ccbb-68db-4b49-a9e0-1cdcf536ae2e,2,1,1,0,0,0,22.0,service_area
+Clever,"Odinsgade 43, 7100 Vejle",55.712821,9.532306,3094e181-d90c-8887-9eb6-93fed9163458,8,5,3,0,0,0,22.0,service_area
+Clever,"Ved Anlæget 18, 7100 Vejle",55.71147,9.533676,2582324b-2ad1-46bc-96a6-b64055bedcb9,6,1,5,0,0,0,11.0,service_area
+Clever,"Ved Anlæget 12, 7100 Vejle",55.710513,9.533719,80b605b2-ba9c-4d67-a175-a8d3032401aa,6,5,1,0,0,0,300.0,service_area
+NRGi Erhverv,"Fiskergade 2, 7100 Vejle",55.706789,9.534011,3261bd7c-6afb-8830-9368-3971875a423a,4,4,0,0,0,0,22.0,service_area
+EWII,"Grønnegade 9, 7100 Vejle",55.708173,9.534204,c2f6e39a-9a07-4595-8607-822a9effd729,8,6,2,0,0,0,22.0,service_area
+Clever,"Borgvold 12A, 7100 Vejle",55.706179,9.534963,333b2122-1f3b-4f59-a9fb-49e05ee689a5,8,3,5,0,0,0,22.0,service_area
+EWII,"Gunhilds Plads 8, 7100 Vejle",55.713592,9.535496,b66e3bea-0023-448b-b52d-4cceb9cb5671,6,3,3,0,0,0,22.0,service_area
+APCOA,"Dæmningen 23, 7100 Vejle",55.709003,9.535777,11dc74b2-383a-4c26-9389-0e9def21d544,2,0,2,0,0,0,11.0,service_area
+EWII,"Volmersgade 25, 7100 Vejle",55.710553,9.537646,b0f7420d-9576-430f-9ddc-c5a1b3f1dfbf,6,3,3,0,0,0,22.0,service_area
+Clever,"Volmersgade 7, 7100 Vejle",55.71049,9.537674,55dda59b-78f0-4534-8c37-8402ebda00e0,6,1,5,0,0,0,22.0,service_area
+OK,"Jernbanegade 28, 7100 Vejle",55.710622,9.539225,38a8fda9-b4c1-8603-9ecc-ead2e97d1437,4,3,1,0,0,0,40.0,service_area
+Clever,"Jyllandsgade 5Q, 7100 Vejle",55.706727,9.539494,1ae3bb60-e202-8044-9600-ae44dce7b2fe,2,2,0,0,0,0,300.0,service_area
+EWII,"Jyllandsgade 6, 7100 Vejle",55.706792,9.539592,96feb9d2-dd01-47d6-a69d-fa84efd0ddcf,4,4,0,0,0,0,400.0,service_area
+EWII,"Havnepladsen 11, 7100 Vejle",55.707397,9.542248,052b5f63-b8ea-410b-9da5-e04ea09cfb5f,6,2,4,0,0,0,22.0,service_area
+EWII,"Fjordgade 5, 7100 Vejle",55.709611,9.542641,4366e058-11e9-408f-949a-e7efd1989483,4,1,3,0,0,0,22.0,service_area
+Clever,"Østerbrogade 27, 7100 Vejle",55.708982,9.543433,f68f7af0-207d-4cf6-bd8c-7c7b85d2df7c,12,4,8,0,0,0,300.0,service_area

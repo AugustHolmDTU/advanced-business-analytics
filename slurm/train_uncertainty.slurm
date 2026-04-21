@@ -21,6 +21,8 @@ mkdir -p "$PROJECT_ROOT/logs"
 cd "$PROJECT_ROOT"
 export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
 export MPLCONFIGDIR="${MPLCONFIGDIR:-$PROJECT_ROOT/.cache/matplotlib}"
+export WANDB_PROJECT="${WANDB_PROJECT:-adaptive-ev-charging}"
+export WANDB_ENTITY="${WANDB_ENTITY:-EV-charging}"
 mkdir -p "$MPLCONFIGDIR"
 
 MODEL_CONFIGS=(
@@ -33,4 +35,5 @@ python -m evch.train.train_uncertainty \
   --config "$CONFIG_DIR/demand/base.yaml" \
   --config "${MODEL_CONFIGS[$SLURM_ARRAY_TASK_ID]}" \
   --config "$CONFIG_DIR/logging/base.yaml" \
+  --config "$CONFIG_DIR/logging/wandb_online.yaml" \
   --config "$CONFIG_DIR/experiment/local_demo.yaml"

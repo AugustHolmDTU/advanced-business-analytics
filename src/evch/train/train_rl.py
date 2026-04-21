@@ -15,7 +15,8 @@ from evch.rl.simple_dqn import SimpleDQNAgent
 from evch.utils.io import ensure_dir, write_json
 from evch.utils.logging import configure_logging
 from evch.utils.seeding import set_global_seed
-from evch.utils.wandb import init_wandb
+from evch.utils.torch_runtime import configure_torch_runtime, resolve_torch_device
+from evch.utils.wandb import init_wandb, log_artifact
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,10 +42,49 @@ def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> b
         return False
 
 
-def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Path) -> tuple[str, str]:
+class WandbSb3Callback:
+    def __init__(self, run: Any, log_interval: int) -> None:
+        from stable_baselines3.common.callbacks import BaseCallback  # type: ignore
+
+        class _Callback(BaseCallback):
+            def __init__(self, parent: "WandbSb3Callback") -> None:
+                super().__init__(verbose=0)
+                self.parent = parent
+
+            def _on_step(self) -> bool:
+                return self.parent.on_step(self)
+
+        self.callback = _Callback(self)
+        self.run = run
+        self.log_interval = max(log_interval, 1)
+
+    def on_step(self, callback: Any) -> bool:
+        if callback.num_timesteps % self.log_interval != 0:
+            return True
+
+        metrics: dict[str, float] = {"rl/timesteps": float(callback.num_timesteps)}
+        exploration_rate = getattr(callback.model, "exploration_rate", None)
+        if exploration_rate is not None:
+            metrics["rl/exploration_rate"] = float(exploration_rate)
+
+        replay_buffer = getattr(callback.model, "replay_buffer", None)
+        if replay_buffer is not None:
+            with contextlib.suppress(TypeError):
+                metrics["rl/replay_buffer_size"] = float(len(replay_buffer))
+
+        for key, value in getattr(callback.model.logger, "name_to_value", {}).items():
+            if isinstance(value, (int, float, np.integer, np.floating)) and np.isfinite(value):
+                metrics[f"sb3/{key}"] = float(value)
+
+        self.run.log(metrics, step=int(callback.num_timesteps))
+        return True
+
+
+def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Path, run: Any) -> tuple[str, str]:
     from stable_baselines3 import DQN  # type: ignore
 
     sb3_cfg = rl_cfg["sb3"]
+    device = resolve_torch_device(str(rl_cfg.get("device", "auto")))
     model = DQN(
         "MlpPolicy",
         env,
@@ -57,8 +97,10 @@ def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Pat
         target_update_interval=int(sb3_cfg["target_update_interval"]),
         verbose=0,
         seed=seed,
+        device=str(device),
     )
-    model.learn(total_timesteps=int(sb3_cfg["total_timesteps"]))
+    callback = WandbSb3Callback(run=run, log_interval=int(rl_cfg.get("wandb_log_interval", 100))).callback
+    model.learn(total_timesteps=int(sb3_cfg["total_timesteps"]), callback=callback)
     checkpoint = output_dir / "best_model.zip"
     model.save(checkpoint)
     return "sb3_dqn", str(checkpoint)
@@ -113,8 +155,10 @@ def main() -> None:
 
     experiment_cfg = config["experiment"]
     rl_cfg = config["rl"]
+    runtime_info = configure_torch_runtime(rl_cfg)
     output_dir = ensure_dir(Path(experiment_cfg["output_root"]) / experiment_cfg["name"] / "rl")
     run = init_wandb(config=config, job_type="train_rl", run_name=f"{experiment_cfg['name']}_rl")
+    run.log({f"runtime/{key}": value for key, value in runtime_info.items()})
 
     env = ChargingPlacementEnv(config["environment"], config["demand"], seed=seed)
     use_sb3 = False
@@ -127,7 +171,7 @@ def main() -> None:
 
     history: list[dict[str, float]] = []
     if use_sb3:
-        backend, checkpoint_path = _train_with_sb3(env, rl_cfg, seed=seed, output_dir=output_dir)
+        backend, checkpoint_path = _train_with_sb3(env, rl_cfg, seed=seed, output_dir=output_dir, run=run)
     else:
         backend, checkpoint_path, history = _train_with_torch_dqn(env, rl_cfg, seed=seed, output_dir=output_dir, run=run)
 
@@ -145,16 +189,47 @@ def main() -> None:
     if history:
         _maybe_plot_training_curve(history, output_dir / "training_curve.png")
 
+    training_summary_path = output_dir / "training_summary.json"
     write_json(
-        output_dir / "training_summary.json",
+        training_summary_path,
         {
             "backend": backend,
             "checkpoint_path": checkpoint_path,
+            "runtime": runtime_info,
             "evaluation": {key: value for key, value in evaluation.items() if key != "episodes"},
         },
     )
     if history:
         write_json(output_dir / "history.json", {"history": history})
+
+    log_artifact(
+        run=run,
+        path=checkpoint_path,
+        artifact_name=f"{experiment_cfg['name']}-{backend}-checkpoint",
+        artifact_type="model",
+        aliases=["latest"],
+    )
+    log_artifact(
+        run=run,
+        path=training_summary_path,
+        artifact_name=f"{experiment_cfg['name']}-rl-summary",
+        artifact_type="metrics",
+        aliases=["latest"],
+    )
+    log_artifact(
+        run=run,
+        path=output_dir / "history.json",
+        artifact_name=f"{experiment_cfg['name']}-rl-history",
+        artifact_type="metrics",
+        aliases=["latest"],
+    )
+    log_artifact(
+        run=run,
+        path=output_dir / "training_curve.png",
+        artifact_name=f"{experiment_cfg['name']}-rl-curve",
+        artifact_type="plot",
+        aliases=["latest"],
+    )
     LOGGER.info("Finished RL training with backend=%s checkpoint=%s", backend, checkpoint_path)
     run.finish()
 

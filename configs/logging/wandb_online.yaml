@@ -1,0 +1,4 @@
+logging:
+  wandb:
+    enabled: true
+    mode: online

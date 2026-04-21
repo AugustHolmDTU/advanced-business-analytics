@@ -78,6 +78,8 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
         self.demand_generator = DemandGenerator(self.city, demand_config, horizon=self.horizon, seed=seed)
         self.static_site_scores = static_site_accessibility_scores(self.city, self.service_decay)
         self.current_travel_time_matrix = self.city.travel_time_matrix.copy()
+        self.site_capacity_scale = self._site_metadata_vector("site_capacity_scale", default=1.0, low=0.25, high=4.0)
+        self.base_site_availability = self._site_metadata_vector("site_availability_proxy", default=1.0, low=0.15, high=1.0)
         obs_dim = 4 * self.num_sites + 4 * self.num_zones + 5
         self.observation_space = spaces.Box(low=-1.0, high=100.0, shape=(obs_dim,), dtype=np.float32)
         self.noop_action = self.num_sites
@@ -90,6 +92,12 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
         self.last_expected_demand = np.zeros(self.num_zones, dtype=np.float32)
         self.step_index = 0
         self.is_weekend = False
+
+    def _site_metadata_vector(self, key: str, default: float, low: float, high: float) -> np.ndarray:
+        values = np.asarray(self.city.metadata.get(key, []), dtype=np.float32)
+        if values.shape != (self.num_sites,):
+            values = np.full(self.num_sites, default, dtype=np.float32)
+        return np.clip(values, low, high).astype(np.float32)
 
     def _build_city(self, seed: int) -> SyntheticCity:
         city = build_city(self.env_config, self.demand_config, seed=seed)
@@ -104,6 +112,8 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
             self.city = self._build_city(chosen_seed)
             self.static_site_scores = static_site_accessibility_scores(self.city, self.service_decay)
             self.current_travel_time_matrix = self.city.travel_time_matrix.copy()
+            self.site_capacity_scale = self._site_metadata_vector("site_capacity_scale", default=1.0, low=0.25, high=4.0)
+            self.base_site_availability = self._site_metadata_vector("site_availability_proxy", default=1.0, low=0.15, high=1.0)
         self.demand_generator = DemandGenerator(self.city, self.demand_config, horizon=self.horizon, seed=chosen_seed)
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[np.ndarray, dict[str, Any]]:
@@ -112,7 +122,7 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
         self.seed(episode_seed)
         self.step_index = 0
         self.is_weekend = bool(self.rng.random() < (2.0 / 7.0))
-        self.site_availability = np.ones(self.num_sites, dtype=np.float32)
+        self.site_availability = self.base_site_availability.copy()
         self.current_travel_time_matrix = self.city.travel_time_matrix.copy()
         self.last_observed_demand = np.zeros(self.num_zones, dtype=np.float32)
         self.last_true_demand = np.zeros(self.num_zones, dtype=np.float32)
@@ -270,7 +280,7 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
         )
 
     def _serve_demand(self, demand: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        remaining_capacity = self.allocations * self.site_availability * self.charger_capacity
+        remaining_capacity = self.allocations * self.site_availability * self.site_capacity_scale * self.charger_capacity
         served = np.zeros(self.num_zones, dtype=np.float32)
         weights = np.exp(-self.service_decay * self.current_travel_time_matrix)
         zone_order = np.argsort(demand)[::-1]
@@ -311,7 +321,7 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
             road_closure_penalty_minutes,
             closure_segment,
         ) = self._sample_disruptions()
-        self.site_availability = np.ones(self.num_sites, dtype=np.float32)
+        self.site_availability = self.base_site_availability.copy()
         if outage_site is not None:
             self.site_availability[outage_site] = 0.0
         self.current_travel_time_matrix = self._sample_travel_matrix(
@@ -334,7 +344,9 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
 
         served_total = float(served.sum())
         unmet_total = float(unmet.sum())
-        total_capacity = float(max(np.sum(self.allocations * self.site_availability) * self.charger_capacity, 1e-6))
+        total_capacity = float(
+            max(np.sum(self.allocations * self.site_availability * self.site_capacity_scale) * self.charger_capacity, 1e-6)
+        )
         utilization = served_total / total_capacity
         coverage_score = self._coverage_score()
         reward = (
@@ -357,6 +369,7 @@ class ChargingPlacementEnv(gym.Env):  # type: ignore[misc]
             "true_demand_total": float(snapshot.true_demand.sum()),
             "expected_demand_total": float(snapshot.expected_lambda.sum()),
             "num_active_chargers": int(self.allocations.sum()),
+            "effective_capacity_total": total_capacity,
             "deployed": deployed,
             "relocated": relocated,
             "action_valid": is_valid_action,

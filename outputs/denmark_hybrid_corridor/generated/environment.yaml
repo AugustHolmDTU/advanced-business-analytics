@@ -1,0 +1,94 @@
+seed: 17
+environment:
+  layout: corridor
+  num_candidate_sites: 18
+  num_demand_zones: 10
+  max_chargers: 4
+  charger_capacity: 10.0
+  horizon: 24
+  max_steps: 24
+  service_decay: 0.055
+  deployment_cost: 0.12
+  relocation_cost: 1.25
+  unmet_penalty: 1.65
+  outage_penalty: 0.22
+  reward_scale: 0.08
+  utilization_bonus: 1.3
+  coverage_bonus: 0.1
+  invalid_action_penalty: 1.0
+  city_extent_km: 275.0
+  corridor_length_km: 275.0
+  randomize_on_reset: true
+  reset_seed_stride: 101
+  start_filled: true
+  corridor:
+    num_cities: 3
+    urban_influence_km: 16.0
+    city_anchor_positions_km:
+    - 0.0
+    - 177.0
+    - 275.0
+    service_area_positions_km:
+    - 22.0
+    - 73.0
+    - 118.0
+    - 205.0
+    - 255.0
+    exit_positions_km:
+    - 36.0
+    - 97.0
+    - 144.0
+    - 224.0
+    - 233.0
+    site_type_counts:
+      city_hub: 3
+      service_area: 5
+      highway_exit: 5
+    site_mix:
+      city_hub: 0.22
+      service_area: 0.4
+      highway_exit: 0.38
+    site_type_profiles:
+      city_hub:
+        connector_range:
+        - 2
+        - 8
+        power_kw_range:
+        - 22.0
+        - 46.99999999999999
+        availability_mean: 0.5833333432674408
+        availability_std: 0.5
+      highway_exit:
+        connector_range:
+        - 2
+        - 10
+        power_kw_range:
+        - 22.0
+        - 300.0
+        availability_mean: 0.5
+        availability_std: 0.5
+      service_area:
+        connector_range:
+        - 4
+        - 8
+        power_kw_range:
+        - 22.0
+        - 300.0
+        availability_mean: 0.5
+        availability_std: 0.29999998956918716
+    zone_mix:
+      city: 0.42
+      suburb: 0.24
+      corridor: 0.22
+      logistics: 0.12
+  disruption:
+    demand_spike_probability: 0.14
+    demand_spike_multiplier: 1.7
+    outage_probability: 0.06
+    observation_noise_scale: 0.3
+    travel_slowdown_probability: 0.18
+    travel_slowdown_multiplier: 1.45
+    travel_slowdown_fraction: 0.18
+    road_closure_probability: 0.05
+    road_closure_fraction: 0.08
+    road_closure_penalty_minutes: 20.0

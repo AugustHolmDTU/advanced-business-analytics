@@ -1,0 +1,18 @@
+demand:
+  base_rate_min: 3.2
+  base_rate_max: 8.5
+  zone_scale_std: 0.22
+  morning_peak_hour: 8.0
+  evening_peak_hour: 17.0
+  peak_width: 2.4
+  morning_peak_weight: 0.75
+  evening_peak_weight: 1.0
+  weekday_multiplier: 1.0
+  weekend_multiplier: 0.82
+  background_intensity: 0.35
+  poisson_clip: 60.0
+  observation_noise_std: 0.5
+data:
+  num_days: 45
+  val_split: 0.2
+  include_prev_observation: true

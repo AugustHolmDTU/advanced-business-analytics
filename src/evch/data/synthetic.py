@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -192,6 +192,42 @@ def _sample_prior_values(
     return rng.uniform(fallback_low, fallback_high, size=count).astype(np.float32)
 
 
+def _coerce_positions(raw_values: list[float] | tuple[float, ...] | np.ndarray | None) -> np.ndarray:
+    if raw_values is None:
+        return np.empty(0, dtype=np.float32)
+    values = np.asarray(raw_values, dtype=np.float32)
+    if values.size == 0:
+        return np.empty(0, dtype=np.float32)
+    if values.ndim != 1:
+        raise ValueError("Explicit corridor positions must be a 1D list.")
+    return np.sort(values.astype(np.float32))
+
+
+def _sample_site_profile_value(
+    rng: np.random.Generator,
+    profile: dict[str, Any],
+    field: str,
+    fallback_sampler: Callable[[], float],
+) -> float:
+    if profile:
+        raw_range = profile.get(f"{field}_range")
+        if isinstance(raw_range, (list, tuple)) and len(raw_range) == 2:
+            low = float(raw_range[0])
+            high = float(raw_range[1])
+            if high < low:
+                low, high = high, low
+            if field == "connector":
+                return float(rng.integers(max(int(round(low)), 1), max(int(round(high)), 1) + 1))
+            return float(rng.uniform(low, high))
+        if field == "availability":
+            mean = profile.get("availability_mean")
+            std = profile.get("availability_std")
+            if mean is not None:
+                sampled = float(rng.normal(float(mean), float(std or 0.08)))
+                return float(np.clip(sampled, 0.15, 1.0))
+    return float(fallback_sampler())
+
+
 def make_synthetic_corridor(
     env_config: dict[str, Any],
     demand_config: dict[str, Any],
@@ -204,17 +240,24 @@ def make_synthetic_corridor(
     priors = _load_calibration_priors(corridor_cfg.get("calibration_priors_path"))
     recommended = priors.get("recommended_corridor_defaults") or {}
     corridor_length_km = float(env_config.get("corridor_length_km", env_config.get("city_extent_km", 220.0)))
-    num_cities = int(corridor_cfg.get("num_cities", min(max(2, num_sites // 4), 4)))
+    explicit_city_positions = _coerce_positions(corridor_cfg.get("city_anchor_positions_km"))
+    explicit_service_positions = _coerce_positions(corridor_cfg.get("service_area_positions_km"))
+    explicit_exit_positions = _coerce_positions(corridor_cfg.get("exit_positions_km"))
+    num_cities = int(corridor_cfg.get("num_cities", len(explicit_city_positions) or min(max(2, num_sites // 4), 4)))
     num_cities = max(1, min(num_cities, num_sites))
     mainline_speed_kmh = float(corridor_cfg.get("mainline_speed_kmh", recommended.get("mainline_speed_kmh", 105.0)))
     urban_speed_kmh = float(corridor_cfg.get("urban_speed_kmh", recommended.get("urban_speed_kmh", 72.0)))
     urban_influence_km = float(corridor_cfg.get("urban_influence_km", 14.0))
 
-    city_anchor_positions = np.linspace(0.08, 0.92, num_cities, dtype=np.float32) * corridor_length_km
-    city_jitter = rng.normal(0.0, 0.03 * corridor_length_km, size=num_cities)
-    city_positions = np.sort(
-        np.clip(city_anchor_positions + city_jitter, 0.06 * corridor_length_km, 0.94 * corridor_length_km)
-    ).astype(np.float32)
+    if explicit_city_positions.size > 0:
+        city_positions = np.clip(explicit_city_positions, 0.06 * corridor_length_km, 0.94 * corridor_length_km).astype(np.float32)
+        num_cities = int(len(city_positions))
+    else:
+        city_anchor_positions = np.linspace(0.08, 0.92, num_cities, dtype=np.float32) * corridor_length_km
+        city_jitter = rng.normal(0.0, 0.03 * corridor_length_km, size=num_cities)
+        city_positions = np.sort(
+            np.clip(city_anchor_positions + city_jitter, 0.06 * corridor_length_km, 0.94 * corridor_length_km)
+        ).astype(np.float32)
     city_strength = rng.uniform(0.9, 1.4, size=num_cities).astype(np.float32)
 
     site_mix = corridor_cfg.get(
@@ -225,7 +268,17 @@ def make_synthetic_corridor(
             "highway_exit": 0.38,
         },
     )
-    site_counts = _allocate_counts(num_sites, site_mix, minimum_if_possible=1 if num_sites >= 3 else 0)
+    explicit_counts = {
+        "city_hub": int(corridor_cfg.get("site_type_counts", {}).get("city_hub", len(explicit_city_positions))),
+        "service_area": int(corridor_cfg.get("site_type_counts", {}).get("service_area", len(explicit_service_positions))),
+        "highway_exit": int(corridor_cfg.get("site_type_counts", {}).get("highway_exit", len(explicit_exit_positions))),
+    }
+    required_sites = sum(max(value, 0) for value in explicit_counts.values())
+    if required_sites > num_sites:
+        raise ValueError("Configured explicit corridor site counts exceed num_candidate_sites.")
+    site_counts = _allocate_counts(num_sites - required_sites, site_mix, minimum_if_possible=0)
+    for key, value in explicit_counts.items():
+        site_counts[key] = site_counts.get(key, 0) + max(value, 0)
     site_counts["city_hub"] = max(site_counts.get("city_hub", 0), min(num_cities, num_sites))
     overflow = sum(site_counts.values()) - num_sites
     if overflow > 0:
@@ -236,22 +289,32 @@ def make_synthetic_corridor(
             if overflow <= 0:
                 break
 
-    city_site_positions_list: list[float] = []
-    for idx in range(site_counts["city_hub"]):
+    city_site_positions_list: list[float] = list(explicit_city_positions.tolist())
+    for idx in range(len(city_site_positions_list), site_counts["city_hub"]):
         anchor = float(city_positions[idx % len(city_positions)])
-        jitter = 0.0 if idx < len(city_positions) else float(rng.normal(0.0, 4.0))
+        jitter = 0.0 if idx < len(city_positions) and explicit_city_positions.size == 0 else float(rng.normal(0.0, 4.0))
         position = float(np.clip(anchor + jitter, 0.03 * corridor_length_km, 0.97 * corridor_length_km))
         city_site_positions_list.append(position)
     city_site_positions = np.sort(np.asarray(city_site_positions_list, dtype=np.float32))
     service_positions = _sample_service_positions(
         rng=rng,
-        count=site_counts["service_area"],
+        count=max(site_counts["service_area"] - len(explicit_service_positions), 0),
         corridor_length_km=corridor_length_km,
         avoid_positions=city_positions,
         min_separation_km=float(corridor_cfg.get("service_area_min_gap_km", recommended.get("service_area_min_gap_km", 18.0))),
     )
+    service_positions = np.sort(np.concatenate([explicit_service_positions, service_positions]).astype(np.float32))
     exit_positions = np.sort(
-        rng.uniform(0.04 * corridor_length_km, 0.96 * corridor_length_km, size=site_counts["highway_exit"])
+        np.concatenate(
+            [
+                explicit_exit_positions,
+                rng.uniform(
+                    0.04 * corridor_length_km,
+                    0.96 * corridor_length_km,
+                    size=max(site_counts["highway_exit"] - len(explicit_exit_positions), 0),
+                ).astype(np.float32),
+            ]
+        )
     ).astype(np.float32)
 
     site_positions = np.concatenate([city_site_positions, service_positions, exit_positions]).astype(np.float32)
@@ -263,14 +326,42 @@ def make_synthetic_corridor(
     connector_prior_values = _prior_values(priors, "connector_count")
     power_prior_values = _prior_values(priors, "max_power_kw")
     availability_prior_values = _prior_values(priors, "availability_ratio")
-    site_connector_proxy = _sample_prior_values(rng, connector_prior_values, len(site_positions), 2.0, 10.0)
-    site_power_proxy = _sample_prior_values(rng, power_prior_values, len(site_positions), 22.0, 150.0)
-    site_availability_proxy = _sample_prior_values(rng, availability_prior_values, len(site_positions), 0.35, 0.85)
+    site_type_profiles = corridor_cfg.get("site_type_profiles", {})
+    site_connector_proxy = np.zeros(len(site_positions), dtype=np.float32)
+    site_power_proxy = np.zeros(len(site_positions), dtype=np.float32)
+    site_availability_proxy = np.zeros(len(site_positions), dtype=np.float32)
     site_coords = np.zeros((num_sites, 2), dtype=np.float32)
     site_detours = np.zeros(num_sites, dtype=np.float32)
     site_labels: list[str] = []
     type_counts_seen = {"city_hub": 0, "service_area": 0, "highway_exit": 0}
+    for index, site_type in enumerate(site_types):
+        profile = dict(site_type_profiles.get(site_type, {}))
+        site_connector_proxy[index] = float(
+            _sample_site_profile_value(
+                rng,
+                profile,
+                "connector",
+                lambda: _sample_prior_values(rng, connector_prior_values, 1, 2.0, 10.0)[0],
+            )
+        )
+        site_power_proxy[index] = float(
+            _sample_site_profile_value(
+                rng,
+                profile,
+                "power_kw",
+                lambda: _sample_prior_values(rng, power_prior_values, 1, 22.0, 150.0)[0],
+            )
+        )
+        site_availability_proxy[index] = float(
+            _sample_site_profile_value(
+                rng,
+                profile,
+                "availability",
+                lambda: _sample_prior_values(rng, availability_prior_values, 1, 0.35, 0.85)[0],
+            )
+        )
     connector_median = float(np.median(site_connector_proxy)) if site_connector_proxy.size else 1.0
+    site_capacity_scale = np.clip(site_connector_proxy / max(connector_median, 1.0), 0.5, 2.5).astype(np.float32)
     for index, (position, site_type) in enumerate(zip(site_positions, site_types, strict=True)):
         connector_scale = float(site_connector_proxy[index] / max(connector_median, 1.0))
         if site_type == "city_hub":
@@ -416,7 +507,8 @@ def make_synthetic_corridor(
             "calibration_location_count": priors.get("location_count"),
             "site_connector_proxy": site_connector_proxy.astype(np.float32).tolist(),
             "site_power_proxy_kw": site_power_proxy.astype(np.float32).tolist(),
-            "site_availability_proxy": site_availability_proxy.astype(np.float32).tolist(),
+            "site_availability_proxy": np.clip(site_availability_proxy.astype(np.float32), 0.15, 1.0).tolist(),
+            "site_capacity_scale": site_capacity_scale.tolist(),
         },
     )
 

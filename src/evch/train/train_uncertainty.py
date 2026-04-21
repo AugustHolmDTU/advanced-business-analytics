@@ -18,7 +18,7 @@ from evch.models.quantile import QuantileRegressor
 from evch.utils.io import ensure_dir, write_json
 from evch.utils.logging import configure_logging
 from evch.utils.seeding import set_global_seed
-from evch.utils.wandb import init_wandb
+from evch.utils.wandb import init_wandb, log_artifact
 
 LOGGER = logging.getLogger(__name__)
 
@@ -148,6 +148,7 @@ def main() -> None:
     )
 
     best_val_loss = float("inf")
+    checkpoint_path = output_dir / str(model_cfg["checkpoint_name"])
     history: list[dict[str, float]] = []
     for epoch in range(int(training_cfg["epochs"])):
         train_loss = _train_epoch(
@@ -163,7 +164,6 @@ def main() -> None:
         run.log({"uncertainty/train_loss": train_loss, "uncertainty/val_loss": val_loss, "epoch": epoch})
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            checkpoint_path = output_dir / str(model_cfg["checkpoint_name"])
             metadata = {
                 "feature_columns": feature_columns,
                 "standardizer_mean": standardizer.mean.tolist(),
@@ -215,12 +215,48 @@ def main() -> None:
         )
 
     run.log({f"uncertainty/{key}": value for key, value in metrics.items()})
-    write_json(output_dir / "metrics.json", metrics)
-    write_json(output_dir / "history.json", {"history": history})
+    metrics_path = output_dir / "metrics.json"
+    history_path = output_dir / "history.json"
+    write_json(metrics_path, metrics)
+    write_json(history_path, {"history": history})
+    log_artifact(
+        run=run,
+        path=checkpoint_path,
+        artifact_name=f"{experiment_cfg['name']}-{model_cfg['name']}-checkpoint",
+        artifact_type="model",
+        aliases=["latest"],
+    )
+    log_artifact(
+        run=run,
+        path=metrics_path,
+        artifact_name=f"{experiment_cfg['name']}-{model_cfg['name']}-metrics",
+        artifact_type="metrics",
+        aliases=["latest"],
+    )
+    log_artifact(
+        run=run,
+        path=history_path,
+        artifact_name=f"{experiment_cfg['name']}-{model_cfg['name']}-history",
+        artifact_type="metrics",
+        aliases=["latest"],
+    )
+    log_artifact(
+        run=run,
+        path=output_dir / "gaussian_intervals.png",
+        artifact_name=f"{experiment_cfg['name']}-{model_cfg['name']}-intervals",
+        artifact_type="plot",
+        aliases=["latest"],
+    )
+    log_artifact(
+        run=run,
+        path=output_dir / "quantile_intervals.png",
+        artifact_name=f"{experiment_cfg['name']}-{model_cfg['name']}-intervals",
+        artifact_type="plot",
+        aliases=["latest"],
+    )
     LOGGER.info("Finished %s training with metrics: %s", model_cfg["name"], metrics)
     run.finish()
 
 
 if __name__ == "__main__":
     main()
-

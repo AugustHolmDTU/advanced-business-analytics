@@ -20,6 +20,8 @@ mkdir -p "$PROJECT_ROOT/logs"
 cd "$PROJECT_ROOT"
 export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
 export MPLCONFIGDIR="${MPLCONFIGDIR:-$PROJECT_ROOT/.cache/matplotlib}"
+export WANDB_PROJECT="${WANDB_PROJECT:-adaptive-ev-charging}"
+export WANDB_ENTITY="${WANDB_ENTITY:-EV-charging}"
 mkdir -p "$MPLCONFIGDIR"
 
 python -m evch.train.train_rl \
@@ -27,4 +29,5 @@ python -m evch.train.train_rl \
   --config "$CONFIG_DIR/demand/base.yaml" \
   --config "$CONFIG_DIR/rl/dqn.yaml" \
   --config "$CONFIG_DIR/logging/base.yaml" \
+  --config "$CONFIG_DIR/logging/wandb_online.yaml" \
   --config "$CONFIG_DIR/experiment/local_demo.yaml"

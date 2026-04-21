@@ -1,0 +1,15 @@
+{
+  "backend": "torch_dqn",
+  "checkpoint_path": "outputs/denmark_hybrid_corridor/rl/best_model.pt",
+  "evaluation": {
+    "mean_reward": -193.79737663213595,
+    "mean_served_demand": 61.59650479679112,
+    "mean_true_demand_total": 1557.5,
+    "mean_unmet_demand": 1495.9035000801086
+  },
+  "runtime": {
+    "cpu_count": 10,
+    "device": "cpu",
+    "torch_num_threads": 8
+  }
+}

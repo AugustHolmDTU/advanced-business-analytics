@@ -1,10 +1,9 @@
 logging:
   level: INFO
   wandb:
-    enabled: false
-    mode: offline
+    enabled: true
+    mode: online
     project: adaptive-ev-charging
-    entity: null
+    entity: EV-charging
     group: local
     tags: ["dtu", "ev", "digital-twin"]
-

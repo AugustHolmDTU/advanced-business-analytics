@@ -1,0 +1,74 @@
+
+% Notes for the executive summary (do not delete this section):
+% Executive summary (PDF, 1 page) targeted at a non-technical business audience. It should
+% summarize the importance of the problem, your main findings and recommendations to the client
+% using plain language. Please add
+% - Up to 5 highlights (aspects you're proud of)
+% - Up to 5 limitations (aspects you wish they'd be better)
+
+\documentclass[10pt]{article}
+\usepackage[a4paper,margin=1.35cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage{multicol}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlist[itemize]{leftmargin=*, topsep=2pt, itemsep=1pt, parsep=0pt, partopsep=0pt}
+
+\begin{document}
+
+{\LARGE \textbf{Executive Summary}}\\
+{\small Draft for a non-technical business audience; to be updated once final KPI and scenario results are locked.}
+
+\vspace{0.5em}
+\small
+
+\textbf{Why this business case matters.} EV adoption is now large enough that charging reliability is becoming a business issue, not just a technical one. The IEA estimated that global electric car sales could reach about 17 million in 2024, while Denmark reached a milestone where battery-electric vehicles made up 51.5\% of new car sales in 2024 and the national fleet passed 300,000 BEVs by October 2024. As EV use grows, failures at busy corridor sites can quickly become lost sales, longer waiting times, weaker customer trust, and pressure for extra capital spending. This matters even more on strategic road corridors, where drivers have fewer good alternatives if a charger is unavailable. EU policy is also raising the bar for corridor coverage and user experience, which increases the value of better planning and faster response.
+
+\textbf{What we have built so far.} We developed a draft decision-support tool for a Denmark corridor case covering roughly 275 km between Copenhagen and Kolding. The current prototype simulates demand spikes, traffic disruption, and station outages, then compares different ways to deploy or reposition a limited number of mobile charging units across 18 candidate sites. The model is synthetic enough to test many scenarios safely, but it is calibrated with real infrastructure patterns so it is more realistic than a purely toy example.
+
+\textbf{Interim findings.} The main result at this stage is that the end-to-end resilience pipeline works and is already useful for stress-testing operational choices. It can show where the network is most exposed, how mobile support can be redeployed, and which simple decision rules are robust under disruption. Importantly, the current rule-based greedy policy performs better than the present reinforcement learning baseline. For the client, that is a useful business finding: a transparent, easier-to-govern operating rule is currently the safer starting point than a more complex AI policy. The draft recommendation is therefore to use this tool first for scenario testing and contingency planning, then revisit advanced AI only if later data shows a clear practical advantage. A placeholder remains for the final KPI section, where we will insert service-level, cost, and resilience results once the remaining experiments are complete.
+
+\textbf{Recommendations to the client.}
+\begin{itemize}
+\item Start with an interpretable rule-based dispatch policy for mobile chargers, because it currently outperforms the more complex AI option.
+\item Use the model to identify high-risk corridor locations and prepare playbooks for outages, congestion, and peak-demand events before expanding infrastructure spend.
+\item In the next phase, measure business KPIs directly: waiting time, lost charging demand, service uptime, relocation cost, and customer coverage.
+\item Treat advanced AI as a second-step investment decision, justified only if it beats strong simple baselines on business metrics rather than technical metrics alone.
+\end{itemize}
+
+\begin{multicols}{2}
+\textbf{Highlights}
+\begin{itemize}
+\item Clear business framing around resilience, not just charger placement.
+\item A working end-to-end prototype already exists.
+\item Real-world calibration is included without losing flexibility.
+\item Baseline comparisons are honest and decision-useful.
+\item The summary is ready to absorb final results later.
+\end{itemize}
+
+\columnbreak
+
+\textbf{Limitations}
+\begin{itemize}
+\item Results are still based on a synthetic corridor, not live operations.
+\item Current outputs are not yet translated into full financial impact.
+\item The reinforcement learning policy does not yet beat the best simple baseline.
+\item Real queueing behavior and customer response are only approximated.
+\item More validation is needed before using the tool for investment decisions.
+\end{itemize}
+\end{multicols}
+
+\vfill
+\footnotesize
+\textit{Background references used for the draft:} IEA, \emph{Global EV Outlook 2024}; European Commission overview of the Alternative Fuels Infrastructure Regulation; European Alternative Fuels Observatory market update for Denmark (11 January 2025).\\
+\href{https://www.iea.org/reports/global-ev-outlook-2024/executive-summary}{IEA: Global EV Outlook 2024 executive summary} \\
+\href{https://www.iea.org/reports/global-ev-outlook-2024/outlook-for-electric-vehicle-charging-infrastructure}{IEA: EV charging infrastructure outlook} \\
+\href{https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en}{European Commission: Alternative Fuels Infrastructure} \\
+\href{https://alternative-fuels-observatory.ec.europa.eu/general-information/news/denmark-bevs-take-over-2024-515-market-share}{EAFO: Denmark BEV market update}
+
+\end{document}

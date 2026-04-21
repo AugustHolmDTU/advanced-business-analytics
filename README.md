@@ -136,6 +136,27 @@ PYTHONPATH=src python -m evch.train.train_rl \
   --config configs/experiment/local_demo.yaml
 ```
 
+Build the Denmark hybrid corridor example from TomTom and generate ready-to-train configs:
+
+```bash
+export TOMTOM_API_KEY=...
+PYTHONPATH=src python -m evch.train.build_denmark_hybrid_corridor \
+  --config configs/logging/base.yaml \
+  --config configs/experiment/denmark_hybrid_corridor.yaml \
+  --config configs/tomtom/denmark_hybrid_corridor.yaml
+```
+
+Train the local RL agent on Apple Silicon using the generated corridor package:
+
+```bash
+PYTHONPATH=src python -m evch.train.train_rl \
+  --config outputs/denmark_hybrid_corridor/generated/environment.yaml \
+  --config outputs/denmark_hybrid_corridor/generated/demand.yaml \
+  --config configs/rl/dqn_apple_silicon.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/experiment/denmark_hybrid_corridor.yaml
+```
+
 Evaluate RL against heuristics:
 
 ```bash
@@ -160,6 +181,7 @@ W&B is controlled through config:
 
 - `logging.wandb.enabled`
 - `logging.wandb.mode` set to `offline` or `online`
+- `rl.wandb_log_interval` for SB3 training metric upload cadence
 
 Environment variables:
 
@@ -168,6 +190,41 @@ Environment variables:
 - `WANDB_ENTITY` (optional)
 
 If W&B is disabled or not installed, runs continue without crashing.
+
+Ready-made overlays are included:
+
+- [configs/logging/wandb_offline.yaml](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/configs/logging/wandb_offline.yaml)
+- [configs/logging/wandb_online.yaml](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/configs/logging/wandb_online.yaml)
+
+Online RL training example:
+
+```bash
+export WANDB_API_KEY=...
+export WANDB_PROJECT=adaptive-ev-charging
+PYTHONPATH=src python -m evch.train.train_rl \
+  --config configs/env/base.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/rl/dqn.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/logging/wandb_online.yaml \
+  --config configs/experiment/local_demo.yaml
+```
+
+Offline logging example:
+
+```bash
+PYTHONPATH=src python -m evch.train.train_uncertainty \
+  --config configs/env/base.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/model/gaussian.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/logging/wandb_offline.yaml \
+  --config configs/experiment/local_demo.yaml
+
+wandb sync wandb/offline-run-*
+```
+
+RL and uncertainty training now upload the generated checkpoint, metrics/history JSON, and plots as W&B artifacts when W&B is enabled.
 
 ## Slurm
 

@@ -84,6 +84,15 @@ def load_tomtom_snapshot_city(snapshot_path: str | Path, demand_config: dict[str
         for idx, station in enumerate(payload.get("stations", []))
     )
     station_types = _classify_station_types(payload)
+    connector_counts = np.asarray(
+        [float(station.get("total_connectors", 0.0)) for station in payload.get("stations", [])],
+        dtype=np.float32,
+    )
+    connector_median = float(np.median(connector_counts[connector_counts > 0.0])) if np.any(connector_counts > 0.0) else 1.0
+    availability_proxy = [
+        float(station.get("available_connectors", 0.0)) / max(float(station.get("total_connectors", 1.0)), 1.0)
+        for station in payload.get("stations", [])
+    ]
     center = payload.get("center") or {}
     return SyntheticCity(
         site_coords=site_coords,
@@ -104,6 +113,12 @@ def load_tomtom_snapshot_city(snapshot_path: str | Path, demand_config: dict[str
             "search_radius_m": payload.get("search_radius_m"),
             "stations": payload.get("stations", []),
             "clustering": payload.get("clustering"),
+            "site_connector_proxy": connector_counts.astype(np.float32).tolist(),
+            "site_power_proxy_kw": [
+                float(station.get("max_power_kw") or 50.0) for station in payload.get("stations", [])
+            ],
+            "site_availability_proxy": np.clip(np.asarray(availability_proxy, dtype=np.float32), 0.15, 1.0).tolist(),
+            "site_capacity_scale": np.clip(connector_counts / max(connector_median, 1.0), 0.5, 2.5).astype(np.float32).tolist(),
         },
     )
 

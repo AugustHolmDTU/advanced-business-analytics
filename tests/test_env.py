@@ -54,6 +54,49 @@ class ChargingEnvTest(unittest.TestCase):
         self.assertTrue(np.all(env.allocations >= 0.0))
         self.assertIsInstance(terminated, bool)
 
+    def test_capacity_scale_and_baseline_availability_affect_effective_capacity(self) -> None:
+        env_config = {
+            "num_candidate_sites": 4,
+            "num_demand_zones": 3,
+            "max_chargers": 2,
+            "charger_capacity": 10.0,
+            "horizon": 12,
+            "max_steps": 6,
+            "service_decay": 0.08,
+            "deployment_cost": 0.1,
+            "relocation_cost": 0.2,
+            "unmet_penalty": 1.0,
+            "outage_penalty": 0.1,
+            "city_extent_km": 5.0,
+            "disruption": {},
+        }
+        demand_config = {
+            "base_rate_min": 2.0,
+            "base_rate_max": 5.0,
+            "zone_scale_std": 0.2,
+            "morning_peak_hour": 8.0,
+            "evening_peak_hour": 18.0,
+            "peak_width": 2.0,
+            "morning_peak_weight": 1.0,
+            "evening_peak_weight": 1.0,
+            "weekday_multiplier": 1.0,
+            "weekend_multiplier": 0.8,
+            "background_intensity": 0.5,
+            "poisson_clip": 30.0,
+            "observation_noise_std": 0.3,
+        }
+        env = ChargingPlacementEnv(env_config, demand_config, seed=2)
+        env.site_capacity_scale = np.asarray([1.8, 1.0, 1.0, 1.0], dtype=np.float32)
+        env.base_site_availability = np.asarray([0.5, 1.0, 1.0, 1.0], dtype=np.float32)
+        env.reset(seed=3)
+        env.allocations[:] = 0.0
+        env.allocations[0] = 1.0
+
+        _, _, _, _, info = env.step(env.noop_action)
+
+        self.assertAlmostEqual(env.site_availability[0], 0.5)
+        self.assertAlmostEqual(info["effective_capacity_total"], 9.0, places=5)
+
     def test_corridor_layout_and_randomized_reset(self) -> None:
         env_config = {
             "layout": "corridor",

@@ -11,6 +11,7 @@ from torch import nn
 from torch.optim import Adam
 
 from evch.models.common import make_mlp
+from evch.utils.torch_runtime import resolve_torch_device
 
 
 @dataclass(slots=True)
@@ -59,7 +60,7 @@ class SimpleDQNAgent:
         self.obs_dim = obs_dim
         self.action_dim = action_dim
         self.config = config
-        self.device = torch.device("cpu")
+        self.device = resolve_torch_device(str(config.get("device", "auto")))
         self.rng = np.random.default_rng(seed)
 
         self.gamma = float(config["gamma"])
@@ -123,7 +124,7 @@ class SimpleDQNAgent:
                 return int(self.rng.choice(valid_indices))
             return int(self.rng.integers(self.action_dim))
         with torch.no_grad():
-            tensor_obs = torch.from_numpy(observation.astype(np.float32)).unsqueeze(0)
+            tensor_obs = torch.as_tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
             q_values = (self.q_network(tensor_obs) + self._heuristic_prior_tensor(tensor_obs)).squeeze(0).cpu().numpy()
         return self._masked_argmax(q_values, action_mask)
 
@@ -131,14 +132,18 @@ class SimpleDQNAgent:
         if len(self.replay_buffer) < max(self.batch_size, self.learning_starts):
             return None
         batch = self.replay_buffer.sample(self.batch_size)
-        observations = torch.from_numpy(np.stack([t.observation for t in batch]).astype(np.float32))
-        actions = torch.tensor([t.action for t in batch], dtype=torch.long).unsqueeze(1)
-        rewards = torch.tensor([t.reward for t in batch], dtype=torch.float32).unsqueeze(1)
+        observations = torch.as_tensor(np.stack([t.observation for t in batch]), dtype=torch.float32, device=self.device)
+        actions = torch.as_tensor([t.action for t in batch], dtype=torch.long, device=self.device).unsqueeze(1)
+        rewards = torch.as_tensor([t.reward for t in batch], dtype=torch.float32, device=self.device).unsqueeze(1)
         if self.reward_clip > 0.0:
             rewards = torch.clamp(rewards, min=-self.reward_clip, max=self.reward_clip)
-        next_observations = torch.from_numpy(np.stack([t.next_observation for t in batch]).astype(np.float32))
-        next_action_masks = torch.from_numpy(np.stack([t.next_action_mask for t in batch]).astype(bool))
-        dones = torch.tensor([t.done for t in batch], dtype=torch.float32).unsqueeze(1)
+        next_observations = torch.as_tensor(
+            np.stack([t.next_observation for t in batch]), dtype=torch.float32, device=self.device
+        )
+        next_action_masks = torch.as_tensor(
+            np.stack([t.next_action_mask for t in batch]), dtype=torch.bool, device=self.device
+        )
+        dones = torch.as_tensor([t.done for t in batch], dtype=torch.float32, device=self.device).unsqueeze(1)
 
         q_values = self.q_network(observations).gather(1, actions)
         with torch.no_grad():

@@ -112,7 +112,7 @@ def fetch_charging_availability(charging_availability_id: str, api_key: str) -> 
     return _fetch_json(url)
 
 
-def _summarize_availability(payload: dict[str, Any] | None) -> dict[str, Any]:
+def summarize_availability_payload(payload: dict[str, Any] | None) -> dict[str, Any]:
     summary = {
         "total_connectors": 0,
         "available_connectors": 0,
@@ -148,7 +148,7 @@ def build_station_records(results: list[dict[str, Any]], api_key: str) -> list[T
         position = result.get("position") or {}
         availability_id = ((result.get("dataSources") or {}).get("chargingAvailability") or {}).get("id")
         availability_payload = fetch_charging_availability(availability_id, api_key) if availability_id else None
-        availability_summary = _summarize_availability(availability_payload)
+        availability_summary = summarize_availability_payload(availability_payload)
         dedupe_key = str(availability_id or f"{position.get('lat')}::{position.get('lon')}")
         deduped[dedupe_key] = TomTomStation(
             name=str((result.get("poi") or {}).get("name") or (result.get("address") or {}).get("freeformAddress") or "Unknown station"),
@@ -165,6 +165,43 @@ def build_station_records(results: list[dict[str, Any]], api_key: str) -> list[T
             max_power_kw=availability_summary["max_power_kw"],
         )
     return sorted(deduped.values(), key=lambda station: (station.lon, station.lat))
+
+
+def route_summary_between_points(
+    origin_lat: float,
+    origin_lon: float,
+    destination_lat: float,
+    destination_lon: float,
+    api_key: str,
+    *,
+    travel_mode: str = "car",
+    route_type: str = "fastest",
+    traffic: str = "historical",
+    depart_at: str = "any",
+) -> dict[str, float]:
+    origin = f"{origin_lat:.6f},{origin_lon:.6f}"
+    destination = f"{destination_lat:.6f},{destination_lon:.6f}"
+    params = {
+        "key": api_key,
+        "travelMode": travel_mode,
+        "routeType": route_type,
+        "traffic": traffic,
+        "departAt": depart_at,
+    }
+    url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin}:{destination}/json?{urlencode(params)}"
+    payload = _fetch_json(url, timeout=60)
+    routes = payload.get("routes") or []
+    if not routes:
+        raise TomTomApiError("TomTom routing returned no routes.")
+    summary = (routes[0] or {}).get("summary") or {}
+    travel_seconds = summary.get("travelTimeInSeconds")
+    route_length = summary.get("lengthInMeters")
+    if travel_seconds is None or route_length is None:
+        raise TomTomApiError("TomTom routing summary was missing travel time or route length.")
+    return {
+        "travel_time_minutes": float(travel_seconds) / 60.0,
+        "route_length_km": float(route_length) / 1000.0,
+    }
 
 
 def latlon_to_local_xy(lat: float, lon: float, center_lat: float, center_lon: float) -> tuple[float, float]:

@@ -1,0 +1,3 @@
+experiment:
+  name: denmark_hybrid_corridor
+  output_root: outputs
