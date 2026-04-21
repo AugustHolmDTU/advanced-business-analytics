@@ -1,0 +1,36 @@
+{
+  "os":  "Windows-11-10.0.26200-SP0",
+  "python":  "CPython 3.12.8",
+  "startedAt":  "2026-04-21T18:02:56.685979Z",
+  "args":  [
+    "--total-steps",
+    "5000",
+    "--wandb-mode",
+    "online",
+    "--seed",
+    "42"
+  ],
+  "program":  "C:\\Users\\augus\\OneDrive\\DTU\\Advanced Business Analytics\\Project\\advanced-business-analytics\\train.py",
+  "codePath":  "train.py",
+  "codePathLocal":  "train.py",
+  "git":  {
+    "remote":  "https://github.com/AugustHolmDTU/advanced-business-analytics/",
+    "commit":  "2ca3f1712adcbee94ec56dbbdee4a917fd4aa670"
+  },
+  "email":  "s224166@dtu.dk",
+  "root":  "C:\\Users\\augus\\OneDrive\\DTU\\Advanced Business Analytics\\Project\\advanced-business-analytics",
+  "host":  "LAPTOP-4AGUFFHP",
+  "executable":  "C:\\Users\\augus\\miniconda3\\envs\\vae\\python.exe",
+  "cpu_count":  4,
+  "cpu_count_logical":  8,
+  "disk":  {
+    "/":  {
+      "total":  "1022779977728",
+      "used":  "820319453184"
+    }
+  },
+  "memory":  {
+    "total":  "16952647680"
+  },
+  "writerId":  "ylcu06i385ahdvqq823g7j3mikl0rfrr"
+}
