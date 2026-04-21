@@ -1,0 +1,23 @@
+{
+  "charging_stop_probability": 0.055,
+  "duration_hours": 72.0,
+  "final_queue_length": 0,
+  "max_utilization": 1.0,
+  "max_wait_completed_minutes": 75.0,
+  "max_wait_started_minutes": 75.0,
+  "mean_queue_length": 2.136574074074074,
+  "mean_service_time_completed_minutes": 30.01542274966095,
+  "mean_service_time_started_minutes": 30.037868170190492,
+  "mean_utilization": 0.6879629629629631,
+  "mean_wait_completed_minutes": 10.109529025191677,
+  "mean_wait_started_minutes": 10.076419213973798,
+  "num_plugs": 10,
+  "peak_queue_length": 23,
+  "peak_queue_time": "17:49",
+  "road_length_km": 100.0,
+  "station_position_km": 50.0,
+  "step_minutes": 5,
+  "total_arrivals": 916,
+  "total_completions": 913,
+  "total_starts": 916
+}

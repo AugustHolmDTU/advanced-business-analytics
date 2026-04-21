@@ -1,0 +1,25 @@
+seed: 21
+simulation:
+  city_names: ["City A", "City B"]
+  road_length_km: 100.0
+  station_position_km: 50.0
+  num_plugs: 10
+  step_minutes: 5
+  duration_hours: 72
+  charging_stop_probability: 0.055
+  service_time:
+    mean_minutes: 30.0
+    std_minutes: 8.0
+    min_minutes: 15.0
+    max_minutes: 50.0
+  traffic:
+    baseline_cars_per_step: 11.0
+    morning_peak_hour: 8.0
+    evening_peak_hour: 17.0
+    morning_peak_cars_per_step: 22.0
+    evening_peak_cars_per_step: 24.0
+    midday_bump_hour: 12.5
+    midday_bump_cars_per_step: 6.0
+    peak_width_hours: 1.6
+    directional_bias_amplitude: 0.24
+    minimum_direction_share: 0.18

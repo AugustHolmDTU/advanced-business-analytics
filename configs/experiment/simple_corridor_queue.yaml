@@ -1,0 +1,4 @@
+experiment:
+  name: simple_corridor_queue
+  output_root: outputs
+  save_plots: true
