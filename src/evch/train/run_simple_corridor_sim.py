@@ -5,6 +5,7 @@ import io
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from evch.config.loader import build_config_parser, load_config
@@ -30,32 +31,104 @@ def _add_derived_metrics(metrics: pd.DataFrame, step_minutes: int) -> pd.DataFra
         "arrivals_total",
         "starts_total",
         "completions_total",
-        "started_wait_mean_minutes",
         "queue_wait_mean_minutes",
+        "started_service_mean_minutes",
+        "started_wait_mean_minutes",
+        "effective_num_plugs",
     ):
-        enriched[f"{column}_rolling_1h"] = (
-            enriched[column].rolling(window=rolling_window, min_periods=1).mean()
-        )
+        enriched[f"{column}_rolling_1h"] = enriched[column].rolling(window=rolling_window, min_periods=1).mean()
     return enriched
 
 
-def _maybe_plot_queue_dynamics(metrics, path: Path) -> bool:
+def _disruption_windows(metrics: pd.DataFrame) -> list[dict[str, float | str]]:
+    windows: list[dict[str, float | str]] = []
+    active = metrics.loc[metrics["disruption_active"] == 1].copy()
+    if active.empty:
+        return windows
+
+    block_id = (
+        (active["disruption_type"] != active["disruption_type"].shift(1))
+        | ((active["global_hour"] - active["global_hour"].shift(1)).fillna(0.0) > 0.51)
+    ).cumsum()
+    for _, block in active.groupby(block_id):
+        first = block.iloc[0]
+        last = block.iloc[-1]
+        step_hours = float(block["global_hour"].diff().median())
+        if not np.isfinite(step_hours) or step_hours <= 0.0:
+            step_hours = float(metrics["global_hour"].diff().dropna().median())
+        if not np.isfinite(step_hours) or step_hours <= 0.0:
+            step_hours = 0.0
+        windows.append(
+            {
+                "start_hour": float(first["global_hour"]),
+                "end_hour": float(last["global_hour"] + step_hours),
+                "disruption_type": str(first["disruption_type"]),
+                "day_index": int(first["day_index"]),
+            }
+        )
+    return windows
+
+
+def _shade_disruptions(axes, windows: list[dict[str, float | str]]) -> None:
+    colors = {
+        "capacity_drop": "#f39c12",
+        "station_outage": "#e74c3c",
+        "demand_surge_ab": "#2ecc71",
+        "demand_surge_ba": "#16a085",
+        "service_time_inflation": "#9b59b6",
+    }
+    for axis in axes:
+        for window in windows:
+            axis.axvspan(
+                float(window["start_hour"]),
+                float(window["end_hour"]),
+                color=colors.get(str(window["disruption_type"]), "#7f8c8d"),
+                alpha=0.16,
+            )
+
+
+def _maybe_plot_queue_dynamics(metrics: pd.DataFrame, path: Path) -> bool:
     try:
         with contextlib.redirect_stderr(io.StringIO()):
             import matplotlib.pyplot as plt
 
-        fig, axes = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
-        axes[0].plot(metrics["hour"], metrics["queue_length"], color="#c0392b", linewidth=2.0, label="Queue length")
-        axes[0].plot(metrics["hour"], metrics["active_plugs"], color="#1f77b4", linewidth=1.6, label="Active plugs")
-        axes[0].set_ylabel("Vehicles")
-        axes[0].set_title("Mid-corridor charging queue over the day")
-        axes[0].legend()
+        windows = _disruption_windows(metrics)
+        fig, axes = plt.subplots(4, 1, figsize=(11, 12), sharex=True)
+        _shade_disruptions(axes, windows)
 
-        axes[1].plot(metrics["hour"], metrics["arrivals_total"], color="#2e7d32", linewidth=1.8, label="Charging arrivals")
-        axes[1].plot(metrics["hour"], metrics["completions_total"], color="#8e44ad", linewidth=1.6, label="Charging completions")
-        axes[1].set_xlabel("Hour of day")
-        axes[1].set_ylabel("Vehicles / step")
+        axes[0].plot(metrics["global_hour"], metrics["queue_length"], color="#c0392b", linewidth=1.5, alpha=0.35)
+        axes[0].plot(metrics["global_hour"], metrics["queue_length_rolling_1h"], color="#7f0000", linewidth=2.4)
+        axes[0].set_ylabel("Vehicles")
+        axes[0].set_title("Queue length with disruption windows")
+
+        axes[1].plot(metrics["global_hour"], metrics["queue_length_rolling_1h"], color="#b03a2e", linewidth=2.2, label="Queue (1h rolling)")
+        axes[1].plot(
+            metrics["global_hour"],
+            metrics["queue_wait_mean_minutes_rolling_1h"],
+            color="#34495e",
+            linewidth=1.8,
+            label="Queue wait mean (1h rolling)",
+        )
+        axes[1].set_ylabel("Queue / wait")
         axes[1].legend()
+
+        axes[2].plot(metrics["global_hour"], metrics["expected_passing_total"], color="#95a5a6", linewidth=1.4, label="Expected passing")
+        axes[2].plot(metrics["global_hour"], metrics["arrivals_total"], color="#27ae60", linewidth=1.0, alpha=0.35, label="Arrivals")
+        axes[2].plot(
+            metrics["global_hour"],
+            metrics["arrivals_total_rolling_1h"],
+            color="#1e8449",
+            linewidth=2.0,
+            label="Arrivals (1h rolling)",
+        )
+        axes[2].set_ylabel("Vehicles / step")
+        axes[2].legend()
+
+        axes[3].plot(metrics["global_hour"], metrics["effective_num_plugs"], color="#1f77b4", linewidth=2.0, label="Effective plugs")
+        axes[3].plot(metrics["global_hour"], metrics["active_plugs"], color="#6c5ce7", linewidth=1.4, alpha=0.7, label="Active plugs")
+        axes[3].set_xlabel("Global hour")
+        axes[3].set_ylabel("Plugs")
+        axes[3].legend()
 
         fig.tight_layout()
         fig.savefig(path, dpi=180)
@@ -73,61 +146,36 @@ def _maybe_plot_daily_patterns(metrics: pd.DataFrame, path: Path) -> bool:
         with contextlib.redirect_stderr(io.StringIO()):
             import matplotlib.pyplot as plt
 
-        fig, axes = plt.subplots(3, 1, figsize=(11, 10), sharex=False)
-        day_boundaries = sorted(metrics["global_hour"].loc[metrics["hour_of_day"] == 0.0].tolist())
-        for boundary in day_boundaries[1:]:
-            axes[0].axvline(boundary, color="#999999", linestyle="--", linewidth=0.8, alpha=0.7)
-            axes[1].axvline(boundary, color="#999999", linestyle="--", linewidth=0.8, alpha=0.7)
+        fig, axes = plt.subplots(2, 1, figsize=(11, 9), sharex=False)
 
-        axes[0].plot(metrics["global_hour"], metrics["queue_length"], color="#d62728", alpha=0.35, label="Queue")
-        axes[0].plot(
-            metrics["global_hour"],
-            metrics["queue_length_rolling_1h"],
-            color="#7f0000",
-            linewidth=2.2,
-            label="Queue (1h rolling)",
-        )
-        axes[0].set_ylabel("Vehicles")
-        axes[0].set_title("Queue length across the full 3-day run")
-        axes[0].legend()
-
-        axes[1].plot(
-            metrics["global_hour"],
-            metrics["arrivals_total_rolling_1h"],
-            color="#2ca02c",
-            linewidth=1.8,
-            label="Arrivals (1h rolling)",
-        )
-        axes[1].plot(
-            metrics["global_hour"],
-            metrics["starts_total_rolling_1h"],
-            color="#1f77b4",
-            linewidth=1.8,
-            label="Charging starts (1h rolling)",
-        )
-        axes[1].plot(
-            metrics["global_hour"],
-            metrics["completions_total_rolling_1h"],
-            color="#9467bd",
-            linewidth=1.8,
-            label="Completions (1h rolling)",
-        )
-        axes[1].set_ylabel("Vehicles / 5 min")
-        axes[1].set_title("Smoothed charging flow with day boundaries")
-        axes[1].legend()
-
+        day_labels: list[str] = []
         for day_index, day_frame in metrics.groupby("day_index", sort=True):
-            axes[2].plot(
+            active_types = [str(value) for value in day_frame.loc[day_frame["disruption_active"] == 1, "disruption_type"].unique()]
+            label_suffix = active_types[0] if active_types else "normal"
+            day_labels.append(f"Day {int(day_index) + 1}: {label_suffix}")
+            axes[0].plot(
                 day_frame["hour_of_day"],
                 day_frame["queue_length_rolling_1h"],
                 linewidth=2.0,
-                label=f"Day {int(day_index) + 1}",
+                label=f"Day {int(day_index) + 1} ({label_suffix})",
             )
-        axes[2].set_xlabel("Hour of day")
-        axes[2].set_ylabel("Queue (1h rolling)")
-        axes[2].set_xlim(0.0, 24.0)
-        axes[2].set_title("Daily queue profile by hour of day")
-        axes[2].legend()
+            axes[1].plot(
+                day_frame["hour_of_day"],
+                day_frame["effective_num_plugs"],
+                linewidth=1.8,
+                label=f"Day {int(day_index) + 1} ({label_suffix})",
+            )
+
+        axes[0].set_xlim(0.0, 24.0)
+        axes[0].set_ylabel("Queue (1h rolling)")
+        axes[0].set_title("Daily queue profile by hour of day")
+        axes[0].legend()
+
+        axes[1].set_xlim(0.0, 24.0)
+        axes[1].set_xlabel("Hour of day")
+        axes[1].set_ylabel("Effective plugs")
+        axes[1].set_title("Per-day available capacity")
+        axes[1].legend()
 
         fig.tight_layout()
         fig.savefig(path, dpi=180)
@@ -167,14 +215,18 @@ def main() -> None:
     _maybe_plot_queue_dynamics(result.metrics, plot_path)
     _maybe_plot_daily_patterns(result.metrics, daily_plot_path)
 
-    for column in result.metrics.columns:
+    numeric_like_columns = [
+        column for column in result.metrics.columns if pd.api.types.is_numeric_dtype(result.metrics[column].dtype)
+    ]
+    for column in numeric_like_columns:
         metric_name = f"sim/{column}"
         if column != "global_hour":
             run.define_metric(metric_name, step_metric="sim/global_hour")
     run.define_metric("summary/*")
 
     for row in result.metrics.to_dict(orient="records"):
-        run.log({f"sim/{key}": value for key, value in row.items() if key != "time_label"}, step=int(row["step"]))
+        payload = {f"sim/{key}": value for key, value in row.items()}
+        run.log(payload, step=int(row["step"]))
     run.log({f"summary/{key}": value for key, value in result.summary.items()})
 
     log_artifact(

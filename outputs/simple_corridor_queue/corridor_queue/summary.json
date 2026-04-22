@@ -1,23 +1,57 @@
 {
   "charging_stop_probability": 0.055,
+  "disruption_counts_by_type": {
+    "capacity_drop": 0,
+    "demand_surge_ab": 0,
+    "demand_surge_ba": 1,
+    "service_time_inflation": 1,
+    "station_outage": 0
+  },
+  "disruption_enabled": 1,
+  "disruption_event_count": 2,
+  "disruption_metrics_by_type": {
+    "demand_surge_ba": {
+      "mean_queue_length": 8.833333333333334,
+      "mean_utilization": 1.0,
+      "mean_wait_minutes": 12.122219215969215,
+      "total_arrivals": 38.0,
+      "total_completions": 35.0
+    },
+    "service_time_inflation": {
+      "mean_queue_length": 0.875,
+      "mean_utilization": 0.6375000000000001,
+      "mean_wait_minutes": 1.4236111111111114,
+      "total_arrivals": 21.0,
+      "total_completions": 15.0
+    }
+  },
+  "disruption_mode": "random",
   "duration_hours": 72.0,
   "final_queue_length": 0,
   "max_utilization": 1.0,
-  "max_wait_completed_minutes": 75.0,
-  "max_wait_started_minutes": 75.0,
-  "mean_queue_length": 2.136574074074074,
-  "mean_service_time_completed_minutes": 30.01542274966095,
-  "mean_service_time_started_minutes": 30.037868170190492,
-  "mean_utilization": 0.6879629629629631,
-  "mean_wait_completed_minutes": 10.109529025191677,
-  "mean_wait_started_minutes": 10.076419213973798,
+  "max_wait_completed_minutes": 65.0,
+  "max_wait_started_minutes": 65.0,
+  "mean_queue_length": 2.3819444444444446,
+  "mean_service_time_completed_minutes": 30.048743829968465,
+  "mean_service_time_started_minutes": 30.084267320309998,
+  "mean_utilization": 0.6847222222222221,
+  "mean_wait_completed_minutes": 11.382743362831858,
+  "mean_wait_started_minutes": 11.282894736842104,
+  "non_disruption_baseline": {
+    "mean_queue_length": 2.236519607843137,
+    "mean_utilization": 0.6768382352941176,
+    "mean_wait_minutes": 3.1590763539292954,
+    "total_arrivals": 853.0,
+    "total_completions": 854.0
+  },
   "num_plugs": 10,
-  "peak_queue_length": 23,
-  "peak_queue_time": "17:49",
+  "peak_queue_length": 18,
+  "peak_queue_time": "09:20",
   "road_length_km": 100.0,
   "station_position_km": 50.0,
   "step_minutes": 5,
-  "total_arrivals": 916,
-  "total_completions": 913,
-  "total_starts": 916
+  "total_arrivals": 912,
+  "total_completions": 904,
+  "total_disrupted_minutes": 240,
+  "total_starts": 912
 }
