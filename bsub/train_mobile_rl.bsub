@@ -31,8 +31,8 @@ PROJECT_ROOT="${PROJECT_ROOT:-${LS_SUBCWD:-$PWD}}"
 CONFIG_DIR="${CONFIG_DIR:-$PROJECT_ROOT/configs}"
 
 ### Activate your environment here.
-# source "$PROJECT_ROOT/.venv/bin/activate"
-# module load python3
+module load python3
+source "$PROJECT_ROOT/.venv/bin/activate"
 
 mkdir -p "$PROJECT_ROOT/logs"
 cd "$PROJECT_ROOT"

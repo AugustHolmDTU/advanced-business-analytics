@@ -32,7 +32,8 @@ CONFIG_DIR="${CONFIG_DIR:-$PROJECT_ROOT/configs}"
 AGENT_CHECKPOINT="${AGENT_CHECKPOINT:-$PROJECT_ROOT/outputs/mobile_mcs_simple/rl/best_model.pt}"
 
 ### Activate your environment here.
-# source "$PROJECT_ROOT/.venv/bin/activate"
+module load python3
+source "$PROJECT_ROOT/.venv/bin/activate"
 
 mkdir -p "$PROJECT_ROOT/logs"
 cd "$PROJECT_ROOT"
