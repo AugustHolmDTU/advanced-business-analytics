@@ -1,0 +1,12 @@
+experiment:
+  name: mobile_mcs_simple
+  output_root: outputs
+  save_plots: true
+evaluation:
+  episodes: 12
+  disruptions: false
+  policies:
+    - rl
+    - mobile_threshold
+    - mobile_noop
+    - random

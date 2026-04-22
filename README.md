@@ -136,6 +136,20 @@ PYTHONPATH=src python -m evch.train.train_rl \
   --config configs/experiment/local_demo.yaml
 ```
 
+Train the simple fixed-location mobile charging support agent:
+
+```bash
+PYTHONPATH=src python -m evch.train.train_rl \
+  --config configs/env/mobile_mcs_simple.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/rl/dqn_mobile_simple.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/logging/wandb_online.yaml \
+  --config configs/experiment/mobile_mcs_simple.yaml
+```
+
+This setup keeps a fixed station with 12 plugs, lets the DQN choose `0..10` mobile charging stations at each step, and uses a reward that trades off served demand, unmet demand, active MCS cost, change cost, and idle overcapacity.
+
 Build the Denmark hybrid corridor example from TomTom and generate ready-to-train configs:
 
 ```bash
@@ -229,6 +243,8 @@ RL and uncertainty training now upload the generated checkpoint, metrics/history
 ## Slurm
 
 Templates are in [slurm/train_uncertainty.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/train_uncertainty.slurm), [slurm/train_rl.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/train_rl.slurm), and [slurm/eval.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/eval.slurm).
+
+For DTU-style LSF clusters, simple `bsub` templates for the mobile-agent setup are included in [bsub/train_mobile_rl.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/bsub/train_mobile_rl.bsub) and [bsub/eval_mobile_rl.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/bsub/eval_mobile_rl.bsub). They follow the same header style as the standard DTU HPC example you submit with `bsub < bsub/train_mobile_rl.bsub`.
 
 Typical submission:
 

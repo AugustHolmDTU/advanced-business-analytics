@@ -75,6 +75,7 @@ class SimpleDQNAgent:
         self.tau = float(config.get("tau", 1.0))
         self.reward_clip = float(config.get("reward_clip", 0.0))
         self.heuristic_prior_strength = float(config.get("heuristic_prior_strength", 0.0))
+        self.heuristic_prior_mode = str(config.get("heuristic_prior_mode", "placement")).lower()
 
         self.q_network = QNetwork(obs_dim, action_dim, list(config["hidden_dims"])).to(self.device)
         self.target_network = QNetwork(obs_dim, action_dim, list(config["hidden_dims"])).to(self.device)
@@ -101,7 +102,7 @@ class SimpleDQNAgent:
         return int(valid_indices[int(np.argmax(q_values[valid_indices]))])
 
     def _heuristic_prior_tensor(self, observations: torch.Tensor) -> torch.Tensor:
-        if self.heuristic_prior_strength <= 0.0:
+        if self.heuristic_prior_strength <= 0.0 or self.heuristic_prior_mode != "placement":
             return torch.zeros((observations.shape[0], self.action_dim), dtype=observations.dtype, device=observations.device)
         num_sites = self.action_dim - 1
         allocations = observations[:, :num_sites]

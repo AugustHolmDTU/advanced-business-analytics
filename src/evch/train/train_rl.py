@@ -9,7 +9,7 @@ from typing import Any, Callable
 import numpy as np
 
 from evch.config.loader import build_config_parser, load_config
-from evch.envs.charging_env import ChargingPlacementEnv
+from evch.envs.factory import make_env
 from evch.rl.evaluation import evaluate_policy
 from evch.rl.simple_dqn import SimpleDQNAgent
 from evch.utils.io import ensure_dir, write_json
@@ -160,7 +160,7 @@ def main() -> None:
     run = init_wandb(config=config, job_type="train_rl", run_name=f"{experiment_cfg['name']}_rl")
     run.log({f"runtime/{key}": value for key, value in runtime_info.items()})
 
-    env = ChargingPlacementEnv(config["environment"], config["demand"], seed=seed)
+    env = make_env(config["environment"], config["demand"], seed=seed)
     use_sb3 = False
     try:
         import stable_baselines3  # noqa: F401
@@ -175,7 +175,7 @@ def main() -> None:
     else:
         backend, checkpoint_path, history = _train_with_torch_dqn(env, rl_cfg, seed=seed, output_dir=output_dir, run=run)
 
-    eval_env = ChargingPlacementEnv(config["environment"], config["demand"], seed=seed + 17)
+    eval_env = make_env(config["environment"], config["demand"], seed=seed + 17)
     policy = _make_rl_policy(backend, checkpoint_path)
     evaluation = evaluate_policy(
         env=eval_env,

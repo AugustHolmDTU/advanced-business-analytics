@@ -10,7 +10,7 @@ import pandas as pd
 
 from evch.baselines.policies import BASELINE_POLICIES
 from evch.config.loader import build_config_parser, load_config
-from evch.envs.charging_env import ChargingPlacementEnv
+from evch.envs.factory import make_env
 from evch.rl.evaluation import evaluate_policy
 from evch.rl.simple_dqn import SimpleDQNAgent
 from evch.utils.io import ensure_dir, write_json
@@ -78,7 +78,7 @@ def main() -> None:
 
     results: list[dict[str, float | str]] = []
     for policy_name in evaluation_cfg["policies"]:
-        env = ChargingPlacementEnv(config["environment"], config["demand"], seed=seed + 101)
+        env = make_env(config["environment"], config["demand"], seed=seed + 101)
         if policy_name == "rl":
             if not args.agent_checkpoint:
                 LOGGER.warning("Skipping RL evaluation because --agent-checkpoint was not provided.")
