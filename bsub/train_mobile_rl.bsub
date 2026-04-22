@@ -40,7 +40,7 @@ cd "$PROJECT_ROOT"
 export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
 export MPLCONFIGDIR="${MPLCONFIGDIR:-$PROJECT_ROOT/.cache/matplotlib}"
 export WANDB_PROJECT="${WANDB_PROJECT:-adaptive-ev-charging}"
-export WANDB_ENTITY="${WANDB_ENTITY:-your-wandb-entity}"
+export WANDB_ENTITY="${WANDB_ENTITY:-EV-charging}"
 mkdir -p "$MPLCONFIGDIR"
 
 python -m evch.train.train_rl \
