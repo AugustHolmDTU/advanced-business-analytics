@@ -1,0 +1,50 @@
+{
+  "charging_stop_probability": 0.055,
+  "disruption_counts_by_type": {
+    "capacity_drop": 3,
+    "demand_surge_ab": 0,
+    "demand_surge_ba": 0,
+    "service_time_inflation": 0,
+    "station_outage": 0
+  },
+  "disruption_enabled": 1,
+  "disruption_event_count": 3,
+  "disruption_metrics_by_type": {
+    "capacity_drop": {
+      "mean_queue_length": 8.0,
+      "mean_utilization": 0.8849206349206349,
+      "mean_wait_minutes": 9.376015142121704,
+      "total_arrivals": 102.0,
+      "total_completions": 74.0
+    }
+  },
+  "disruption_mode": "scripted",
+  "duration_hours": 72.0,
+  "final_queue_length": 0,
+  "max_utilization": 1.8571428571428572,
+  "max_wait_completed_minutes": 85.0,
+  "max_wait_started_minutes": 85.0,
+  "mean_queue_length": 1.2002314814814814,
+  "mean_service_time_completed_minutes": 30.07188156026787,
+  "mean_service_time_started_minutes": 30.066119735987094,
+  "mean_utilization": 0.5727640415140415,
+  "mean_wait_completed_minutes": 5.611471861471862,
+  "mean_wait_started_minutes": 5.563304721030043,
+  "non_disruption_baseline": {
+    "mean_queue_length": 0.5820707070707071,
+    "mean_utilization": 0.5443861693861695,
+    "mean_wait_minutes": 0.9326064601931826,
+    "total_arrivals": 830.0,
+    "total_completions": 850.0
+  },
+  "num_plugs": 13,
+  "peak_queue_length": 30,
+  "peak_queue_time": "18:45",
+  "road_length_km": 100.0,
+  "station_position_km": 50.0,
+  "step_minutes": 5,
+  "total_arrivals": 932,
+  "total_completions": 924,
+  "total_disrupted_minutes": 360,
+  "total_starts": 932
+}
