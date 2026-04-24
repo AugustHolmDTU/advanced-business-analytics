@@ -177,7 +177,14 @@ def _build_mobile_comparison_rollout(
     if not bool(rollout_cfg.get("enabled", True)):
         return None
     env_type = str(config.get("environment", {}).get("env_type", "")).lower()
-    if env_type not in {"mobile_station_capacity", "corridor_mobile_mcs", "corridor_mobile_station"}:
+    if env_type not in {
+        "mobile_station_capacity",
+        "corridor_mobile_mcs",
+        "corridor_mobile_station",
+        "line_corridor_mobile_mcs",
+        "line_corridor_mobile_station",
+        "corridor_mobile_mcs_abc",
+    }:
         return None
 
     env_cfg = copy.deepcopy(config["environment"])
@@ -263,10 +270,17 @@ def _build_mobile_comparison_rollout(
                 "disruption_active": int(info.get("disruption_active", 0)),
                 "disruption_type": str(info.get("disruption_type", "none")),
                 "disruption_type_code": int(info.get("disruption_type_code", 0)),
+                "disruption_target": str(info.get("disruption_target", "none")),
                 "disruption_day_index": int(info.get("disruption_day_index", -1)),
                 "disruption_remaining_minutes": float(info.get("disruption_remaining_steps", 0.0)) * float(env.planning_step_minutes),
                 "rl_action_mcs": float(action),
                 "num_active_mobile_stations": float(info.get("num_active_mobile_stations", 0.0)),
+                "num_active_mobile_stations_station_ab": float(info.get("num_active_mobile_stations_station_ab", 0.0)),
+                "num_active_mobile_stations_station_bc": float(info.get("num_active_mobile_stations_station_bc", 0.0)),
+                "queue_length_station_ab": float(info.get("queue_length_station_ab", 0.0)),
+                "queue_length_station_bc": float(info.get("queue_length_station_bc", 0.0)),
+                "unused_mobile_stations_estimate_station_ab": float(info.get("unused_mobile_stations_estimate_station_ab", 0.0)),
+                "unused_mobile_stations_estimate_station_bc": float(info.get("unused_mobile_stations_estimate_station_bc", 0.0)),
                 "reward": float(reward),
             }
         )

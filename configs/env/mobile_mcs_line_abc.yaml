@@ -1,0 +1,62 @@
+seed: 21
+environment:
+  env_type: line_corridor_mobile_mcs
+  max_mobile_stations: 10
+  mobile_station_chargers: 2
+  mobile_station_capacity: 20.0
+  reset_seed_stride: 97
+  reward_scale: 0.1
+  queue_normalizer: 80.0
+  arrival_normalizer: 20.0
+  reward:
+    served_reward_weight: 1.0
+    unmet_penalty: 2.5
+    active_mobile_station_cost: 24.0
+    activation_cost: 6.0
+    adjustment_cost: 2.0
+    idle_capacity_penalty: 0.1
+    utilization_bonus: 1.0
+    queue_length_penalty: 2.5
+    queue_wait_penalty: 0.02
+  simulation:
+    city_names: ["City A", "City B", "City C"]
+    inter_city_distance_km: 100.0
+    station_positions_km: [50.0, 150.0]
+    num_plugs: [12, 12]
+    step_minutes: 5
+    duration_hours: 24
+    charging_stop_probability: 0.055
+    service_time:
+      mean_minutes: 30.0
+      std_minutes: 8.0
+      min_minutes: 15.0
+      max_minutes: 50.0
+    traffic:
+      baseline_cars_per_step: 18.0
+      morning_peak_hour: 8.0
+      evening_peak_hour: 17.0
+      morning_peak_cars_per_step: 30.0
+      evening_peak_cars_per_step: 32.0
+      midday_bump_hour: 12.5
+      midday_bump_cars_per_step: 8.0
+      peak_width_hours: 1.6
+      directional_bias_amplitude: 0.24
+      middle_city_share: 0.34
+      long_trip_share: 0.35
+      middle_destination_bias_amplitude: 0.18
+    disruption:
+      enabled: true
+      mode: scripted
+      scripted_events:
+        - disruption_type: capacity_drop
+          target: station_ab
+          day_index: 0
+          start_hour: 6.0
+          duration_hours: 2.0
+          severity: 4.0
+        - disruption_type: demand_surge
+          target: od_ac
+          day_index: 0
+          start_hour: 16.0
+          duration_hours: 2.0
+          severity: 1.8

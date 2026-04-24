@@ -58,6 +58,29 @@ def coverage_policy(obs: np.ndarray, env: Any, deterministic: bool = True) -> in
 
 def mobile_threshold_policy(obs: np.ndarray, env: Any, deterministic: bool = True) -> int:
     del obs, deterministic
+    if (
+        hasattr(env, "expected_vehicle_arrivals_by_station")
+        and hasattr(env, "current_service_capacity_per_step_by_station")
+        and hasattr(env, "action_from_mobile_station_allocation")
+    ):
+        expected_by_station = np.asarray(env.expected_vehicle_arrivals_by_station(), dtype=np.float32)
+        if hasattr(env, "queue_lengths_by_station"):
+            expected_by_station = expected_by_station + np.asarray(env.queue_lengths_by_station, dtype=np.float32)
+        base_capacity_by_station = np.asarray(env.current_service_capacity_per_step_by_station(), dtype=np.float32)
+        mobile_capacity = max(
+            float(env.mobile_station_chargers) * float(getattr(env, "planning_step_minutes", 60.0)) / max(float(getattr(env, "mean_service_minutes", 30.0)), 1e-6),
+            1e-6,
+        )
+        deficits = np.maximum(expected_by_station - base_capacity_by_station, 0.0)
+        allocation = np.zeros_like(deficits, dtype=np.int32)
+        remaining = int(getattr(env, "max_mobile_stations", 0))
+        while remaining > 0 and float(deficits.max()) > 0.0:
+            station_index = int(np.argmax(deficits))
+            allocation[station_index] += 1
+            deficits[station_index] = max(float(deficits[station_index]) - mobile_capacity, 0.0)
+            remaining -= 1
+        return int(env.action_from_mobile_station_allocation(allocation.tolist()))
+
     if hasattr(env, "expected_vehicle_arrivals") and hasattr(env, "current_service_capacity_per_step"):
         expected_total = float(env.expected_vehicle_arrivals()) + float(getattr(env, "queue_length", 0.0))
         base_capacity = float(env.current_service_capacity_per_step(service_time_multiplier=1.0, effective_base_plugs=getattr(env, "base_station_plugs", 0)))

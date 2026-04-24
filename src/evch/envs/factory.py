@@ -4,6 +4,7 @@ from typing import Any
 
 from evch.envs.charging_env import ChargingPlacementEnv
 from evch.envs.corridor_mobile_env import CorridorMobileStationEnv
+from evch.envs.line_corridor_mobile_env import LineCorridorMobileStationEnv
 from evch.envs.mobile_station_env import MobileStationChargingEnv
 
 
@@ -11,6 +12,8 @@ def make_env(environment_config: dict[str, Any], demand_config: dict[str, Any], 
     env_type = str(environment_config.get("env_type", "placement")).lower()
     if env_type in {"placement", "charging_placement"}:
         return ChargingPlacementEnv(environment_config, demand_config, seed=seed)
+    if env_type in {"line_corridor_mobile_mcs", "line_corridor_mobile_station", "corridor_mobile_mcs_abc"}:
+        return LineCorridorMobileStationEnv(environment_config, demand_config, seed=seed)
     if env_type in {"corridor_mobile_mcs", "corridor_mobile_station"}:
         return CorridorMobileStationEnv(environment_config, demand_config, seed=seed)
     if env_type in {"mobile_station_capacity", "mobile_mcs"}:
