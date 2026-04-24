@@ -132,12 +132,12 @@ class MobileNoopComparisonTest(unittest.TestCase):
             self.assertEqual(frame["num_active_mobile_stations"].max(), 0.0)
             self.assertIn("unused_mobile_chargers", frame.columns)
             self.assertIn("unused_mobile_stations_estimate", frame.columns)
-            self.assertNotIn("global_hour", frame.columns)
-            self.assertNotIn("day_index", frame.columns)
-            self.assertNotIn("hour_of_day", frame.columns)
-            self.assertFalse(any(column.startswith("starts_") for column in frame.columns))
-            self.assertFalse(any(column.startswith("started_") for column in frame.columns))
-            self.assertFalse(any(column.startswith("completions_") for column in frame.columns))
+            self.assertIn("global_hour", frame.columns)
+            self.assertIn("day_index", frame.columns)
+            self.assertIn("hour_of_day", frame.columns)
+            self.assertTrue(any(column.startswith("starts_") for column in frame.columns))
+            self.assertTrue(any(column.startswith("started_") for column in frame.columns))
+            self.assertTrue(any(column.startswith("completions_") for column in frame.columns))
 
 
 if __name__ == "__main__":
