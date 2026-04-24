@@ -249,7 +249,7 @@ def _build_mobile_comparison_rollout(
                 run.define_metric(metric_name, step_metric="sim/global_hour")
     run.define_metric("sim_summary/*")
     for row in frame.to_dict(orient="records"):
-        run.log({f"sim/{key}": value for key, value in row.items()}, step=int(row["step"]))
+        run.log({f"sim/{key}": value for key, value in row.items()})
     run.log({f"sim_summary/{key}": value for key, value in summary.items()})
 
     log_artifact(run=run, path=metrics_path, artifact_name=f"{config['experiment']['name']}-comparison-rollout-metrics", artifact_type="metrics", aliases=["latest"])
