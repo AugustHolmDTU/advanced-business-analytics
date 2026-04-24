@@ -1,5 +1,7 @@
+from collections import deque
 import unittest
 
+from evch.sim.simple_corridor import ActiveSession, QueuedVehicle
 from evch.envs.corridor_mobile_env import CorridorMobileStationEnv
 from evch.envs.factory import make_env
 
@@ -113,6 +115,77 @@ class CorridorMobileStationEnvTest(unittest.TestCase):
         self.assertEqual(between["disruption_active"], 0)
         self.assertEqual(second["disruption_type"], "station_outage")
         self.assertEqual(second["effective_base_plugs"], 0)
+
+    def test_queue_wait_service_level_penalty_only_hits_above_target(self) -> None:
+        config = {
+            "env_type": "corridor_mobile_mcs",
+            "max_mobile_stations": 2,
+            "mobile_station_chargers": 2,
+            "mobile_station_capacity": 20.0,
+            "reward_scale": 1.0,
+            "reward": {
+                "served_reward_weight": 0.0,
+                "unmet_penalty": 0.0,
+                "active_mobile_station_cost": 0.0,
+                "activation_cost": 0.0,
+                "adjustment_cost": 0.0,
+                "idle_capacity_penalty": 0.0,
+                "utilization_bonus": 0.0,
+                "queue_length_penalty": 0.0,
+                "queue_wait_penalty": 0.0,
+                "queue_wait_target_minutes": 15.0,
+                "queue_wait_excess_penalty": 2.0,
+                "queue_wait_hard_penalty": 7.0,
+                "queue_wait_service_level_bonus": 0.0,
+            },
+            "simulation": {
+                "city_names": ["City A", "City B"],
+                "road_length_km": 100.0,
+                "station_position_km": 50.0,
+                "num_plugs": 1,
+                "step_minutes": 5,
+                "duration_hours": 2.0,
+                "charging_stop_probability": 0.0,
+                "service_time": {
+                    "mean_minutes": 30.0,
+                    "std_minutes": 1.0,
+                    "min_minutes": 30.0,
+                    "max_minutes": 30.0,
+                },
+                "traffic": {
+                    "baseline_cars_per_step": 0.0,
+                    "morning_peak_hour": 8.0,
+                    "evening_peak_hour": 17.0,
+                    "morning_peak_cars_per_step": 0.0,
+                    "evening_peak_cars_per_step": 0.0,
+                    "midday_bump_hour": 12.0,
+                    "midday_bump_cars_per_step": 0.0,
+                    "peak_width_hours": 1.0,
+                    "directional_bias_amplitude": 0.0,
+                    "minimum_direction_share": 0.2,
+                },
+                "disruption": {"enabled": False},
+            },
+        }
+        env = CorridorMobileStationEnv(config, {}, seed=5)
+        env.reset(seed=6)
+        env.active_sessions = [
+            ActiveSession(
+                arrival_step=0,
+                start_step=0,
+                end_step=100,
+                direction=env.simulator.direction_ab,
+                service_minutes=30.0,
+            )
+        ]
+        env.queue = deque([QueuedVehicle(arrival_step=-4, direction=env.simulator.direction_ab)])
+
+        _, reward, _, _, info = env.step(0)
+
+        self.assertEqual(info["queue_wait_target_minutes"], 15.0)
+        self.assertEqual(info["queue_wait_excess_minutes"], 5.0)
+        self.assertEqual(info["queue_wait_target_breached"], 1)
+        self.assertAlmostEqual(reward, -(2.0 * 5.0 + 7.0))
 
 
 if __name__ == "__main__":

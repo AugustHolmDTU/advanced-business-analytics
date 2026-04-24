@@ -1,0 +1,48 @@
+experiment:
+  name: mobile_mcs_service_level_15min
+  output_root: outputs
+  save_plots: true
+comparison_rollout:
+  enabled: true
+  num_days: 3
+  seed: 123
+  repeat_daily_disruptions: false
+  scripted_events:
+    - disruption_type: capacity_drop
+      day_index: 0
+      start_hour: 6.0
+      duration_hours: 2.0
+      severity: 4.0
+    - disruption_type: demand_surge_ab
+      day_index: 0
+      start_hour: 16.0
+      duration_hours: 2.0
+      severity: 1.8
+    - disruption_type: service_time_inflation
+      day_index: 1
+      start_hour: 10.0
+      duration_hours: 2.0
+      severity: 1.5
+    - disruption_type: station_outage
+      day_index: 1
+      start_hour: 17.0
+      duration_hours: 1.5
+      severity: 0.0
+    - disruption_type: demand_surge_ba
+      day_index: 2
+      start_hour: 7.0
+      duration_hours: 2.0
+      severity: 1.8
+    - disruption_type: capacity_drop
+      day_index: 2
+      start_hour: 15.0
+      duration_hours: 2.0
+      severity: 5.0
+evaluation:
+  episodes: 12
+  disruptions: false
+  policies:
+    - rl
+    - mobile_threshold
+    - mobile_noop
+    - random

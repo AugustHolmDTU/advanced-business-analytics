@@ -191,6 +191,8 @@ class SimpleDQNAgent:
             adjusted_trace: list[float] = []
             queue_length_trace: list[float] = []
             queue_wait_trace: list[float] = []
+            queue_wait_excess_trace: list[float] = []
+            queue_wait_breach_trace: list[float] = []
             disruption_trace: list[float] = []
             for _ in range(max_steps):
                 action = self.act(observation, deterministic=False, env=env)
@@ -223,6 +225,8 @@ class SimpleDQNAgent:
                 adjusted_trace.append(float(info.get("adjusted_mobile_stations", 0.0)))
                 queue_length_trace.append(float(info.get("queue_length", 0.0)))
                 queue_wait_trace.append(float(info.get("queue_wait_mean_minutes", 0.0)))
+                queue_wait_excess_trace.append(float(info.get("queue_wait_excess_minutes", 0.0)))
+                queue_wait_breach_trace.append(float(info.get("queue_wait_target_breached", 0.0)))
                 disruption_trace.append(float(info.get("disruption_active", 0.0)))
                 self.total_steps += 1
                 if run is not None and self.total_steps % max(self.wandb_step_log_interval, 1) == 0:
@@ -242,6 +246,8 @@ class SimpleDQNAgent:
                             "rl_step/idle_capacity": float(info.get("idle_capacity", 0.0)),
                             "rl_step/queue_length": float(info.get("queue_length", 0.0)),
                             "rl_step/queue_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
+                            "rl_step/queue_wait_excess_minutes": float(info.get("queue_wait_excess_minutes", 0.0)),
+                            "rl_step/queue_wait_target_breached": float(info.get("queue_wait_target_breached", 0.0)),
                             "rl_step/arrivals_vehicles": float(info.get("arrivals_vehicles", 0.0)),
                             "rl_step/service_capacity_vehicles": float(info.get("service_capacity_vehicles", 0.0)),
                             "rl_step/disruption_active": float(info.get("disruption_active", 0.0)),
@@ -283,6 +289,8 @@ class SimpleDQNAgent:
                 "mean_queue_length": float(np.mean(queue_length_trace)) if queue_length_trace else 0.0,
                 "max_queue_length": float(np.max(queue_length_trace)) if queue_length_trace else 0.0,
                 "mean_queue_wait_minutes": float(np.mean(queue_wait_trace)) if queue_wait_trace else 0.0,
+                "mean_queue_wait_excess_minutes": float(np.mean(queue_wait_excess_trace)) if queue_wait_excess_trace else 0.0,
+                "queue_wait_target_breach_fraction": float(np.mean(queue_wait_breach_trace)) if queue_wait_breach_trace else 0.0,
                 "disruption_step_fraction": float(np.mean(disruption_trace)) if disruption_trace else 0.0,
             }
             history.append(record)

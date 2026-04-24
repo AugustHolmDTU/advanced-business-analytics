@@ -44,6 +44,12 @@ class CorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.utilization_bonus = float(reward_cfg.get("utilization_bonus", 1.0))
         self.queue_length_penalty = float(reward_cfg.get("queue_length_penalty", 3.0))
         self.queue_wait_penalty = float(reward_cfg.get("queue_wait_penalty", 0.02))
+        self.queue_wait_target_minutes = float(reward_cfg.get("queue_wait_target_minutes", 0.0))
+        self.queue_wait_excess_penalty = float(
+            reward_cfg.get("queue_wait_excess_penalty", self.queue_wait_penalty)
+        )
+        self.queue_wait_hard_penalty = float(reward_cfg.get("queue_wait_hard_penalty", 0.0))
+        self.queue_wait_service_level_bonus = float(reward_cfg.get("queue_wait_service_level_bonus", 0.0))
         self.disruption_response_bonus = float(reward_cfg.get("disruption_response_bonus", 0.0))
 
         self.simulator = SimpleCorridorQueueSimulator(config=sim_cfg, seed=self.base_seed)
@@ -251,16 +257,29 @@ class CorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         adjusted = abs(self.current_mobile_stations - previous_mobile_stations)
         mean_started_wait = float(np.mean(started_waits)) if started_waits else 0.0
         mean_queue_wait = float(np.mean(queue_wait_minutes)) if queue_wait_minutes else 0.0
+        queue_wait_excess = max(mean_queue_wait - self.queue_wait_target_minutes, 0.0)
+        queue_wait_target_breached = float(
+            self.queue_wait_target_minutes > 0.0 and mean_queue_wait > self.queue_wait_target_minutes
+        )
+        queue_wait_penalty_term = (
+            self.queue_wait_penalty * mean_queue_wait
+            if self.queue_wait_target_minutes <= 0.0
+            else self.queue_wait_excess_penalty * queue_wait_excess
+        )
         reward = (
             self.served_reward_weight * served_total
             - self.unmet_penalty * unmet_total
             - self.queue_length_penalty * unmet_total
-            - self.queue_wait_penalty * mean_queue_wait
+            - queue_wait_penalty_term
+            - self.queue_wait_hard_penalty * queue_wait_target_breached
             - self.active_mobile_station_cost * float(self.current_mobile_stations)
             - self.activation_cost * float(activated)
             - self.adjustment_cost * float(adjusted)
             - self.idle_capacity_penalty * idle_capacity
             + self.utilization_bonus * utilization
+            + self.queue_wait_service_level_bonus * float(
+                self.queue_wait_target_minutes > 0.0 and queue_wait_target_breached == 0.0
+            )
             + self.disruption_response_bonus * float(disruption_state["disruption_active"]) * float(self.current_mobile_stations > 0)
         )
         reward *= self.reward_scale
@@ -289,6 +308,9 @@ class CorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "arrivals_vehicles": float(len(arrivals)),
             "queue_length": unmet_total,
             "queue_wait_mean_minutes": mean_queue_wait,
+            "queue_wait_target_minutes": float(self.queue_wait_target_minutes),
+            "queue_wait_excess_minutes": float(queue_wait_excess),
+            "queue_wait_target_breached": int(queue_wait_target_breached),
             "service_capacity_vehicles": float(total_effective_num_plugs),
             "num_active_mobile_stations": int(self.current_mobile_stations),
             "num_active_chargers": int(total_effective_num_plugs),
