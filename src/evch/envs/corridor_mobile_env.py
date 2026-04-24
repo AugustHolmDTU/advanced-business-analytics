@@ -249,6 +249,12 @@ class CorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         queue_wait_minutes = [(self.step_index - vehicle.arrival_step) * self.simulator.step_minutes for vehicle in self.queue]
         active_plugs = len(self.active_sessions)
         utilization = active_plugs / float(max(total_effective_num_plugs, 1)) if total_effective_num_plugs > 0 else 0.0
+        mobile_chargers_total = float(self.current_mobile_stations * self.mobile_station_chargers)
+        mobile_chargers_used_estimate = float(
+            np.clip(active_plugs - base_effective_num_plugs, 0, self.current_mobile_stations * self.mobile_station_chargers)
+        )
+        unused_mobile_chargers = max(mobile_chargers_total - mobile_chargers_used_estimate, 0.0)
+        unused_mobile_stations_estimate = unused_mobile_chargers / max(float(self.mobile_station_chargers), 1e-6)
 
         served_total = float(len(starts_now))
         unmet_total = float(len(self.queue))
@@ -316,8 +322,10 @@ class CorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "num_active_chargers": int(total_effective_num_plugs),
             "active_plugs": int(active_plugs),
             "base_capacity_total": float(base_effective_num_plugs),
-            "mobile_capacity_total": float(self.current_mobile_stations * self.mobile_station_chargers),
+            "mobile_capacity_total": mobile_chargers_total,
             "effective_capacity_total": float(total_effective_num_plugs),
+            "unused_mobile_chargers": float(unused_mobile_chargers),
+            "unused_mobile_stations_estimate": float(unused_mobile_stations_estimate),
             "action_valid": True,
             "utilization": utilization,
             "activated_mobile_stations": int(activated),

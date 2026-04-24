@@ -23,6 +23,27 @@ from evch.utils.wandb import init_wandb, log_artifact
 LOGGER = logging.getLogger(__name__)
 
 
+def _prune_mobile_comparison_metrics(frame: pd.DataFrame) -> pd.DataFrame:
+    drop_columns = {
+        "day_index",
+        "day_progress",
+        "disruption_day_index",
+        "disruption_remaining_minutes",
+        "global_hour",
+        "hour",
+        "hour_of_day",
+        "step_in_day",
+        "time_label",
+    }
+    prefix_patterns = ("starts_", "started_", "completions_")
+    pruned_columns = [
+        column
+        for column in frame.columns
+        if column not in drop_columns and not any(column.startswith(prefix) for prefix in prefix_patterns)
+    ]
+    return frame.loc[:, pruned_columns].copy()
+
+
 def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> bool:
     try:
         with contextlib.redirect_stderr(io.StringIO()):
@@ -233,6 +254,8 @@ def _build_mobile_comparison_rollout(
                 "queue_wait_target_breached": int(info.get("queue_wait_target_breached", 0)),
                 "active_plugs": float(info.get("active_plugs", info.get("num_active_chargers", 0.0))),
                 "effective_num_plugs": float(info.get("effective_num_plugs", info.get("effective_capacity_total", info.get("num_active_chargers", 0.0)))),
+                "unused_mobile_chargers": float(info.get("unused_mobile_chargers", 0.0)),
+                "unused_mobile_stations_estimate": float(info.get("unused_mobile_stations_estimate", 0.0)),
                 "utilization": float(info.get("utilization", 0.0)),
                 "started_wait_mean_minutes": float(info.get("started_wait_mean_minutes", info.get("queue_wait_mean_minutes", 0.0))),
                 "completed_wait_mean_minutes": float(info.get("completed_wait_mean_minutes", info.get("queue_wait_mean_minutes", 0.0))),
@@ -254,11 +277,12 @@ def _build_mobile_comparison_rollout(
     from evch.train.run_simple_corridor_sim import _add_derived_metrics, _maybe_plot_daily_patterns, _maybe_plot_queue_dynamics
 
     frame = _add_derived_metrics(frame, step_minutes=int(env.planning_step_minutes))
+    export_frame = _prune_mobile_comparison_metrics(frame)
     metrics_path = output_dir / "comparison_timestep_metrics.csv"
     summary_path = output_dir / "comparison_rollout_summary.json"
     plot_path = output_dir / "comparison_queue_dynamics.png"
     daily_plot_path = output_dir / "comparison_daily_patterns.png"
-    frame.to_csv(metrics_path, index=False)
+    export_frame.to_csv(metrics_path, index=False)
     summary = {
         "num_days": num_days,
         "seed": rollout_seed,
@@ -282,13 +306,13 @@ def _build_mobile_comparison_rollout(
     _maybe_plot_queue_dynamics(frame, plot_path)
     _maybe_plot_daily_patterns(frame, daily_plot_path)
 
-    for column in frame.columns:
-        if pd.api.types.is_numeric_dtype(frame[column].dtype):
+    for column in export_frame.columns:
+        if pd.api.types.is_numeric_dtype(export_frame[column].dtype):
             metric_name = f"sim/{column}"
-            if column != "global_hour":
-                run.define_metric(metric_name, step_metric="sim/global_hour")
+            if column != "step":
+                run.define_metric(metric_name, step_metric="sim/step")
     run.define_metric("sim_summary/*")
-    for row in frame.to_dict(orient="records"):
+    for row in export_frame.to_dict(orient="records"):
         run.log({f"sim/{key}": value for key, value in row.items()})
     run.log({f"sim_summary/{key}": value for key, value in summary.items()})
 

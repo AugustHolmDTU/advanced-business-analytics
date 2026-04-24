@@ -99,6 +99,8 @@ class CorridorMobileStationEnvTest(unittest.TestCase):
         self.assertIn("completions_total", step_info)
         self.assertIn("active_plugs", step_info)
         self.assertIn("effective_base_plugs", step_info)
+        self.assertIn("unused_mobile_chargers", step_info)
+        self.assertIn("unused_mobile_stations_estimate", step_info)
 
     def test_multiple_disruptions_same_day_activate_in_sequence(self) -> None:
         env = CorridorMobileStationEnv(self.env_config, self.demand_config, seed=3)

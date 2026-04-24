@@ -187,6 +187,8 @@ class SimpleDQNAgent:
             utilization_trace: list[float] = []
             idle_capacity_trace: list[float] = []
             effective_capacity_trace: list[float] = []
+            unused_mobile_chargers_trace: list[float] = []
+            unused_mobile_stations_trace: list[float] = []
             activated_trace: list[float] = []
             adjusted_trace: list[float] = []
             queue_length_trace: list[float] = []
@@ -221,6 +223,8 @@ class SimpleDQNAgent:
                 utilization_trace.append(float(info.get("utilization", 0.0)))
                 idle_capacity_trace.append(float(info.get("idle_capacity", 0.0)))
                 effective_capacity_trace.append(float(info.get("effective_capacity_total", 0.0)))
+                unused_mobile_chargers_trace.append(float(info.get("unused_mobile_chargers", 0.0)))
+                unused_mobile_stations_trace.append(float(info.get("unused_mobile_stations_estimate", 0.0)))
                 activated_trace.append(float(info.get("activated_mobile_stations", 0.0)))
                 adjusted_trace.append(float(info.get("adjusted_mobile_stations", 0.0)))
                 queue_length_trace.append(float(info.get("queue_length", 0.0)))
@@ -242,6 +246,8 @@ class SimpleDQNAgent:
                             "rl_step/active_chargers": float(info.get("num_active_chargers", 0.0)),
                             "rl_step/mobile_capacity_total": float(info.get("mobile_capacity_total", 0.0)),
                             "rl_step/effective_capacity_total": float(info.get("effective_capacity_total", 0.0)),
+                            "rl_step/unused_mobile_chargers": float(info.get("unused_mobile_chargers", 0.0)),
+                            "rl_step/unused_mobile_stations_estimate": float(info.get("unused_mobile_stations_estimate", 0.0)),
                             "rl_step/utilization": float(info.get("utilization", 0.0)),
                             "rl_step/idle_capacity": float(info.get("idle_capacity", 0.0)),
                             "rl_step/queue_length": float(info.get("queue_length", 0.0)),
@@ -286,6 +292,8 @@ class SimpleDQNAgent:
                 "mean_utilization": float(np.mean(utilization_trace)) if utilization_trace else 0.0,
                 "mean_idle_capacity": float(np.mean(idle_capacity_trace)) if idle_capacity_trace else 0.0,
                 "mean_effective_capacity": float(np.mean(effective_capacity_trace)) if effective_capacity_trace else 0.0,
+                "mean_unused_mobile_chargers": float(np.mean(unused_mobile_chargers_trace)) if unused_mobile_chargers_trace else 0.0,
+                "mean_unused_mobile_stations_estimate": float(np.mean(unused_mobile_stations_trace)) if unused_mobile_stations_trace else 0.0,
                 "mean_queue_length": float(np.mean(queue_length_trace)) if queue_length_trace else 0.0,
                 "max_queue_length": float(np.max(queue_length_trace)) if queue_length_trace else 0.0,
                 "mean_queue_wait_minutes": float(np.mean(queue_wait_trace)) if queue_wait_trace else 0.0,
