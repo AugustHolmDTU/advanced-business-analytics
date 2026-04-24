@@ -2,6 +2,11 @@ experiment:
   name: mobile_mcs_simple
   output_root: outputs
   save_plots: true
+comparison_rollout:
+  enabled: true
+  num_days: 3
+  seed: 123
+  repeat_daily_disruptions: false
 evaluation:
   episodes: 12
   disruptions: false

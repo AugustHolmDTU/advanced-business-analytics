@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import io
 import logging
 from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
+import pandas as pd
 
 from evch.config.loader import build_config_parser, load_config
 from evch.envs.factory import make_env
@@ -144,6 +146,125 @@ def _make_rl_policy(backend: str, checkpoint_path: str) -> Callable[[np.ndarray,
     return policy
 
 
+def _build_mobile_comparison_rollout(
+    config: dict[str, Any],
+    policy: Callable[[np.ndarray, Any, bool], int],
+    output_dir: Path,
+    run: Any,
+) -> dict[str, Any] | None:
+    rollout_cfg = dict(config.get("comparison_rollout", {}))
+    if not bool(rollout_cfg.get("enabled", True)):
+        return None
+    if str(config.get("environment", {}).get("env_type", "")).lower() != "mobile_station_capacity":
+        return None
+
+    env_cfg = copy.deepcopy(config["environment"])
+    horizon = int(env_cfg["horizon"])
+    num_days = int(rollout_cfg.get("num_days", 3))
+    env_cfg["max_steps"] = horizon * num_days
+    disruption_cfg = dict(env_cfg.get("disruption", {}))
+    scripted_events = [dict(event) for event in disruption_cfg.get("scripted_events", [])]
+    if scripted_events and bool(rollout_cfg.get("repeat_daily_disruptions", True)):
+        for event in scripted_events:
+            event.setdefault("repeat_daily", True)
+            event.pop("day_index", None)
+        disruption_cfg["scripted_events"] = scripted_events
+        env_cfg["disruption"] = disruption_cfg
+
+    rollout_seed = int(rollout_cfg.get("seed", 123))
+    env = make_env(env_cfg, config["demand"], seed=rollout_seed)
+    observation, _ = env.reset(seed=rollout_seed)
+    rows: list[dict[str, Any]] = []
+    while True:
+        action = int(policy(observation, env, True))
+        observation, reward, terminated, truncated, info = env.step(action)
+        current_step = int(env.step_index - 1)
+        global_hour = current_step * float(env.planning_step_minutes) / 60.0
+        hour_of_day = global_hour % 24.0
+        day_index = int(global_hour // 24.0)
+        rows.append(
+            {
+                "step": current_step,
+                "hour": global_hour,
+                "global_hour": global_hour,
+                "day_index": day_index,
+                "hour_of_day": hour_of_day,
+                "time_label": f"{int(hour_of_day):02d}:{int((hour_of_day % 1.0) * 60):02d}",
+                "expected_passing_total": float(info.get("expected_arrivals_vehicles", 0.0)),
+                "arrivals_total": float(info.get("arrivals_vehicles", 0.0)),
+                "starts_total": float(info.get("served_demand", 0.0)),
+                "completions_total": float(info.get("served_demand", 0.0)),
+                "queue_length": float(info.get("queue_length", 0.0)),
+                "queue_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
+                "active_plugs": float(info.get("num_active_chargers", 0.0)),
+                "effective_num_plugs": float(info.get("num_active_chargers", 0.0)),
+                "utilization": float(info.get("utilization", 0.0)),
+                "started_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
+                "completed_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
+                "started_service_mean_minutes": float(env.mean_service_minutes),
+                "disruption_active": int(info.get("disruption_active", 0)),
+                "disruption_type": str(info.get("disruption_type", "none")),
+                "disruption_type_code": int(info.get("disruption_type_code", 0)),
+                "disruption_day_index": int(info.get("disruption_day_index", -1)),
+                "disruption_remaining_minutes": float(info.get("disruption_remaining_steps", 0.0)) * float(env.planning_step_minutes),
+                "rl_action_mcs": float(action),
+                "num_active_mobile_stations": float(info.get("num_active_mobile_stations", 0.0)),
+                "reward": float(reward),
+            }
+        )
+        if terminated or truncated:
+            break
+
+    frame = pd.DataFrame(rows)
+    from evch.train.run_simple_corridor_sim import _add_derived_metrics, _maybe_plot_daily_patterns, _maybe_plot_queue_dynamics
+
+    frame = _add_derived_metrics(frame, step_minutes=int(env.planning_step_minutes))
+    metrics_path = output_dir / "comparison_timestep_metrics.csv"
+    summary_path = output_dir / "comparison_rollout_summary.json"
+    plot_path = output_dir / "comparison_queue_dynamics.png"
+    daily_plot_path = output_dir / "comparison_daily_patterns.png"
+    frame.to_csv(metrics_path, index=False)
+    summary = {
+        "num_days": num_days,
+        "seed": rollout_seed,
+        "mean_queue_length": float(frame["queue_length"].mean()),
+        "peak_queue_length": float(frame["queue_length"].max()),
+        "mean_utilization": float(frame["utilization"].mean()),
+        "mean_active_mobile_stations": float(frame["num_active_mobile_stations"].mean()),
+        "mean_active_mobile_stations_normal": float(frame.loc[frame["disruption_active"] == 0, "num_active_mobile_stations"].mean())
+        if (frame["disruption_active"] == 0).any()
+        else 0.0,
+        "mean_active_mobile_stations_disrupted": float(frame.loc[frame["disruption_active"] == 1, "num_active_mobile_stations"].mean())
+        if (frame["disruption_active"] == 1).any()
+        else 0.0,
+    }
+    write_json(summary_path, summary)
+    _maybe_plot_queue_dynamics(frame, plot_path)
+    _maybe_plot_daily_patterns(frame, daily_plot_path)
+
+    for column in frame.columns:
+        if pd.api.types.is_numeric_dtype(frame[column].dtype):
+            metric_name = f"sim/{column}"
+            if column != "global_hour":
+                run.define_metric(metric_name, step_metric="sim/global_hour")
+    run.define_metric("sim_summary/*")
+    for row in frame.to_dict(orient="records"):
+        run.log({f"sim/{key}": value for key, value in row.items()}, step=int(row["step"]))
+    run.log({f"sim_summary/{key}": value for key, value in summary.items()})
+
+    log_artifact(run=run, path=metrics_path, artifact_name=f"{config['experiment']['name']}-comparison-rollout-metrics", artifact_type="metrics", aliases=["latest"])
+    log_artifact(run=run, path=summary_path, artifact_name=f"{config['experiment']['name']}-comparison-rollout-summary", artifact_type="metrics", aliases=["latest"])
+    log_artifact(run=run, path=plot_path, artifact_name=f"{config['experiment']['name']}-comparison-rollout-plot", artifact_type="plot", aliases=["latest"])
+    log_artifact(run=run, path=daily_plot_path, artifact_name=f"{config['experiment']['name']}-comparison-daily-patterns", artifact_type="plot", aliases=["latest"])
+    return {
+        "metrics_path": str(metrics_path),
+        "summary_path": str(summary_path),
+        "plot_path": str(plot_path),
+        "daily_plot_path": str(daily_plot_path),
+        "summary": summary,
+    }
+
+
 def run_training(config: dict[str, Any]) -> dict[str, Any]:
     configure_logging(config.get("logging", {}).get("level", "INFO"))
     seed = int(config.get("seed", 0))
@@ -198,6 +319,13 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
     if history:
         write_json(output_dir / "history.json", {"history": history})
 
+    comparison_rollout = _build_mobile_comparison_rollout(
+        config=config,
+        policy=policy,
+        output_dir=output_dir,
+        run=run,
+    )
+
     log_artifact(
         run=run,
         path=checkpoint_path,
@@ -236,6 +364,7 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         "output_dir": str(output_dir),
         "training_summary_path": str(training_summary_path),
         "runtime": runtime_info,
+        "comparison_rollout": comparison_rollout,
     }
 
 

@@ -23,25 +23,35 @@ environment:
     mode: scripted
     scripted_events:
       - disruption_type: capacity_drop
+        day_index: 0
         start_hour: 6.0
         duration_hours: 2.0
         severity: 3.0
       - disruption_type: demand_surge_ab
+        day_index: 0
         start_hour: 8.0
         duration_hours: 2.0
         severity: 1.8
       - disruption_type: service_time_inflation
-        start_hour: 11.0
+        day_index: 1
+        start_hour: 10.0
         duration_hours: 2.0
         severity: 1.5
-      - disruption_type: demand_surge_ba
-        start_hour: 15.0
-        duration_hours: 2.0
-        severity: 1.8
       - disruption_type: station_outage
+        day_index: 1
         start_hour: 17.0
         duration_hours: 2.0
         severity: 0.0
+      - disruption_type: demand_surge_ba
+        day_index: 2
+        start_hour: 7.0
+        duration_hours: 2.0
+        severity: 1.8
+      - disruption_type: capacity_drop
+        day_index: 2
+        start_hour: 16.0
+        duration_hours: 2.0
+        severity: 4.0
   reward:
     served_reward_weight: 1.0
     unmet_penalty: 2.5

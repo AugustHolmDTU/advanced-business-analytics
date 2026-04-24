@@ -13,6 +13,7 @@ from evch.envs.demand import DemandGenerator
 @dataclass(slots=True)
 class MobileDisruptionEvent:
     disruption_type: str
+    day_index: int
     start_step: int
     end_step: int
     severity: float
@@ -111,7 +112,9 @@ class MobileStationChargingEnv(gym.Env):  # type: ignore[misc]
     def _coerce_event(self, payload: dict[str, Any]) -> MobileDisruptionEvent:
         disruption_type = str(payload["disruption_type"])
         severity = float(payload.get("severity", 1.0))
-        start_step = int(round(float(payload.get("start_hour", 0.0)) * 60.0 / self.planning_step_minutes))
+        day_index = int(payload.get("day_index", 0))
+        steps_per_day = int(round(self.horizon * 60.0 / self.planning_step_minutes))
+        start_step = day_index * steps_per_day + int(round(float(payload.get("start_hour", 0.0)) * 60.0 / self.planning_step_minutes))
         duration_steps = self._step_from_hours(float(payload.get("duration_hours", 1.0)))
         end_step = min(self.max_steps, start_step + duration_steps)
 
@@ -131,6 +134,7 @@ class MobileStationChargingEnv(gym.Env):  # type: ignore[misc]
 
         return MobileDisruptionEvent(
             disruption_type=disruption_type,
+            day_index=day_index,
             start_step=start_step,
             end_step=end_step,
             severity=severity,
@@ -147,9 +151,18 @@ class MobileStationChargingEnv(gym.Env):  # type: ignore[misc]
         schedule: dict[int, MobileDisruptionEvent] = {}
         mode = str(disruption_cfg.get("mode", "scripted")).lower()
         events: list[MobileDisruptionEvent] = []
+        steps_per_day = int(round(self.horizon * 60.0 / self.planning_step_minutes))
+        num_days = max(1, int(np.ceil(self.max_steps / max(steps_per_day, 1))))
         if mode == "scripted":
             for payload in disruption_cfg.get("scripted_events", []):
-                events.append(self._coerce_event(dict(payload)))
+                raw_payload = dict(payload)
+                if bool(raw_payload.get("repeat_daily", False)):
+                    for day_index in range(num_days):
+                        repeated = dict(raw_payload)
+                        repeated["day_index"] = day_index
+                        events.append(self._coerce_event(repeated))
+                else:
+                    events.append(self._coerce_event(raw_payload))
         elif mode == "random":
             if self.rng.random() < float(disruption_cfg.get("event_probability", 1.0)):
                 event_types = list(
@@ -201,6 +214,7 @@ class MobileStationChargingEnv(gym.Env):  # type: ignore[misc]
                 "disruption_active": 0,
                 "disruption_type": "none",
                 "disruption_type_code": 0,
+                "disruption_day_index": -1,
                 "disruption_remaining_steps": 0.0,
                 "effective_base_plugs": self.base_station_plugs,
                 "demand_multiplier": 1.0,
@@ -210,6 +224,7 @@ class MobileStationChargingEnv(gym.Env):  # type: ignore[misc]
             "disruption_active": 1,
             "disruption_type": event.disruption_type,
             "disruption_type_code": self.DISRUPTION_TYPE_CODES[event.disruption_type],
+            "disruption_day_index": event.day_index,
             "disruption_remaining_steps": float(max(event.end_step - self.step_index, 0)),
             "effective_base_plugs": event.effective_base_plugs,
             "demand_multiplier": event.demand_multiplier,
@@ -369,6 +384,7 @@ class MobileStationChargingEnv(gym.Env):  # type: ignore[misc]
             "true_demand_total": total_true_demand,
             "expected_demand_total": total_expected_demand,
             "arrivals_vehicles": float(arrivals),
+            "expected_arrivals_vehicles": float(self.last_expected_arrivals),
             "queue_length": float(self.queue_length),
             "queue_wait_mean_minutes": float(self.queue_wait_mean_minutes),
             "service_capacity_vehicles": float(service_capacity_vehicles),
@@ -385,6 +401,7 @@ class MobileStationChargingEnv(gym.Env):  # type: ignore[misc]
             "disruption_active": int(disruption_state["disruption_active"]),
             "disruption_type": str(disruption_state["disruption_type"]),
             "disruption_type_code": int(disruption_state["disruption_type_code"]),
+            "disruption_day_index": int(disruption_state["disruption_day_index"]),
             "disruption_remaining_steps": float(disruption_state["disruption_remaining_steps"]),
             "effective_base_plugs": int(effective_base_plugs),
             "fixed_site_index": self.fixed_site_index,

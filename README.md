@@ -171,6 +171,8 @@ W&B also logs a per-step control timeline for this environment under:
 
 For sweep runs, the full parameter combination is stored in the W&B config under `sweep_run.parameters`, together with `sweep_run.combination_index`, `sweep_run.label`, and `sweep_run.sweep_name`.
 
+Each mobile RL training run also emits a deterministic 3-day comparison rollout with the same `sim/*` style step logging used by the corridor queue simulator, including `sim/global_hour`, `sim/day_index`, `sim/hour_of_day`, `sim/queue_length`, `sim/utilization`, `sim/effective_num_plugs`, and disruption fields. The default comparison window now uses two scripted disruptions per day with different disruption pairs across the three days. The rollout artifacts are saved as `comparison_timestep_metrics.csv` and `comparison_rollout_summary.json` in the RL output directory.
+
 Recommended W&B dashboard panels for the full-grid sweep:
 
 1. Scatter plot:
