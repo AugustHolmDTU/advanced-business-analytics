@@ -1,0 +1,137 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+import pandas as pd
+
+from evch.train.run_mobile_noop_comparison import run_mobile_noop_comparison
+
+
+class MobileNoopComparisonTest(unittest.TestCase):
+    def test_runs_fixed_three_day_noop_comparison(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = {
+                "seed": 21,
+                "experiment": {
+                    "name": "mobile_mcs_simple",
+                    "output_root": tmp_dir,
+                    "save_plots": False,
+                },
+                "logging": {"level": "INFO", "wandb": {"enabled": False}},
+                "demand": {},
+                "comparison_rollout": {
+                    "enabled": True,
+                    "num_days": 3,
+                    "seed": 123,
+                    "repeat_daily_disruptions": False,
+                    "scripted_events": [
+                        {
+                            "disruption_type": "capacity_drop",
+                            "day_index": 0,
+                            "start_hour": 6.0,
+                            "duration_hours": 2.0,
+                            "severity": 4.0,
+                        },
+                        {
+                            "disruption_type": "demand_surge_ab",
+                            "day_index": 0,
+                            "start_hour": 16.0,
+                            "duration_hours": 2.0,
+                            "severity": 1.8,
+                        },
+                        {
+                            "disruption_type": "service_time_inflation",
+                            "day_index": 1,
+                            "start_hour": 10.0,
+                            "duration_hours": 2.0,
+                            "severity": 1.5,
+                        },
+                        {
+                            "disruption_type": "station_outage",
+                            "day_index": 1,
+                            "start_hour": 17.0,
+                            "duration_hours": 1.5,
+                            "severity": 0.0,
+                        },
+                        {
+                            "disruption_type": "demand_surge_ba",
+                            "day_index": 2,
+                            "start_hour": 7.0,
+                            "duration_hours": 2.0,
+                            "severity": 1.8,
+                        },
+                        {
+                            "disruption_type": "capacity_drop",
+                            "day_index": 2,
+                            "start_hour": 15.0,
+                            "duration_hours": 2.0,
+                            "severity": 5.0,
+                        },
+                    ],
+                },
+                "environment": {
+                    "env_type": "corridor_mobile_mcs",
+                    "max_mobile_stations": 10,
+                    "mobile_station_chargers": 2,
+                    "mobile_station_capacity": 20.0,
+                    "reward_scale": 0.1,
+                    "reward": {
+                        "served_reward_weight": 1.0,
+                        "unmet_penalty": 2.5,
+                        "active_mobile_station_cost": 24.0,
+                        "activation_cost": 6.0,
+                        "adjustment_cost": 2.0,
+                        "idle_capacity_penalty": 0.1,
+                        "utilization_bonus": 1.0,
+                        "queue_length_penalty": 2.5,
+                        "queue_wait_penalty": 0.02,
+                    },
+                    "simulation": {
+                        "city_names": ["City A", "City B"],
+                        "road_length_km": 100.0,
+                        "station_position_km": 50.0,
+                        "num_plugs": 12,
+                        "step_minutes": 5,
+                        "duration_hours": 24.0,
+                        "charging_stop_probability": 0.055,
+                        "service_time": {
+                            "mean_minutes": 30.0,
+                            "std_minutes": 8.0,
+                            "min_minutes": 15.0,
+                            "max_minutes": 50.0,
+                        },
+                        "traffic": {
+                            "baseline_cars_per_step": 11.0,
+                            "morning_peak_hour": 8.0,
+                            "evening_peak_hour": 17.0,
+                            "morning_peak_cars_per_step": 22.0,
+                            "evening_peak_cars_per_step": 24.0,
+                            "midday_bump_hour": 12.5,
+                            "midday_bump_cars_per_step": 6.0,
+                            "peak_width_hours": 1.6,
+                            "directional_bias_amplitude": 0.24,
+                            "minimum_direction_share": 0.18,
+                        },
+                        "disruption": {
+                            "enabled": True,
+                            "mode": "scripted",
+                            "scripted_events": [],
+                        },
+                    },
+                },
+            }
+
+            result = run_mobile_noop_comparison(config)
+
+            self.assertIsNotNone(result)
+            output_dir = Path(tmp_dir) / "mobile_mcs_simple" / "mobile_noop_comparison"
+            metrics_path = output_dir / "comparison_timestep_metrics.csv"
+            self.assertTrue(metrics_path.exists())
+            frame = pd.read_csv(metrics_path)
+            self.assertEqual(len(frame), 864)
+            self.assertEqual(frame["day_index"].nunique(), 3)
+            self.assertEqual(frame["num_active_mobile_stations"].max(), 0.0)
+
+
+if __name__ == "__main__":
+    unittest.main()
