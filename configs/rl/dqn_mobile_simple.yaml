@@ -19,6 +19,7 @@ rl:
   reward_clip: 25.0
   heuristic_prior_strength: 0.0
   heuristic_prior_mode: placement
+  wandb_step_log_interval: 1
   evaluation_episodes: 16
   deterministic_eval: true
   sb3:

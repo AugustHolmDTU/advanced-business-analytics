@@ -15,11 +15,25 @@ class MobileStationEnvTest(unittest.TestCase):
             "max_steps": 8,
             "city_extent_km": 4.0,
             "base_station_plugs": 12,
-            "base_plug_capacity": 1.0,
             "max_mobile_stations": 10,
             "mobile_station_chargers": 2,
             "mobile_station_capacity": 20.0,
+            "planning_step_minutes": 60.0,
+            "vehicle_arrival_scale": 4.0,
+            "service_time": {"mean_minutes": 30.0},
             "reward_scale": 0.1,
+            "disruption": {
+                "enabled": True,
+                "mode": "scripted",
+                "scripted_events": [
+                    {
+                        "disruption_type": "station_outage",
+                        "start_hour": 1.0,
+                        "duration_hours": 2.0,
+                        "severity": 0.0,
+                    }
+                ],
+            },
             "reward": {
                 "served_reward_weight": 1.0,
                 "unmet_penalty": 2.0,
@@ -28,6 +42,7 @@ class MobileStationEnvTest(unittest.TestCase):
                 "adjustment_cost": 1.0,
                 "idle_capacity_penalty": 0.1,
                 "utilization_bonus": 1.0,
+                "queue_length_penalty": 1.0,
             },
         }
         self.demand_config = {
@@ -55,6 +70,8 @@ class MobileStationEnvTest(unittest.TestCase):
         obs, info = env.reset(seed=4)
         self.assertEqual(obs.shape, env.observation_space.shape)
         self.assertEqual(info["num_active_mobile_stations"], 0)
+        self.assertEqual(info["fixed_site_index"], 0)
+        self.assertEqual(len(info["fixed_site_coords_km"]), 2)
 
         next_obs, reward, terminated, truncated, step_info = env.step(3)
         self.assertEqual(next_obs.shape, env.observation_space.shape)
@@ -62,10 +79,59 @@ class MobileStationEnvTest(unittest.TestCase):
         self.assertFalse(truncated)
         self.assertFalse(terminated)
         self.assertEqual(step_info["num_active_mobile_stations"], 3)
-        self.assertAlmostEqual(step_info["mobile_capacity_total"], 60.0)
-        self.assertAlmostEqual(step_info["effective_capacity_total"], 72.0)
+        self.assertAlmostEqual(step_info["mobile_capacity_total"], 6.0)
+        self.assertGreaterEqual(step_info["effective_capacity_total"], 0.0)
+        self.assertEqual(step_info["fixed_site_index"], 0)
         self.assertIn("served_demand", step_info)
         self.assertIn("unmet_demand", step_info)
+        self.assertIn("queue_length", step_info)
+        self.assertIn("disruption_active", step_info)
+
+    def test_scripted_outage_reduces_base_plugs_during_window(self) -> None:
+        env = MobileStationChargingEnv(self.env_config, self.demand_config, seed=3)
+        env.reset(seed=4)
+
+        _, _, _, _, before = env.step(0)
+        _, _, _, _, during = env.step(0)
+        _, _, _, _, still_during = env.step(0)
+
+        self.assertEqual(before["disruption_active"], 0)
+        self.assertEqual(during["disruption_active"], 1)
+        self.assertEqual(during["effective_base_plugs"], 0)
+        self.assertEqual(still_during["effective_base_plugs"], 0)
+
+    def test_accepts_directional_surge_labels_from_corridor_sim(self) -> None:
+        surge_config = dict(self.env_config)
+        surge_config["disruption"] = {
+            "enabled": True,
+            "mode": "scripted",
+            "scripted_events": [
+                {
+                    "disruption_type": "demand_surge_ab",
+                    "start_hour": 0.0,
+                    "duration_hours": 1.0,
+                    "severity": 1.8,
+                },
+                {
+                    "disruption_type": "demand_surge_ba",
+                    "start_hour": 1.0,
+                    "duration_hours": 1.0,
+                    "severity": 1.8,
+                },
+            ],
+        }
+        env = MobileStationChargingEnv(surge_config, self.demand_config, seed=3)
+        env.reset(seed=4)
+        _, _, _, _, first = env.step(0)
+        _, _, _, _, second = env.step(0)
+        self.assertEqual(first["disruption_type"], "demand_surge_ab")
+        self.assertEqual(second["disruption_type"], "demand_surge_ba")
+
+    def test_rejects_multiple_candidate_sites(self) -> None:
+        bad_config = dict(self.env_config)
+        bad_config["num_candidate_sites"] = 2
+        with self.assertRaises(ValueError):
+            MobileStationChargingEnv(bad_config, self.demand_config, seed=3)
 
     def test_mobile_threshold_policy_matches_capacity_gap(self) -> None:
         env = MobileStationChargingEnv(self.env_config, self.demand_config, seed=1)

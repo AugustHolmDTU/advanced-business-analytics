@@ -76,6 +76,7 @@ class SimpleDQNAgent:
         self.reward_clip = float(config.get("reward_clip", 0.0))
         self.heuristic_prior_strength = float(config.get("heuristic_prior_strength", 0.0))
         self.heuristic_prior_mode = str(config.get("heuristic_prior_mode", "placement")).lower()
+        self.wandb_step_log_interval = int(config.get("wandb_step_log_interval", 1))
 
         self.q_network = QNetwork(obs_dim, action_dim, list(config["hidden_dims"])).to(self.device)
         self.target_network = QNetwork(obs_dim, action_dim, list(config["hidden_dims"])).to(self.device)
@@ -180,6 +181,17 @@ class SimpleDQNAgent:
             unmet_total = 0.0
             invalid_actions = 0.0
             losses: list[float] = []
+            action_trace: list[int] = []
+            active_chargers_trace: list[float] = []
+            mobile_stations_trace: list[float] = []
+            utilization_trace: list[float] = []
+            idle_capacity_trace: list[float] = []
+            effective_capacity_trace: list[float] = []
+            activated_trace: list[float] = []
+            adjusted_trace: list[float] = []
+            queue_length_trace: list[float] = []
+            queue_wait_trace: list[float] = []
+            disruption_trace: list[float] = []
             for _ in range(max_steps):
                 action = self.act(observation, deterministic=False, env=env)
                 next_observation, reward, terminated, truncated, info = env.step(action)
@@ -201,7 +213,45 @@ class SimpleDQNAgent:
                 served_total += float(info["served_demand"])
                 unmet_total += float(info["unmet_demand"])
                 invalid_actions += float(not info.get("action_valid", True))
+                action_trace.append(int(action))
+                active_chargers_trace.append(float(info.get("num_active_chargers", 0.0)))
+                mobile_stations_trace.append(float(info.get("num_active_mobile_stations", 0.0)))
+                utilization_trace.append(float(info.get("utilization", 0.0)))
+                idle_capacity_trace.append(float(info.get("idle_capacity", 0.0)))
+                effective_capacity_trace.append(float(info.get("effective_capacity_total", 0.0)))
+                activated_trace.append(float(info.get("activated_mobile_stations", 0.0)))
+                adjusted_trace.append(float(info.get("adjusted_mobile_stations", 0.0)))
+                queue_length_trace.append(float(info.get("queue_length", 0.0)))
+                queue_wait_trace.append(float(info.get("queue_wait_mean_minutes", 0.0)))
+                disruption_trace.append(float(info.get("disruption_active", 0.0)))
                 self.total_steps += 1
+                if run is not None and self.total_steps % max(self.wandb_step_log_interval, 1) == 0:
+                    run.log(
+                        {
+                            "rl_step/action": float(action),
+                            "rl_step/reward": float(reward),
+                            "rl_step/served_demand": float(info["served_demand"]),
+                            "rl_step/unmet_demand": float(info["unmet_demand"]),
+                            "rl_step/true_demand_total": float(info.get("true_demand_total", 0.0)),
+                            "rl_step/expected_demand_total": float(info.get("expected_demand_total", 0.0)),
+                            "rl_step/active_mobile_stations": float(info.get("num_active_mobile_stations", 0.0)),
+                            "rl_step/active_chargers": float(info.get("num_active_chargers", 0.0)),
+                            "rl_step/mobile_capacity_total": float(info.get("mobile_capacity_total", 0.0)),
+                            "rl_step/effective_capacity_total": float(info.get("effective_capacity_total", 0.0)),
+                            "rl_step/utilization": float(info.get("utilization", 0.0)),
+                            "rl_step/idle_capacity": float(info.get("idle_capacity", 0.0)),
+                            "rl_step/queue_length": float(info.get("queue_length", 0.0)),
+                            "rl_step/queue_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
+                            "rl_step/arrivals_vehicles": float(info.get("arrivals_vehicles", 0.0)),
+                            "rl_step/service_capacity_vehicles": float(info.get("service_capacity_vehicles", 0.0)),
+                            "rl_step/disruption_active": float(info.get("disruption_active", 0.0)),
+                            "rl_step/disruption_type_code": float(info.get("disruption_type_code", 0.0)),
+                            "rl_step/disruption_remaining_steps": float(info.get("disruption_remaining_steps", 0.0)),
+                            "rl_step/activated_mobile_stations": float(info.get("activated_mobile_stations", 0.0)),
+                            "rl_step/adjusted_mobile_stations": float(info.get("adjusted_mobile_stations", 0.0)),
+                        },
+                        step=int(self.total_steps),
+                    )
                 if self.total_steps % self.train_frequency == 0:
                     for _ in range(self.gradient_steps):
                         maybe_loss = self.update()
@@ -219,6 +269,21 @@ class SimpleDQNAgent:
                 "invalid_actions": invalid_actions,
                 "epsilon": self._epsilon(),
                 "loss": float(np.mean(losses)) if losses else 0.0,
+                "mean_action": float(np.mean(action_trace)) if action_trace else 0.0,
+                "max_action": float(np.max(action_trace)) if action_trace else 0.0,
+                "mean_active_chargers": float(np.mean(active_chargers_trace)) if active_chargers_trace else 0.0,
+                "max_active_chargers": float(np.max(active_chargers_trace)) if active_chargers_trace else 0.0,
+                "mean_active_mobile_stations": float(np.mean(mobile_stations_trace)) if mobile_stations_trace else 0.0,
+                "max_active_mobile_stations": float(np.max(mobile_stations_trace)) if mobile_stations_trace else 0.0,
+                "total_activated_mobile_stations": float(np.sum(activated_trace)) if activated_trace else 0.0,
+                "total_adjusted_mobile_stations": float(np.sum(adjusted_trace)) if adjusted_trace else 0.0,
+                "mean_utilization": float(np.mean(utilization_trace)) if utilization_trace else 0.0,
+                "mean_idle_capacity": float(np.mean(idle_capacity_trace)) if idle_capacity_trace else 0.0,
+                "mean_effective_capacity": float(np.mean(effective_capacity_trace)) if effective_capacity_trace else 0.0,
+                "mean_queue_length": float(np.mean(queue_length_trace)) if queue_length_trace else 0.0,
+                "max_queue_length": float(np.max(queue_length_trace)) if queue_length_trace else 0.0,
+                "mean_queue_wait_minutes": float(np.mean(queue_wait_trace)) if queue_wait_trace else 0.0,
+                "disruption_step_fraction": float(np.mean(disruption_trace)) if disruption_trace else 0.0,
             }
             history.append(record)
             if run is not None:

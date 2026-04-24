@@ -95,7 +95,7 @@ def log_artifact(
     aliases: list[str] | None = None,
 ) -> None:
     artifact_path = Path(path)
-    if not artifact_path.exists() or find_spec("wandb") is None:
+    if isinstance(run, DummyRun) or not artifact_path.exists() or find_spec("wandb") is None:
         return
 
     try:

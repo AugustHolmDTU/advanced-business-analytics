@@ -58,11 +58,19 @@ def coverage_policy(obs: np.ndarray, env: Any, deterministic: bool = True) -> in
 
 def mobile_threshold_policy(obs: np.ndarray, env: Any, deterministic: bool = True) -> int:
     del obs, deterministic
-    expected_total = (
-        float(env.expected_total_demand()) if hasattr(env, "expected_total_demand") else float(getattr(env, "last_expected_total_demand", 0.0))
-    )
-    base_capacity = float(getattr(env, "base_station_capacity", 0.0))
-    mobile_capacity = max(float(getattr(env, "mobile_station_capacity", 1.0)), 1e-6)
+    if hasattr(env, "expected_vehicle_arrivals") and hasattr(env, "current_service_capacity_per_step"):
+        expected_total = float(env.expected_vehicle_arrivals()) + float(getattr(env, "queue_length", 0.0))
+        base_capacity = float(env.current_service_capacity_per_step(service_time_multiplier=1.0, effective_base_plugs=getattr(env, "base_station_plugs", 0)))
+        mobile_capacity = max(
+            float(env.mobile_station_chargers) * float(getattr(env, "planning_step_minutes", 60.0)) / max(float(getattr(env, "mean_service_minutes", 30.0)), 1e-6),
+            1e-6,
+        )
+    else:
+        expected_total = (
+            float(env.expected_total_demand()) if hasattr(env, "expected_total_demand") else float(getattr(env, "last_expected_total_demand", 0.0))
+        )
+        base_capacity = float(getattr(env, "base_station_capacity", 0.0))
+        mobile_capacity = max(float(getattr(env, "mobile_station_capacity", 1.0)), 1e-6)
     max_mobile_stations = int(getattr(env, "max_mobile_stations", 0))
     required_mobile_stations = max(0, ceil((expected_total - base_capacity) / mobile_capacity))
     return int(min(required_mobile_stations, max_mobile_stations))

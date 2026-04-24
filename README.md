@@ -150,6 +150,44 @@ PYTHONPATH=src python -m evch.train.train_rl \
 
 This setup keeps a fixed station with 12 plugs, lets the DQN choose `0..10` mobile charging stations at each step, and uses a reward that trades off served demand, unmet demand, active MCS cost, change cost, and idle overcapacity.
 
+The training history and W&B logs for this setup now include the mobile-capacity control metrics that matter for debugging the policy:
+
+- `rl/mean_active_mobile_stations`
+- `rl/max_active_mobile_stations`
+- `rl/mean_active_chargers`
+- `rl/max_active_chargers`
+- `rl/total_activated_mobile_stations`
+- `rl/total_adjusted_mobile_stations`
+- `rl/mean_utilization`
+- `rl/mean_idle_capacity`
+
+W&B also logs a per-step control timeline for this environment under:
+
+- `rl_step/active_mobile_stations`
+- `rl_step/active_chargers`
+- `rl_step/utilization`
+- `rl_step/served_demand`
+- `rl_step/unmet_demand`
+
+For sweep runs, the full parameter combination is stored in the W&B config under `sweep_run.parameters`, together with `sweep_run.combination_index`, `sweep_run.label`, and `sweep_run.sweep_name`.
+
+Recommended W&B dashboard panels for the full-grid sweep:
+
+1. Scatter plot:
+   x-axis `config.sweep_run.parameters.environment.reward.active_mobile_station_cost`
+   y-axis `rl_eval/mean_reward`
+2. Parallel coordinates:
+   dimensions `config.sweep_run.parameters.*` and `rl_eval/mean_reward`
+3. Line plot:
+   y-axis `rl_step/active_mobile_stations`
+   x-axis `_step`
+   group by run
+4. Line plot:
+   y-axis `rl_step/active_chargers`, `rl_step/served_demand`, `rl_step/unmet_demand`
+   x-axis `_step`
+5. Table:
+   columns `config.sweep_run.label`, `rl_eval/mean_reward`, `rl_eval/mean_unmet_demand`, `rl/mean_active_mobile_stations`
+
 Build the Denmark hybrid corridor example from TomTom and generate ready-to-train configs:
 
 ```bash
@@ -245,6 +283,19 @@ RL and uncertainty training now upload the generated checkpoint, metrics/history
 Templates are in [slurm/train_uncertainty.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/train_uncertainty.slurm), [slurm/train_rl.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/train_rl.slurm), and [slurm/eval.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/eval.slurm).
 
 For DTU-style LSF clusters, simple `bsub` templates for the mobile-agent setup are included in [bsub/train_mobile_rl.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/bsub/train_mobile_rl.bsub) and [bsub/eval_mobile_rl.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/bsub/eval_mobile_rl.bsub). They follow the same header style as the standard DTU HPC example you submit with `bsub < bsub/train_mobile_rl.bsub`.
+
+A full-grid reward sweep for the mobile MCS setup is included in [configs/sweeps/mobile_mcs_reward_sweep.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/configs/sweeps/mobile_mcs_reward_sweep.yaml) and [bsub/sweep_mobile_rl.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/bsub/sweep_mobile_rl.bsub). The current narrowed grid focuses on the empirically useful band and produces `3 * 2 * 2 * 2 = 24` runs. Submit the full range with:
+
+```bash
+bsub < bsub/sweep_mobile_rl.bsub
+```
+
+Or submit a chunk of the grid by index:
+
+```bash
+SWEEP_START_INDEX=0 SWEEP_END_INDEX=100 bsub < bsub/sweep_mobile_rl.bsub
+SWEEP_START_INDEX=100 SWEEP_END_INDEX=200 bsub < bsub/sweep_mobile_rl.bsub
+```
 
 Typical submission:
 

@@ -144,11 +144,7 @@ def _make_rl_policy(backend: str, checkpoint_path: str) -> Callable[[np.ndarray,
     return policy
 
 
-def main() -> None:
-    parser = build_config_parser("Train the EV charger placement RL baseline.")
-    args = parser.parse_args()
-    config = load_config(args.config)
-
+def run_training(config: dict[str, Any]) -> dict[str, Any]:
     configure_logging(config.get("logging", {}).get("level", "INFO"))
     seed = int(config.get("seed", 0))
     set_global_seed(seed)
@@ -186,7 +182,7 @@ def main() -> None:
     )
     run.log({f"rl_eval/{key}": value for key, value in evaluation.items() if not isinstance(value, list)})
 
-    if history:
+    if history and bool(experiment_cfg.get("save_plots", True)):
         _maybe_plot_training_curve(history, output_dir / "training_curve.png")
 
     training_summary_path = output_dir / "training_summary.json"
@@ -232,6 +228,22 @@ def main() -> None:
     )
     LOGGER.info("Finished RL training with backend=%s checkpoint=%s", backend, checkpoint_path)
     run.finish()
+    return {
+        "backend": backend,
+        "checkpoint_path": checkpoint_path,
+        "history": history,
+        "evaluation": evaluation,
+        "output_dir": str(output_dir),
+        "training_summary_path": str(training_summary_path),
+        "runtime": runtime_info,
+    }
+
+
+def main() -> None:
+    parser = build_config_parser("Train the EV charger placement RL baseline.")
+    args = parser.parse_args()
+    config = load_config(args.config)
+    run_training(config)
 
 
 if __name__ == "__main__":

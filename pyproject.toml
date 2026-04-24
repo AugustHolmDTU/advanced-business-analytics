@@ -36,6 +36,7 @@ evch-build-denmark-corridor = "evch.train.build_denmark_hybrid_corridor:main"
 evch-run-simple-corridor = "evch.train.run_simple_corridor_sim:main"
 evch-train-uncertainty = "evch.train.train_uncertainty:main"
 evch-train-rl = "evch.train.train_rl:main"
+evch-sweep-mobile-rl = "evch.train.sweep_mobile_rl:main"
 evch-eval = "evch.train.evaluate_policies:main"
 
 [tool.hatch.build.targets.wheel]

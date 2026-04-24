@@ -8,16 +8,46 @@ environment:
   city_extent_km: 6.0
   randomize_on_reset: false
   base_station_plugs: 12
-  base_plug_capacity: 1.0
   max_mobile_stations: 10
   mobile_station_chargers: 2
   mobile_station_capacity: 20.0
+  planning_step_minutes: 60.0
+  vehicle_arrival_scale: 4.0
+  queue_normalizer: 120.0
+  arrival_normalizer: 30.0
   reward_scale: 0.1
+  service_time:
+    mean_minutes: 30.0
+  disruption:
+    enabled: true
+    mode: scripted
+    scripted_events:
+      - disruption_type: capacity_drop
+        start_hour: 6.0
+        duration_hours: 2.0
+        severity: 3.0
+      - disruption_type: demand_surge_ab
+        start_hour: 8.0
+        duration_hours: 2.0
+        severity: 1.8
+      - disruption_type: service_time_inflation
+        start_hour: 11.0
+        duration_hours: 2.0
+        severity: 1.5
+      - disruption_type: demand_surge_ba
+        start_hour: 15.0
+        duration_hours: 2.0
+        severity: 1.8
+      - disruption_type: station_outage
+        start_hour: 17.0
+        duration_hours: 2.0
+        severity: 0.0
   reward:
     served_reward_weight: 1.0
     unmet_penalty: 2.5
-    active_mobile_station_cost: 14.0
-    activation_cost: 4.0
-    adjustment_cost: 1.0
+    active_mobile_station_cost: 30.0
+    activation_cost: 8.0
+    adjustment_cost: 3.0
     idle_capacity_penalty: 0.15
     utilization_bonus: 1.0
+    queue_length_penalty: 3.0
