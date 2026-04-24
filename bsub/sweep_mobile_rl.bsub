@@ -17,9 +17,9 @@
 ### -- set the email address --
 ##BSUB -u your_email_address
 ### -- send notification at start --
-#BSUB -B
+##BSUB -B
 ### -- send notification at completion --
-#BSUB -N
+##BSUB -N
 ### -- Specify the output and error file. %J is the job-id --
 #BSUB -o logs/sweep_mobile_rl_%J.out
 #BSUB -e logs/sweep_mobile_rl_%J.err

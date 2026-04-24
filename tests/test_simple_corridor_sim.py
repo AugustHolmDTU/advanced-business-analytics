@@ -216,6 +216,62 @@ class SimpleCorridorQueueSimulatorTest(unittest.TestCase):
         self.assertIn("mean_queue_length", result.summary["non_disruption_baseline"])
         self.assertGreater(result.summary["total_disrupted_minutes"], 0)
 
+    def test_multiple_scripted_events_per_day_are_supported_when_non_overlapping(self) -> None:
+        config = _base_config()
+        config["duration_hours"] = 24.0
+        config["disruption"] = {
+            "enabled": True,
+            "mode": "scripted",
+            "scripted_events": [
+                {
+                    "disruption_type": "capacity_drop",
+                    "day_index": 0,
+                    "start_hour": 6.0,
+                    "duration_hours": 2.0,
+                    "severity": 3.0,
+                },
+                {
+                    "disruption_type": "station_outage",
+                    "day_index": 0,
+                    "start_hour": 17.0,
+                    "duration_hours": 1.5,
+                    "severity": 0.0,
+                },
+            ],
+        }
+
+        result = SimpleCorridorQueueSimulator(config=config, seed=11).run()
+
+        self.assertEqual(result.summary["disruption_event_count"], 2)
+        self.assertEqual(result.summary["disruption_counts_by_type"]["capacity_drop"], 1)
+        self.assertEqual(result.summary["disruption_counts_by_type"]["station_outage"], 1)
+
+    def test_overlapping_scripted_events_raise(self) -> None:
+        config = _base_config()
+        config["disruption"] = {
+            "enabled": True,
+            "mode": "scripted",
+            "scripted_events": [
+                {
+                    "disruption_type": "capacity_drop",
+                    "day_index": 0,
+                    "start_hour": 8.0,
+                    "duration_hours": 2.0,
+                    "severity": 3.0,
+                },
+                {
+                    "disruption_type": "service_time_inflation",
+                    "day_index": 0,
+                    "start_hour": 9.0,
+                    "duration_hours": 2.0,
+                    "severity": 1.5,
+                },
+            ],
+        }
+
+        with self.assertRaises(ValueError):
+            SimpleCorridorQueueSimulator(config=config, seed=5).run()
+
     def test_scripted_scenarios_are_reproducible(self) -> None:
         config = _config_with_scripted_event("capacity_drop", start_hour=8.0, duration_hours=2.0, severity=3.0)
         run_a = SimpleCorridorQueueSimulator(config=copy.deepcopy(config), seed=17).run()

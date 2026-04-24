@@ -155,21 +155,45 @@ def _build_mobile_comparison_rollout(
     rollout_cfg = dict(config.get("comparison_rollout", {}))
     if not bool(rollout_cfg.get("enabled", True)):
         return None
-    if str(config.get("environment", {}).get("env_type", "")).lower() != "mobile_station_capacity":
+    env_type = str(config.get("environment", {}).get("env_type", "")).lower()
+    if env_type not in {"mobile_station_capacity", "corridor_mobile_mcs", "corridor_mobile_station"}:
         return None
 
     env_cfg = copy.deepcopy(config["environment"])
-    horizon = int(env_cfg["horizon"])
     num_days = int(rollout_cfg.get("num_days", 3))
-    env_cfg["max_steps"] = horizon * num_days
-    disruption_cfg = dict(env_cfg.get("disruption", {}))
-    scripted_events = [dict(event) for event in disruption_cfg.get("scripted_events", [])]
-    if scripted_events and bool(rollout_cfg.get("repeat_daily_disruptions", True)):
-        for event in scripted_events:
-            event.setdefault("repeat_daily", True)
-            event.pop("day_index", None)
-        disruption_cfg["scripted_events"] = scripted_events
-        env_cfg["disruption"] = disruption_cfg
+    if env_type == "mobile_station_capacity":
+        horizon = int(env_cfg["horizon"])
+        env_cfg["max_steps"] = horizon * num_days
+        disruption_cfg = dict(env_cfg.get("disruption", {}))
+        scripted_events = [dict(event) for event in disruption_cfg.get("scripted_events", [])]
+        if scripted_events and bool(rollout_cfg.get("repeat_daily_disruptions", True)):
+            for event in scripted_events:
+                event.setdefault("repeat_daily", True)
+                event.pop("day_index", None)
+            disruption_cfg["scripted_events"] = scripted_events
+            env_cfg["disruption"] = disruption_cfg
+    else:
+        sim_cfg = dict(env_cfg.get("simulation", {}))
+        sim_cfg["duration_hours"] = 24.0 * num_days
+        disruption_cfg = dict(sim_cfg.get("disruption", {}))
+        comparison_events = rollout_cfg.get("scripted_events")
+        if comparison_events:
+            disruption_cfg["enabled"] = True
+            disruption_cfg["mode"] = "scripted"
+            disruption_cfg["scripted_events"] = [dict(event) for event in comparison_events]
+        elif disruption_cfg.get("mode", "random") == "scripted":
+            scripted_events = [dict(event) for event in disruption_cfg.get("scripted_events", [])]
+            if scripted_events and bool(rollout_cfg.get("repeat_daily_disruptions", True)):
+                repeated_events: list[dict[str, Any]] = []
+                template_events = sorted(scripted_events, key=lambda event: (int(event.get("day_index", 0)), float(event["start_hour"])))
+                for day_index in range(num_days):
+                    for event in template_events:
+                        copied_event = dict(event)
+                        copied_event["day_index"] = day_index
+                        repeated_events.append(copied_event)
+                disruption_cfg["scripted_events"] = repeated_events
+        sim_cfg["disruption"] = disruption_cfg
+        env_cfg["simulation"] = sim_cfg
 
     rollout_seed = int(rollout_cfg.get("seed", 123))
     env = make_env(env_cfg, config["demand"], seed=rollout_seed)
@@ -190,18 +214,26 @@ def _build_mobile_comparison_rollout(
                 "day_index": day_index,
                 "hour_of_day": hour_of_day,
                 "time_label": f"{int(hour_of_day):02d}:{int((hour_of_day % 1.0) * 60):02d}",
-                "expected_passing_total": float(info.get("expected_arrivals_vehicles", 0.0)),
-                "arrivals_total": float(info.get("arrivals_vehicles", 0.0)),
-                "starts_total": float(info.get("served_demand", 0.0)),
-                "completions_total": float(info.get("served_demand", 0.0)),
+                "expected_passing_total": float(info.get("expected_passing_total", info.get("expected_arrivals_vehicles", 0.0))),
+                "expected_passing_ab": float(info.get("expected_passing_ab", 0.0)),
+                "expected_passing_ba": float(info.get("expected_passing_ba", 0.0)),
+                "arrivals_total": float(info.get("arrivals_total", info.get("arrivals_vehicles", 0.0))),
+                "arrivals_ab": float(info.get("arrivals_ab", 0.0)),
+                "arrivals_ba": float(info.get("arrivals_ba", 0.0)),
+                "starts_total": float(info.get("starts_total", info.get("served_demand", 0.0))),
+                "starts_ab": float(info.get("starts_ab", 0.0)),
+                "starts_ba": float(info.get("starts_ba", 0.0)),
+                "completions_total": float(info.get("completions_total", info.get("served_demand", 0.0))),
+                "completions_ab": float(info.get("completions_ab", 0.0)),
+                "completions_ba": float(info.get("completions_ba", 0.0)),
                 "queue_length": float(info.get("queue_length", 0.0)),
                 "queue_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
-                "active_plugs": float(info.get("num_active_chargers", 0.0)),
-                "effective_num_plugs": float(info.get("num_active_chargers", 0.0)),
+                "active_plugs": float(info.get("active_plugs", info.get("num_active_chargers", 0.0))),
+                "effective_num_plugs": float(info.get("effective_num_plugs", info.get("effective_capacity_total", info.get("num_active_chargers", 0.0)))),
                 "utilization": float(info.get("utilization", 0.0)),
-                "started_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
-                "completed_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
-                "started_service_mean_minutes": float(env.mean_service_minutes),
+                "started_wait_mean_minutes": float(info.get("started_wait_mean_minutes", info.get("queue_wait_mean_minutes", 0.0))),
+                "completed_wait_mean_minutes": float(info.get("completed_wait_mean_minutes", info.get("queue_wait_mean_minutes", 0.0))),
+                "started_service_mean_minutes": float(info.get("started_service_mean_minutes", env.mean_service_minutes)),
                 "disruption_active": int(info.get("disruption_active", 0)),
                 "disruption_type": str(info.get("disruption_type", "none")),
                 "disruption_type_code": int(info.get("disruption_type_code", 0)),

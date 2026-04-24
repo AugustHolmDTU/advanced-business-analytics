@@ -326,11 +326,9 @@ class SimpleCorridorQueueSimulator:
 
         events.sort(key=lambda event: (event.start_step, event.end_step))
         trimmed = [event for event in events if event.start_step < self.num_steps and event.end_step > event.start_step]
-        day_counts: dict[int, int] = {}
-        for event in trimmed:
-            day_counts[event.day_index] = day_counts.get(event.day_index, 0) + 1
-        if any(count > 1 for count in day_counts.values()):
-            raise ValueError("At most one disruption event per day is supported in v1.")
+        for previous, current in zip(trimmed, trimmed[1:]):
+            if current.start_step < previous.end_step:
+                raise ValueError("Overlapping scripted disruptions are not supported.")
         return trimmed
 
     def _event_map(self, events: list[DisruptionEvent]) -> dict[int, DisruptionEvent]:
