@@ -22,6 +22,39 @@ from evch.utils.wandb import init_wandb, log_artifact
 
 LOGGER = logging.getLogger(__name__)
 
+SIM_WANDB_COLUMNS = {
+    "step",
+    "global_hour",
+    "queue_length",
+    "queue_length_station_ab",
+    "queue_length_station_bc",
+    "queue_wait_mean_minutes",
+    "queue_wait_mean_minutes_station_ab",
+    "queue_wait_mean_minutes_station_bc",
+    "active_plugs",
+    "effective_num_plugs",
+    "utilization",
+    "unused_mobile_chargers",
+    "unused_mobile_stations_estimate",
+    "unused_mobile_stations_estimate_station_ab",
+    "unused_mobile_stations_estimate_station_bc",
+    "rl_action_mcs",
+    "num_active_mobile_stations",
+    "num_active_mobile_stations_station_ab",
+    "num_active_mobile_stations_station_bc",
+    "expected_passing_total",
+    "expected_passing_od_ab",
+    "expected_passing_od_ba",
+    "expected_passing_od_bc",
+    "expected_passing_od_cb",
+    "expected_passing_od_ac",
+    "expected_passing_od_ca",
+    "disruption_active",
+    "disruption_type_code",
+    "disruption_target",
+    "reward",
+}
+
 
 def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> bool:
     try:
@@ -258,6 +291,8 @@ def _build_mobile_comparison_rollout(
                 "num_active_mobile_stations_station_bc": float(info.get("num_active_mobile_stations_station_bc", 0.0)),
                 "queue_length_station_ab": float(info.get("queue_length_station_ab", 0.0)),
                 "queue_length_station_bc": float(info.get("queue_length_station_bc", 0.0)),
+                "queue_wait_mean_minutes_station_ab": float(info.get("queue_wait_mean_minutes_station_ab", 0.0)),
+                "queue_wait_mean_minutes_station_bc": float(info.get("queue_wait_mean_minutes_station_bc", 0.0)),
                 "unused_mobile_stations_estimate_station_ab": float(info.get("unused_mobile_stations_estimate_station_ab", 0.0)),
                 "unused_mobile_stations_estimate_station_bc": float(info.get("unused_mobile_stations_estimate_station_bc", 0.0)),
                 "expected_passing_od_ab": float(info.get("expected_passing_od_ab", 0.0)),
@@ -287,6 +322,12 @@ def _build_mobile_comparison_rollout(
         "mean_queue_length": float(frame["queue_length"].mean()),
         "peak_queue_length": float(frame["queue_length"].max()),
         "mean_queue_wait_minutes": float(frame["queue_wait_mean_minutes"].mean()),
+        "mean_queue_wait_minutes_station_ab": float(frame["queue_wait_mean_minutes_station_ab"].mean())
+        if "queue_wait_mean_minutes_station_ab" in frame
+        else 0.0,
+        "mean_queue_wait_minutes_station_bc": float(frame["queue_wait_mean_minutes_station_bc"].mean())
+        if "queue_wait_mean_minutes_station_bc" in frame
+        else 0.0,
         "peak_queue_wait_minutes": float(frame["queue_wait_mean_minutes"].max()),
         "queue_wait_target_minutes": float(frame["queue_wait_target_minutes"].max()) if "queue_wait_target_minutes" in frame else 0.0,
         "queue_wait_target_breach_fraction": float(frame["queue_wait_target_breached"].mean()) if "queue_wait_target_breached" in frame else 0.0,
@@ -304,13 +345,14 @@ def _build_mobile_comparison_rollout(
     _maybe_plot_queue_dynamics(frame, plot_path)
     _maybe_plot_daily_patterns(frame, daily_plot_path)
 
-    for column in frame.columns:
-        if pd.api.types.is_numeric_dtype(frame[column].dtype):
+    wandb_frame = frame.loc[:, [column for column in frame.columns if column in SIM_WANDB_COLUMNS]].copy()
+    for column in wandb_frame.columns:
+        if pd.api.types.is_numeric_dtype(wandb_frame[column].dtype):
             metric_name = f"sim/{column}"
             if column != "global_hour":
                 run.define_metric(metric_name, step_metric="sim/global_hour")
     run.define_metric("sim_summary/*")
-    for row in frame.to_dict(orient="records"):
+    for row in wandb_frame.to_dict(orient="records"):
         run.log({f"sim/{key}": value for key, value in row.items()})
     run.log({f"sim_summary/{key}": value for key, value in summary.items()})
 

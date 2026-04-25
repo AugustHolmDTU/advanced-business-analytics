@@ -193,6 +193,8 @@ class SimpleDQNAgent:
             adjusted_trace: list[float] = []
             queue_length_trace: list[float] = []
             queue_wait_trace: list[float] = []
+            queue_wait_station_ab_trace: list[float] = []
+            queue_wait_station_bc_trace: list[float] = []
             queue_wait_excess_trace: list[float] = []
             queue_wait_breach_trace: list[float] = []
             disruption_trace: list[float] = []
@@ -229,6 +231,8 @@ class SimpleDQNAgent:
                 adjusted_trace.append(float(info.get("adjusted_mobile_stations", 0.0)))
                 queue_length_trace.append(float(info.get("queue_length", 0.0)))
                 queue_wait_trace.append(float(info.get("queue_wait_mean_minutes", 0.0)))
+                queue_wait_station_ab_trace.append(float(info.get("queue_wait_mean_minutes_station_ab", 0.0)))
+                queue_wait_station_bc_trace.append(float(info.get("queue_wait_mean_minutes_station_bc", 0.0)))
                 queue_wait_excess_trace.append(float(info.get("queue_wait_excess_minutes", 0.0)))
                 queue_wait_breach_trace.append(float(info.get("queue_wait_target_breached", 0.0)))
                 disruption_trace.append(float(info.get("disruption_active", 0.0)))
@@ -240,31 +244,25 @@ class SimpleDQNAgent:
                             "rl_step/reward": float(reward),
                             "rl_step/served_demand": float(info["served_demand"]),
                             "rl_step/unmet_demand": float(info["unmet_demand"]),
-                            "rl_step/true_demand_total": float(info.get("true_demand_total", 0.0)),
-                            "rl_step/expected_demand_total": float(info.get("expected_demand_total", 0.0)),
                             "rl_step/active_mobile_stations": float(info.get("num_active_mobile_stations", 0.0)),
+                            "rl_step/active_mobile_stations_station_ab": float(info.get("num_active_mobile_stations_station_ab", 0.0)),
+                            "rl_step/active_mobile_stations_station_bc": float(info.get("num_active_mobile_stations_station_bc", 0.0)),
                             "rl_step/active_chargers": float(info.get("num_active_chargers", 0.0)),
-                            "rl_step/mobile_capacity_total": float(info.get("mobile_capacity_total", 0.0)),
-                            "rl_step/effective_capacity_total": float(info.get("effective_capacity_total", 0.0)),
                             "rl_step/unused_mobile_chargers": float(info.get("unused_mobile_chargers", 0.0)),
                             "rl_step/unused_mobile_stations_estimate": float(info.get("unused_mobile_stations_estimate", 0.0)),
-                            "rl_step/num_active_mobile_stations_station_ab": float(info.get("num_active_mobile_stations_station_ab", 0.0)),
-                            "rl_step/num_active_mobile_stations_station_bc": float(info.get("num_active_mobile_stations_station_bc", 0.0)),
                             "rl_step/queue_length_station_ab": float(info.get("queue_length_station_ab", 0.0)),
                             "rl_step/queue_length_station_bc": float(info.get("queue_length_station_bc", 0.0)),
+                            "rl_step/queue_wait_mean_minutes_station_ab": float(info.get("queue_wait_mean_minutes_station_ab", 0.0)),
+                            "rl_step/queue_wait_mean_minutes_station_bc": float(info.get("queue_wait_mean_minutes_station_bc", 0.0)),
                             "rl_step/unused_mobile_stations_estimate_station_ab": float(info.get("unused_mobile_stations_estimate_station_ab", 0.0)),
                             "rl_step/unused_mobile_stations_estimate_station_bc": float(info.get("unused_mobile_stations_estimate_station_bc", 0.0)),
                             "rl_step/utilization": float(info.get("utilization", 0.0)),
-                            "rl_step/idle_capacity": float(info.get("idle_capacity", 0.0)),
+                            "rl_step/utilization_station_ab": float(info.get("utilization_station_ab", 0.0)),
+                            "rl_step/utilization_station_bc": float(info.get("utilization_station_bc", 0.0)),
                             "rl_step/queue_length": float(info.get("queue_length", 0.0)),
                             "rl_step/queue_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
-                            "rl_step/queue_wait_excess_minutes": float(info.get("queue_wait_excess_minutes", 0.0)),
-                            "rl_step/queue_wait_target_breached": float(info.get("queue_wait_target_breached", 0.0)),
-                            "rl_step/arrivals_vehicles": float(info.get("arrivals_vehicles", 0.0)),
-                            "rl_step/service_capacity_vehicles": float(info.get("service_capacity_vehicles", 0.0)),
                             "rl_step/disruption_active": float(info.get("disruption_active", 0.0)),
                             "rl_step/disruption_type_code": float(info.get("disruption_type_code", 0.0)),
-                            "rl_step/disruption_remaining_steps": float(info.get("disruption_remaining_steps", 0.0)),
                             "rl_step/activated_mobile_stations": float(info.get("activated_mobile_stations", 0.0)),
                             "rl_step/adjusted_mobile_stations": float(info.get("adjusted_mobile_stations", 0.0)),
                         },
@@ -303,6 +301,8 @@ class SimpleDQNAgent:
                 "mean_queue_length": float(np.mean(queue_length_trace)) if queue_length_trace else 0.0,
                 "max_queue_length": float(np.max(queue_length_trace)) if queue_length_trace else 0.0,
                 "mean_queue_wait_minutes": float(np.mean(queue_wait_trace)) if queue_wait_trace else 0.0,
+                "mean_queue_wait_minutes_station_ab": float(np.mean(queue_wait_station_ab_trace)) if queue_wait_station_ab_trace else 0.0,
+                "mean_queue_wait_minutes_station_bc": float(np.mean(queue_wait_station_bc_trace)) if queue_wait_station_bc_trace else 0.0,
                 "mean_queue_wait_excess_minutes": float(np.mean(queue_wait_excess_trace)) if queue_wait_excess_trace else 0.0,
                 "queue_wait_target_breach_fraction": float(np.mean(queue_wait_breach_trace)) if queue_wait_breach_trace else 0.0,
                 "disruption_step_fraction": float(np.mean(disruption_trace)) if disruption_trace else 0.0,
