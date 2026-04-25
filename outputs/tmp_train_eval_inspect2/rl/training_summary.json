@@ -1,0 +1,15 @@
+{
+  "backend": "torch_dqn",
+  "checkpoint_path": "outputs/tmp_train_eval_inspect2/rl/best_model.pt",
+  "evaluation": {
+    "mean_reward": -791.7269641070668,
+    "mean_served_demand": 670.5,
+    "mean_true_demand_total": 670.5,
+    "mean_unmet_demand": 1251.5
+  },
+  "runtime": {
+    "cpu_count": 10,
+    "device": "cpu",
+    "torch_num_threads": 8
+  }
+}

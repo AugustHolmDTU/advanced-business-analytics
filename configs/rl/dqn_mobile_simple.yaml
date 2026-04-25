@@ -21,6 +21,8 @@ rl:
   heuristic_prior_mode: placement
   wandb_step_log_interval: 12
   evaluation_episodes: 8
+  eval_interval_episodes: 10
+  eval_during_training_episodes: 4
   deterministic_eval: true
   sb3:
     total_timesteps: 12000

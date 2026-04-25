@@ -1,126 +1,97 @@
-# RL Optimization Log
+# RL Change Log
 
-## Baseline
+## Current Active Setup
 
-Configuration:
-- Environment: `configs/env/corridor_calibrated.yaml`
-- Demand: `configs/demand/base.yaml`
-- RL: `configs/rl/dqn.yaml`
+The active RL benchmark is no longer the original toy placement environment.
 
-Observed baseline behavior before changes:
-- RL trained end-to-end but underperformed simple heuristics.
-- Invalid actions increased during training instead of decreasing.
-- The environment had no explicit `no-op` action.
+The current focus is:
+- `A-B-C` line corridor
+- two fixed charging stations
+- mobile charging stations allocated across `AB` and `BC`
+- fixed 3-day scripted comparison rollouts
+- DTU HPC execution through `bsub`
 
-Baseline evaluation summary:
-- RL mean reward: `-184.58`
-- Greedy mean reward: `-179.76`
-- Coverage mean reward: `-181.81`
-- Random mean reward: `-184.04`
+## Key Changes
 
-Interpretation:
-- The agent was likely using invalid actions as a surrogate for “do nothing”.
-- This makes the RL problem harder than necessary and distorts the reward signal.
+### 1. Added a dedicated `A-B-C` line-corridor simulator
 
-## Change 1
-
-Added an explicit `no-op` action and valid-action masking support.
+This introduced:
+- `6` OD flows:
+  - `od_ab`, `od_ba`, `od_bc`, `od_cb`, `od_ac`, `od_ca`
+- two fixed stations
+- station-targeted disruptions
+- station-specific queue and wait tracking
 
 Reason:
-- The agent should be able to keep the current deployment when movement is not useful.
-- Invalid actions should represent true mistakes, not a missing control primitive.
+- the previous single-corridor setup could not show whether a controller reacted at the correct location.
 
-Expected effect:
-- Lower invalid-action count.
-- More stable learning.
-- Better comparison between move, relocate, and stay decisions.
+### 2. Added a two-station mobile-allocation RL environment
 
-Observed result after Change 1:
-- Invalid actions dropped from non-zero to `0.0`.
-- RL still underperformed greedy and coverage.
-- Conclusion: legality was a real bug, but not the only bottleneck.
+The control problem changed from:
+- one station with action `0..10`
 
-## Change 2
-
-Introduced a stronger DQN training configuration in `configs/rl/dqn_optimized.yaml`.
-
-Changes:
-- more episodes
-- larger replay buffer
-- larger network
-- more gradient steps
-- slower epsilon decay
-- lower learning rate
+to:
+- allocate up to `10` total MCS across `AB` and `BC`
 
 Reason:
-- The calibrated corridor is more variable and harder than the original toy setup.
-- The baseline DQN budget was probably too small for generalization across randomized episodes.
+- the new benchmark should test location-aware allocation, not only total deployment level.
 
-Observed result after Change 2:
-- RL improved a little versus random but still did not match greedy.
-- Invalid actions stayed at `0.0`.
-- Late-training reward drifted downward, suggesting the agent was still not exploiting the strongest site signal reliably.
+### 3. Standardized fixed 3-day comparison rollouts
 
-## Change 3
-
-Added a heuristic action prior inside the DQN policy.
-
-What it does:
-- Uses the normalized site-score block already present in the observation.
-- Adds a configurable prior to action selection and next-action selection during bootstrapping.
-- Treats the `no-op` action prior as the best currently occupied site score.
+The comparison workflow now uses:
+- the same scripted 3-day scenario
+- noop comparison
+- trained RL comparison
 
 Reason:
-- The current task is close to a structured contextual decision problem.
-- The greedy baseline directly exploits the same site-score signal.
-- Residual learning over an interpretable prior is more appropriate than forcing the network to rediscover that signal from scratch.
+- this makes runs directly comparable in W&B and in exported CSV files.
 
-## Change 4
+### 4. Added station-specific diagnostics
 
-Created a resilience-oriented environment variant:
-- `configs/env/corridor_resilience.yaml`
-- starts with mobile chargers already filled at strong initial sites
-- increases relocation cost
-- slightly increases utilization and coverage bonuses
+The comparison outputs now include:
+- station-specific queue length
+- station-specific queue wait
+- station-specific active MCS
+- station-specific expected charging demand
+- disruption target
 
 Reason:
-- The original benchmark mixed initial deployment and disruption response.
-- The project focus is resilience under disruption, not cold-start placement.
-- This variant makes the RL decision closer to “reposition or hold” under stress, which is more aligned with the research question.
+- the main project question is whether the controller sends MCS to the correct station.
 
-Observed result after Change 4:
-- This was the strongest RL setup tested.
-- RL mean reward improved relative to the non-resilience calibrated setup.
-- RL served demand increased.
-- RL still did not beat the greedy baseline, but the gap narrowed.
+### 5. Added demand-versus-MCS visual checks
 
-## Current Diagnosis
+The current comparison workflow now produces:
+- `comparison_station_demand_vs_mcs.png`
+- W&B overlays:
+  - `sim_overlay/station_ab_demand_vs_mcs`
+  - `sim_overlay/station_bc_demand_vs_mcs`
 
-What helped:
-- Explicit `no-op` action
-- valid-action masking
-- larger DQN training budget
-- residual learning over a heuristic prior
-- resilience-oriented start state
+Reason:
+- the team needs a direct visual check of whether allocation matches station demand.
 
-What still limits performance:
-- The decision problem is still close to a myopic score-based relocation rule, so greedy remains very hard to beat.
-- Reward is dominated by unmet demand, while movement costs are comparatively small.
-- Even with `no-op`, the learned policy still relocates frequently.
-- The benchmark may still favor simple score-following heuristics over value-based RL.
+### 6. Added DTU HPC scripts for the new workflow
 
-## Best Result So Far
+Main scripts:
+- `bsub/run_mobile_noop_line_abc.bsub`
+- `bsub/train_mobile_line_abc.bsub`
+- `bsub/run_mobile_rl_line_abc.bsub`
+- `bsub/sweep_mobile_line_abc.bsub`
+- `bsub/run_mobile_noop_line_abc_no_disruptions.bsub`
 
-Best RL configuration:
-- Environment: `configs/env/corridor_resilience.yaml`
-- RL: `configs/rl/dqn_optimized.yaml`
+Reason:
+- the `A-B-C` benchmark is now the main runnable experiment path.
 
-Best observed evaluation:
-- RL mean reward: `-211.62`
-- Greedy mean reward: `-207.78`
-- Coverage mean reward: `-210.69`
-- Random mean reward: `-211.86`
+## Current Interpretation
 
-Interpretation:
-- RL is now competitive with random and closer to coverage.
-- Greedy is still the strongest baseline on the current formulation.
+The important success criterion is now:
+- not just whether reward improves,
+- but whether the controller allocates MCS to `AB` when `AB` is stressed and to `BC` when `BC` is stressed.
+
+That interpretability requirement is part of the benchmark itself.
+
+## Open RL Questions
+
+- Does trained RL beat `noop` consistently?
+- Does it beat the current threshold baseline?
+- Does it allocate MCS to the correct station during targeted disruptions?
+- Is a stronger station-aware heuristic a better benchmark than the current simple one?

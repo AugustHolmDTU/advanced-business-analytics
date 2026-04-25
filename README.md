@@ -1,27 +1,31 @@
 # Adaptive EV Charging Under Uncertainty
 
-Minimal research codebase for a DTU course project on adaptive EV charging placement with a stochastic digital twin and uncertainty-aware demand prediction.
+Research codebase for a DTU course project on resilient EV charging operations under disruption.
 
-## Goal
+The current main benchmark is a synthetic `A-B-C` line corridor:
+- cities `A -> B -> C`
+- `100 km` between neighboring cities
+- one fixed charging station between `A-B`
+- one fixed charging station between `B-C`
+- mobile charging stations allocated across the two fixed stations
 
-The repository provides a small but extensible setup to:
+## Current Focus
 
-- simulate EV charging demand in a toy urban area,
-- train uncertainty-aware demand models on simulator-generated data,
-- train a single-agent RL policy to place or relocate a limited number of chargers,
-- compare RL against simple heuristic baselines,
-- track experiments with Weights & Biases,
-- run locally first and scale later via Slurm.
+The active question is:
+- can a controller allocate mobile charging stations to the correct station when disruptions happen,
+- and does it do better than simple baselines on the same fixed 3-day scenario.
 
-The first version intentionally stays small. It is designed to run end-to-end on synthetic data in minutes, while keeping clean seams for future real-data ingestion and richer digital-twin logic.
+This is not just a generic RL benchmark. The important outputs are station-specific:
+- queue length and wait at `AB` and `BC`
+- number of MCS allocated to `AB` and `BC`
+- whether allocation follows the disruption location
 
 ## Repo Structure
 
 ```text
 .
+├── bsub/
 ├── configs/
-├── scripts/
-├── slurm/
 ├── src/evch/
 │   ├── baselines/
 │   ├── config/
@@ -29,56 +33,33 @@ The first version intentionally stays small. It is designed to run end-to-end on
 │   ├── envs/
 │   ├── models/
 │   ├── rl/
+│   ├── sim/
 │   ├── train/
 │   └── utils/
 ├── tests/
+├── context.md
 ├── IMPLEMENTATION_NOTES.md
+├── RL_CHANGELOG.md
 └── README.md
 ```
 
-## Digital Twin
+## Main Benchmark
 
-The environment models:
+The active `A-B-C` environment is defined in:
+- [mobile_mcs_line_abc.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/env/mobile_mcs_line_abc.yaml)
+- [mobile_mcs_line_abc.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/experiment/mobile_mcs_line_abc.yaml)
 
-- demand zones with coordinates and base demand rates,
-- candidate charging sites with coordinates,
-- either a toy urban layout or a long-distance corridor with city hubs, service areas, and exits,
-- or a TomTom-grounded snapshot with real station coordinates, connector availability, and routing times,
-- a travel-time matrix derived from synthetic road structure,
-- stochastic zone demand with morning and evening peaks,
-- optional disruptions:
-  - demand spikes,
-  - temporary station outages,
-  - corridor slowdowns and road-closure penalties,
-  - noisy observations.
+It currently uses:
+- `12` base plugs at `station_ab`
+- `12` base plugs at `station_bc`
+- up to `10` mobile charging stations total
+- `2` plugs per mobile charging station
+- maximum corridor capacity of `44` plugs when all MCS are deployed
 
-The first RL-friendly action space is discrete:
-
-- select one candidate site,
-- if chargers remain, deploy a charger there,
-- otherwise relocate one charger from the currently weakest occupied site to the chosen site.
-
-Reward combines:
-
-- served demand,
-- unmet demand penalty,
-- deployment or relocation costs,
-- optional outage penalty.
-
-## Uncertainty Modeling
-
-Two uncertainty-aware demand model families are included:
-
-1. Gaussian probabilistic regression
-   - predicts `mu(x)` and `log_sigma(x)`
-   - uses Gaussian negative log-likelihood
-   - supports heteroscedastic uncertainty through `sigma(x)`
-2. Quantile regression
-   - predicts `q05`, `q50`, `q95`
-   - uses tilted loss
-   - exposes predictive intervals and warns on quantile crossing
-
-The default local baseline uses the Gaussian model. Quantile regression is implemented and ready to compare later.
+The fixed comparison rollout is:
+- `3` days
+- scripted disruptions
+- the same scenario for noop and trained RL comparisons
 
 ## Install
 
@@ -88,230 +69,129 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-If you want the exact requested stack, keep `gymnasium`, `stable-baselines3`, and `wandb` installed. The code also contains local fallbacks so the toy pipeline can still run when some optional packages are unavailable.
+## Main Local Commands
 
-## Quickstart
-
-Generate synthetic supervised data:
-
-```bash
-PYTHONPATH=src python -m evch.train.generate_synthetic_data \
-  --config configs/env/base.yaml \
-  --config configs/demand/base.yaml \
-  --config configs/experiment/local_demo.yaml
-```
-
-For the corridor-focused resilience setup, swap `configs/env/base.yaml` for `configs/env/corridor.yaml`.
-
-For a TomTom-grounded hybrid setup, first fetch a cached snapshot and then point the training scripts at `configs/env/tomtom_frederiksberg.yaml`.
-
-```bash
-export TOMTOM_API_KEY=...
-PYTHONPATH=src python3 -m evch.train.fetch_tomtom_snapshot \
-  --config configs/env/tomtom_frederiksberg.yaml \
-  --config configs/logging/base.yaml \
-  --config configs/experiment/tomtom_frederiksberg.yaml \
-  --config configs/tomtom/frederiksberg.yaml
-```
-
-Train an uncertainty model:
-
-```bash
-PYTHONPATH=src python -m evch.train.train_uncertainty \
-  --config configs/env/base.yaml \
-  --config configs/demand/base.yaml \
-  --config configs/model/gaussian.yaml \
-  --config configs/logging/base.yaml \
-  --config configs/experiment/local_demo.yaml
-```
-
-Train the RL agent:
+Train the current `A-B-C` RL setup:
 
 ```bash
 PYTHONPATH=src python -m evch.train.train_rl \
-  --config configs/env/base.yaml \
-  --config configs/demand/base.yaml \
-  --config configs/rl/dqn.yaml \
-  --config configs/logging/base.yaml \
-  --config configs/experiment/local_demo.yaml
-```
-
-Train the simple fixed-location mobile charging support agent:
-
-```bash
-PYTHONPATH=src python -m evch.train.train_rl \
-  --config configs/env/mobile_mcs_simple.yaml \
+  --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
   --config configs/rl/dqn_mobile_simple.yaml \
   --config configs/logging/base.yaml \
   --config configs/logging/wandb_online.yaml \
-  --config configs/experiment/mobile_mcs_simple.yaml
+  --config configs/experiment/mobile_mcs_line_abc.yaml
 ```
 
-This setup keeps a fixed station with 12 plugs, lets the DQN choose `0..10` mobile charging stations at each step, and uses a reward that trades off served demand, unmet demand, active MCS cost, change cost, and idle overcapacity.
-
-The training history and W&B logs for this setup now include the mobile-capacity control metrics that matter for debugging the policy:
-
-- `rl/mean_active_mobile_stations`
-- `rl/max_active_mobile_stations`
-- `rl/mean_active_chargers`
-- `rl/max_active_chargers`
-- `rl/total_activated_mobile_stations`
-- `rl/total_adjusted_mobile_stations`
-- `rl/mean_utilization`
-- `rl/mean_idle_capacity`
-
-W&B also logs a per-step control timeline for this environment under:
-
-- `rl_step/active_mobile_stations`
-- `rl_step/active_chargers`
-- `rl_step/utilization`
-- `rl_step/served_demand`
-- `rl_step/unmet_demand`
-
-For sweep runs, the full parameter combination is stored in the W&B config under `sweep_run.parameters`, together with `sweep_run.combination_index`, `sweep_run.label`, and `sweep_run.sweep_name`.
-
-Each mobile RL training run also emits a deterministic 3-day comparison rollout with the same `sim/*` style step logging used by the corridor queue simulator, including `sim/global_hour`, `sim/day_index`, `sim/hour_of_day`, `sim/queue_length`, `sim/utilization`, `sim/effective_num_plugs`, and disruption fields. The default comparison window now uses two scripted disruptions per day with different disruption pairs across the three days. The rollout artifacts are saved as `comparison_timestep_metrics.csv` and `comparison_rollout_summary.json` in the RL output directory.
-
-Recommended W&B dashboard panels for the full-grid sweep:
-
-1. Scatter plot:
-   x-axis `config.sweep_run.parameters.environment.reward.active_mobile_station_cost`
-   y-axis `rl_eval/mean_reward`
-2. Parallel coordinates:
-   dimensions `config.sweep_run.parameters.*` and `rl_eval/mean_reward`
-3. Line plot:
-   y-axis `rl_step/active_mobile_stations`
-   x-axis `_step`
-   group by run
-4. Line plot:
-   y-axis `rl_step/active_chargers`, `rl_step/served_demand`, `rl_step/unmet_demand`
-   x-axis `_step`
-5. Table:
-   columns `config.sweep_run.label`, `rl_eval/mean_reward`, `rl_eval/mean_unmet_demand`, `rl/mean_active_mobile_stations`
-
-Build the Denmark hybrid corridor example from TomTom and generate ready-to-train configs:
+Run the fixed 3-day noop comparison:
 
 ```bash
-export TOMTOM_API_KEY=...
-PYTHONPATH=src python -m evch.train.build_denmark_hybrid_corridor \
-  --config configs/logging/base.yaml \
-  --config configs/experiment/denmark_hybrid_corridor.yaml \
-  --config configs/tomtom/denmark_hybrid_corridor.yaml
-```
-
-Train the local RL agent on Apple Silicon using the generated corridor package:
-
-```bash
-PYTHONPATH=src python -m evch.train.train_rl \
-  --config outputs/denmark_hybrid_corridor/generated/environment.yaml \
-  --config outputs/denmark_hybrid_corridor/generated/demand.yaml \
-  --config configs/rl/dqn_apple_silicon.yaml \
-  --config configs/logging/base.yaml \
-  --config configs/experiment/denmark_hybrid_corridor.yaml
-```
-
-Evaluate RL against heuristics:
-
-```bash
-PYTHONPATH=src python -m evch.train.evaluate_policies \
-  --config configs/env/base.yaml \
+PYTHONPATH=src python -m evch.train.run_mobile_noop_comparison \
+  --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
-  --config configs/rl/dqn.yaml \
-  --config configs/logging/base.yaml \
-  --config configs/experiment/local_demo.yaml \
-  --agent-checkpoint outputs/latest/rl/best_model.pt
-```
-
-Or run the small local pipeline:
-
-```bash
-bash scripts/run_local_pipeline.sh
-```
-
-## Weights & Biases
-
-W&B is controlled through config:
-
-- `logging.wandb.enabled`
-- `logging.wandb.mode` set to `offline` or `online`
-- `rl.wandb_log_interval` for SB3 training metric upload cadence
-
-Environment variables:
-
-- `WANDB_API_KEY`
-- `WANDB_PROJECT`
-- `WANDB_ENTITY` (optional)
-
-If W&B is disabled or not installed, runs continue without crashing.
-
-Ready-made overlays are included:
-
-- [configs/logging/wandb_offline.yaml](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/configs/logging/wandb_offline.yaml)
-- [configs/logging/wandb_online.yaml](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/configs/logging/wandb_online.yaml)
-
-Online RL training example:
-
-```bash
-export WANDB_API_KEY=...
-export WANDB_PROJECT=adaptive-ev-charging
-PYTHONPATH=src python -m evch.train.train_rl \
-  --config configs/env/base.yaml \
-  --config configs/demand/base.yaml \
-  --config configs/rl/dqn.yaml \
   --config configs/logging/base.yaml \
   --config configs/logging/wandb_online.yaml \
-  --config configs/experiment/local_demo.yaml
+  --config configs/experiment/mobile_mcs_line_abc.yaml
 ```
 
-Offline logging example:
+Run the fixed 3-day trained RL comparison:
 
 ```bash
-PYTHONPATH=src python -m evch.train.train_uncertainty \
-  --config configs/env/base.yaml \
+PYTHONPATH=src python -m evch.train.run_mobile_rl_comparison \
+  --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
-  --config configs/model/gaussian.yaml \
   --config configs/logging/base.yaml \
-  --config configs/logging/wandb_offline.yaml \
-  --config configs/experiment/local_demo.yaml
-
-wandb sync wandb/offline-run-*
+  --config configs/logging/wandb_online.yaml \
+  --config configs/experiment/mobile_mcs_line_abc.yaml \
+  --agent-checkpoint outputs/mobile_mcs_line_abc/rl/best_model.pt
 ```
 
-RL and uncertainty training now upload the generated checkpoint, metrics/history JSON, and plots as W&B artifacts when W&B is enabled.
-
-## Slurm
-
-Templates are in [slurm/train_uncertainty.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/train_uncertainty.slurm), [slurm/train_rl.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/train_rl.slurm), and [slurm/eval.slurm](/Users/Saxe/Desktop/Business Analytics/2. semester/Adv BA/advanced-business-analytics/slurm/eval.slurm).
-
-For DTU-style LSF clusters, simple `bsub` templates for the mobile-agent setup are included in [bsub/train_mobile_rl.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/bsub/train_mobile_rl.bsub) and [bsub/eval_mobile_rl.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/bsub/eval_mobile_rl.bsub). They follow the same header style as the standard DTU HPC example you submit with `bsub < bsub/train_mobile_rl.bsub`.
-
-A full-grid reward sweep for the mobile MCS setup is included in [configs/sweeps/mobile_mcs_reward_sweep.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/configs/sweeps/mobile_mcs_reward_sweep.yaml) and [bsub/sweep_mobile_rl.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced-business-analytics/bsub/sweep_mobile_rl.bsub). The current narrowed grid focuses on the empirically useful band and produces `3 * 2 * 2 * 2 = 24` runs. Submit the full range with:
+Run the no-disruption sanity check:
 
 ```bash
-bsub < bsub/sweep_mobile_rl.bsub
+PYTHONPATH=src python -m evch.train.run_mobile_noop_comparison \
+  --config configs/env/mobile_mcs_line_abc_no_disruptions.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/logging/wandb_online.yaml \
+  --config configs/experiment/mobile_mcs_line_abc_no_disruptions.yaml
 ```
 
-Or submit a chunk of the grid by index:
+## DTU HPC
+
+The current `A-B-C` `bsub` scripts are:
+- [run_mobile_noop_line_abc.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/run_mobile_noop_line_abc.bsub)
+- [train_mobile_line_abc.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/train_mobile_line_abc.bsub)
+- [run_mobile_rl_line_abc.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/run_mobile_rl_line_abc.bsub)
+- [sweep_mobile_line_abc.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/sweep_mobile_line_abc.bsub)
+- [run_mobile_noop_line_abc_no_disruptions.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/run_mobile_noop_line_abc_no_disruptions.bsub)
+
+Typical order:
 
 ```bash
-SWEEP_START_INDEX=0 SWEEP_END_INDEX=100 bsub < bsub/sweep_mobile_rl.bsub
-SWEEP_START_INDEX=100 SWEEP_END_INDEX=200 bsub < bsub/sweep_mobile_rl.bsub
+bsub < bsub/run_mobile_noop_line_abc.bsub
+bsub < bsub/train_mobile_line_abc.bsub
+bsub < bsub/run_mobile_rl_line_abc.bsub
 ```
 
-Typical submission:
+The RL comparison script loads:
+
+```text
+outputs/mobile_mcs_line_abc/rl/best_model.pt
+```
+
+The current sweep is a 24-run full grid:
 
 ```bash
-sbatch slurm/train_uncertainty.slurm
-sbatch slurm/train_rl.slurm
-sbatch slurm/eval.slurm
+bsub < bsub/sweep_mobile_line_abc.bsub
 ```
 
-The templates use environment variables and placeholders rather than site-specific paths.
+## W&B Logging
+
+The current comparison runs log:
+- aggregate queue and wait metrics
+- station-specific queue and wait metrics
+- station-specific MCS allocation
+- expected passing demand by OD
+- expected charging demand at `AB` and `BC`
+- disruption type and disruption target
+
+Important metrics include:
+- `sim/queue_wait_mean_minutes_station_ab`
+- `sim/queue_wait_mean_minutes_station_bc`
+- `sim/num_active_mobile_stations_station_ab`
+- `sim/num_active_mobile_stations_station_bc`
+- `sim/expected_station_arrivals_ab`
+- `sim/expected_station_arrivals_bc`
+- `sim/disruption_target`
+
+Comparison runs also produce:
+- `comparison_timestep_metrics.csv`
+- `comparison_rollout_summary.json`
+- `comparison_queue_dynamics.png`
+- `comparison_daily_patterns.png`
+- `comparison_station_demand_vs_mcs.png`
+
+There are also custom W&B overlay panels for:
+- `sim_overlay/station_ab_demand_vs_mcs`
+- `sim_overlay/station_bc_demand_vs_mcs`
+
+Those are intended to show whether MCS are allocated to the correct station when a disruption occurs.
+
+## Baselines
+
+The most relevant baselines for the current setup are:
+- `mobile_noop`
+- `mobile_threshold`
+- trained RL
+
+`mobile_noop` is the clean "do nothing" baseline.
+`mobile_threshold` is the main simple rule-based baseline.
+An untrained RL policy is only a sanity check, not a main benchmark.
 
 ## Tests
 
-Run the minimal test suite with:
+Run:
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
@@ -319,21 +199,18 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 
 ## What Is Implemented
 
-- stochastic Gymnasium-compatible charging placement environment,
-- synthetic city and demand generation,
-- Gaussian NLL and quantile regressors in PyTorch,
-- local DQN implementation with optional Stable-Baselines3 DQN backend,
-- heuristic baselines,
-- evaluation scripts and plots,
-- YAML config loading,
-- optional W&B logging,
-- Slurm templates,
-- minimal tests.
+- two-city and three-city corridor queue simulators
+- mobile charging support environments
+- uncertainty-aware supervised models
+- RL training and evaluation
+- fixed 3-day comparison rollouts
+- DTU HPC `bsub` templates
+- W&B logging and artifact export
+- station-level diagnostics for the `A-B-C` setup
 
-## What Is Still Placeholder
+## What Is Still Open
 
-- real OSM or TomTom ingestion,
-- richer traffic assignment and queueing,
-- explicit uncertainty integration inside the RL state or reward,
-- multi-step relocation planning and constrained deployment budgets,
-- stronger robustness evaluation across many disruption regimes.
+- stronger heuristic baselines for the `A-B-C` environment
+- richer OD-to-station charging choice behavior
+- more systematic hyperparameter sweeps
+- clearer final evaluation story around when RL is justified

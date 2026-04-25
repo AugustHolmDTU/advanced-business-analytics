@@ -18,7 +18,7 @@ from evch.utils.io import ensure_dir, write_json
 from evch.utils.logging import configure_logging
 from evch.utils.seeding import set_global_seed
 from evch.utils.torch_runtime import configure_torch_runtime, resolve_torch_device
-from evch.utils.wandb import init_wandb, log_artifact
+from evch.utils.wandb import DummyRun, init_wandb, log_artifact
 
 LOGGER = logging.getLogger(__name__)
 
@@ -65,14 +65,45 @@ def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> b
         with contextlib.redirect_stderr(io.StringIO()):
             import matplotlib.pyplot as plt
 
-        plt.figure(figsize=(8, 4))
-        plt.plot([entry["reward"] for entry in history], label="Episode reward")
-        plt.xlabel("Episode")
-        plt.ylabel("Reward")
-        plt.title("Torch DQN training curve")
-        plt.tight_layout()
-        plt.savefig(path, dpi=180)
-        plt.close()
+        episodes = [entry["episode"] for entry in history]
+        rewards = [entry["reward"] for entry in history]
+        losses = [entry["loss"] for entry in history]
+        eval_points = [(entry["episode"], entry["eval_mean_reward"]) for entry in history if "eval_mean_reward" in entry]
+        eval_loss_points = [(entry["episode"], entry["eval_td_loss"]) for entry in history if "eval_td_loss" in entry]
+
+        fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+        axes[0].plot(episodes, rewards, color="#1f77b4", linewidth=1.6, label="Train reward")
+        if eval_points:
+            axes[0].plot(
+                [point[0] for point in eval_points],
+                [point[1] for point in eval_points],
+                color="#d62728",
+                marker="o",
+                linewidth=1.8,
+                label="Eval reward",
+            )
+        axes[0].set_ylabel("Reward")
+        axes[0].set_title("Train vs evaluation reward")
+        axes[0].legend()
+
+        axes[1].plot(episodes, losses, color="#2ca02c", linewidth=1.6, label="Train TD loss")
+        if eval_loss_points:
+            axes[1].plot(
+                [point[0] for point in eval_loss_points],
+                [point[1] for point in eval_loss_points],
+                color="#9467bd",
+                marker="o",
+                linewidth=1.8,
+                label="Eval TD loss",
+            )
+        axes[1].set_xlabel("Episode")
+        axes[1].set_ylabel("Loss")
+        axes[1].set_title("Train vs evaluation TD loss")
+        axes[1].legend()
+
+        fig.tight_layout()
+        fig.savefig(path, dpi=180)
+        plt.close(fig)
         return True
     except Exception as exc:  # pragma: no cover - depends on local plotting stack
         LOGGER.warning("Skipping RL training plot because matplotlib is unavailable: %s", exc)
@@ -157,6 +188,51 @@ def _maybe_plot_station_demand_vs_mcs(metrics: pd.DataFrame, path: Path) -> bool
         return False
 
 
+def _log_station_overlay_panels(run: Any, metrics: pd.DataFrame) -> None:
+    if isinstance(run, DummyRun):
+        return
+
+    required_columns = {
+        "global_hour",
+        "expected_station_arrivals_ab",
+        "expected_station_arrivals_bc",
+        "num_active_mobile_stations_station_ab",
+        "num_active_mobile_stations_station_bc",
+    }
+    if not required_columns.issubset(metrics.columns):
+        return
+
+    try:
+        import wandb  # type: ignore
+
+        run.log(
+            {
+                "sim_overlay/station_ab_demand_vs_mcs": wandb.plot.line_series(
+                    xs=metrics["global_hour"].tolist(),
+                    ys=[
+                        metrics["expected_station_arrivals_ab"].tolist(),
+                        metrics["num_active_mobile_stations_station_ab"].tolist(),
+                    ],
+                    keys=["AB expected charging demand", "AB allocated MCS"],
+                    title="Station AB: demand vs allocated MCS",
+                    xname="Global hour",
+                ),
+                "sim_overlay/station_bc_demand_vs_mcs": wandb.plot.line_series(
+                    xs=metrics["global_hour"].tolist(),
+                    ys=[
+                        metrics["expected_station_arrivals_bc"].tolist(),
+                        metrics["num_active_mobile_stations_station_bc"].tolist(),
+                    ],
+                    keys=["BC expected charging demand", "BC allocated MCS"],
+                    title="Station BC: demand vs allocated MCS",
+                    xname="Global hour",
+                ),
+            }
+        )
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        LOGGER.warning("Skipping WandB station overlay panels: %s", exc)
+
+
 class WandbSb3Callback:
     def __init__(self, run: Any, log_interval: int) -> None:
         from stable_baselines3.common.callbacks import BaseCallback  # type: ignore
@@ -221,7 +297,14 @@ def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Pat
     return "sb3_dqn", str(checkpoint)
 
 
-def _train_with_torch_dqn(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Path, run: Any) -> tuple[str, str, list[dict[str, float]]]:
+def _train_with_torch_dqn(
+    env: Any,
+    rl_cfg: dict[str, Any],
+    seed: int,
+    output_dir: Path,
+    run: Any,
+    eval_env_factory: Callable[[int], Any] | None = None,
+) -> tuple[str, str, list[dict[str, float]]]:
     agent = SimpleDQNAgent(
         obs_dim=int(env.observation_space.shape[0]),
         action_dim=int(env.action_space.n),
@@ -233,6 +316,10 @@ def _train_with_torch_dqn(env: Any, rl_cfg: dict[str, Any], seed: int, output_di
         episodes=int(rl_cfg["episodes"]),
         max_steps=int(rl_cfg["max_steps_per_episode"]),
         run=run,
+        eval_env_factory=eval_env_factory,
+        eval_interval=int(rl_cfg.get("eval_interval_episodes", max(1, int(rl_cfg["episodes"]) // 8))),
+        eval_episodes=int(rl_cfg.get("eval_during_training_episodes", max(1, int(rl_cfg.get("evaluation_episodes", 1))))),
+        eval_seed=seed + 10_000,
     )
     checkpoint = output_dir / str(rl_cfg["checkpoint_name"])
     agent.save(checkpoint)
@@ -441,6 +528,7 @@ def _build_mobile_comparison_rollout(
     for row in wandb_frame.to_dict(orient="records"):
         run.log({f"sim/{key}": value for key, value in row.items()})
     run.log({f"sim_summary/{key}": value for key, value in summary.items()})
+    _log_station_overlay_panels(run, frame)
 
     log_artifact(run=run, path=metrics_path, artifact_name=f"{config['experiment']['name']}-comparison-rollout-metrics", artifact_type="metrics", aliases=["latest"])
     log_artifact(run=run, path=summary_path, artifact_name=f"{config['experiment']['name']}-comparison-rollout-summary", artifact_type="metrics", aliases=["latest"])
@@ -488,7 +576,14 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
     if use_sb3:
         backend, checkpoint_path = _train_with_sb3(env, rl_cfg, seed=seed, output_dir=output_dir, run=run)
     else:
-        backend, checkpoint_path, history = _train_with_torch_dqn(env, rl_cfg, seed=seed, output_dir=output_dir, run=run)
+        backend, checkpoint_path, history = _train_with_torch_dqn(
+            env,
+            rl_cfg,
+            seed=seed,
+            output_dir=output_dir,
+            run=run,
+            eval_env_factory=lambda eval_seed: make_env(config["environment"], config["demand"], seed=eval_seed),
+        )
 
     eval_env = make_env(config["environment"], config["demand"], seed=seed + 17)
     policy = _make_rl_policy(backend, checkpoint_path)
@@ -500,9 +595,6 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         deterministic=bool(rl_cfg.get("deterministic_eval", True)),
     )
     run.log({f"rl_eval/{key}": value for key, value in evaluation.items() if not isinstance(value, list)})
-
-    if history and bool(experiment_cfg.get("save_plots", True)):
-        _maybe_plot_training_curve(history, output_dir / "training_curve.png")
 
     training_summary_path = output_dir / "training_summary.json"
     write_json(
@@ -516,6 +608,9 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
     )
     if history:
         write_json(output_dir / "history.json", {"history": history})
+
+    if history and bool(experiment_cfg.get("save_plots", True)):
+        _maybe_plot_training_curve(history, output_dir / "training_curve.png")
 
     comparison_rollout = _build_mobile_comparison_rollout(
         config=config,

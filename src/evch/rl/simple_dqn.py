@@ -11,6 +11,7 @@ from torch import nn
 from torch.optim import Adam
 
 from evch.models.common import make_mlp
+from evch.rl.evaluation import evaluate_policy
 from evch.utils.torch_runtime import resolve_torch_device
 
 
@@ -130,10 +131,7 @@ class SimpleDQNAgent:
             q_values = (self.q_network(tensor_obs) + self._heuristic_prior_tensor(tensor_obs)).squeeze(0).cpu().numpy()
         return self._masked_argmax(q_values, action_mask)
 
-    def update(self) -> float | None:
-        if len(self.replay_buffer) < max(self.batch_size, self.learning_starts):
-            return None
-        batch = self.replay_buffer.sample(self.batch_size)
+    def _td_loss_tensor(self, batch: list[Transition]) -> torch.Tensor:
         observations = torch.as_tensor(np.stack([t.observation for t in batch]), dtype=torch.float32, device=self.device)
         actions = torch.as_tensor([t.action for t in batch], dtype=torch.long, device=self.device).unsqueeze(1)
         rewards = torch.as_tensor([t.reward for t in batch], dtype=torch.float32, device=self.device).unsqueeze(1)
@@ -155,7 +153,13 @@ class SimpleDQNAgent:
             next_q = self.target_network(next_observations).gather(1, next_actions)
             targets = rewards + self.gamma * (1.0 - dones) * next_q
 
-        loss = torch.nn.functional.smooth_l1_loss(q_values, targets)
+        return torch.nn.functional.smooth_l1_loss(q_values, targets)
+
+    def update(self) -> float | None:
+        if len(self.replay_buffer) < max(self.batch_size, self.learning_starts):
+            return None
+        batch = self.replay_buffer.sample(self.batch_size)
+        loss = self._td_loss_tensor(batch)
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=5.0)
@@ -163,6 +167,39 @@ class SimpleDQNAgent:
         if self.tau < 1.0:
             self._update_target_network()
         return float(loss.item())
+
+    def evaluate_td_loss(self, env: Any, episodes: int, seed: int) -> float:
+        transitions: list[Transition] = []
+        for episode in range(episodes):
+            observation, _ = env.reset(seed=seed + episode)
+            while True:
+                action = self.act(observation, deterministic=True, env=env)
+                next_observation, reward, terminated, truncated, _info = env.step(action)
+                next_action_mask = self._valid_action_mask(env)
+                if next_action_mask is None:
+                    next_action_mask = np.ones(self.action_dim, dtype=bool)
+                transitions.append(
+                    Transition(
+                        observation=observation.copy(),
+                        action=action,
+                        reward=float(reward),
+                        next_observation=next_observation.copy(),
+                        next_action_mask=next_action_mask.copy(),
+                        done=bool(terminated or truncated),
+                    )
+                )
+                observation = next_observation
+                if terminated or truncated:
+                    break
+
+        if not transitions:
+            return 0.0
+
+        losses: list[float] = []
+        for start in range(0, len(transitions), self.batch_size):
+            batch = transitions[start : start + self.batch_size]
+            losses.append(float(self._td_loss_tensor(batch).item()))
+        return float(np.mean(losses)) if losses else 0.0
 
     def _update_target_network(self) -> None:
         if self.tau >= 1.0:
@@ -172,7 +209,17 @@ class SimpleDQNAgent:
             for target_param, param in zip(self.target_network.parameters(), self.q_network.parameters()):
                 target_param.data.mul_(1.0 - self.tau).add_(param.data, alpha=self.tau)
 
-    def train(self, env: Any, episodes: int, max_steps: int, run: Any | None = None) -> list[dict[str, float]]:
+    def train(
+        self,
+        env: Any,
+        episodes: int,
+        max_steps: int,
+        run: Any | None = None,
+        eval_env_factory: Any | None = None,
+        eval_interval: int = 0,
+        eval_episodes: int = 1,
+        eval_seed: int = 12345,
+    ) -> list[dict[str, float]]:
         history: list[dict[str, float]] = []
         for episode in range(episodes):
             observation, _ = env.reset(seed=int(self.rng.integers(1_000_000)))
@@ -307,6 +354,36 @@ class SimpleDQNAgent:
                 "queue_wait_target_breach_fraction": float(np.mean(queue_wait_breach_trace)) if queue_wait_breach_trace else 0.0,
                 "disruption_step_fraction": float(np.mean(disruption_trace)) if disruption_trace else 0.0,
             }
+            should_eval = (
+                eval_env_factory is not None
+                and eval_interval > 0
+                and (((episode + 1) % eval_interval == 0) or (episode == episodes - 1))
+            )
+            if should_eval:
+                reward_env = eval_env_factory(eval_seed)
+                eval_summary = evaluate_policy(
+                    env=reward_env,
+                    policy=lambda obs, inner_env, deterministic=True: self.act(obs, deterministic=deterministic, env=inner_env),
+                    episodes=max(eval_episodes, 1),
+                    seed=eval_seed,
+                    deterministic=True,
+                )
+                if hasattr(reward_env, "close"):
+                    reward_env.close()
+
+                loss_env = eval_env_factory(eval_seed)
+                eval_td_loss = self.evaluate_td_loss(loss_env, episodes=max(eval_episodes, 1), seed=eval_seed)
+                if hasattr(loss_env, "close"):
+                    loss_env.close()
+
+                record.update(
+                    {
+                        "eval_mean_reward": float(eval_summary["mean_reward"]),
+                        "eval_mean_served_demand": float(eval_summary["mean_served_demand"]),
+                        "eval_mean_unmet_demand": float(eval_summary["mean_unmet_demand"]),
+                        "eval_td_loss": float(eval_td_loss),
+                    }
+                )
             history.append(record)
             if run is not None:
                 run.log({f"rl/{key}": value for key, value in record.items()})
