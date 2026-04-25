@@ -25,6 +25,8 @@ LOGGER = logging.getLogger(__name__)
 SIM_WANDB_COLUMNS = {
     "step",
     "global_hour",
+    "arrivals_total_station_ab",
+    "arrivals_total_station_bc",
     "queue_length",
     "queue_length_station_ab",
     "queue_length_station_bc",
@@ -43,6 +45,8 @@ SIM_WANDB_COLUMNS = {
     "num_active_mobile_stations_station_ab",
     "num_active_mobile_stations_station_bc",
     "expected_passing_total",
+    "expected_station_arrivals_ab",
+    "expected_station_arrivals_bc",
     "expected_passing_od_ab",
     "expected_passing_od_ba",
     "expected_passing_od_bc",
@@ -72,6 +76,82 @@ def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> b
         return True
     except Exception as exc:  # pragma: no cover - depends on local plotting stack
         LOGGER.warning("Skipping RL training plot because matplotlib is unavailable: %s", exc)
+        if path.exists():
+            path.unlink()
+        return False
+
+
+def _maybe_plot_station_demand_vs_mcs(metrics: pd.DataFrame, path: Path) -> bool:
+    required_columns = {
+        "global_hour",
+        "arrivals_total_station_ab",
+        "arrivals_total_station_bc",
+        "expected_station_arrivals_ab",
+        "expected_station_arrivals_bc",
+        "num_active_mobile_stations_station_ab",
+        "num_active_mobile_stations_station_bc",
+    }
+    if not required_columns.issubset(metrics.columns):
+        return False
+
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            import matplotlib.pyplot as plt
+
+        from evch.train.run_simple_corridor_sim import _disruption_windows, _shade_disruptions
+
+        fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+        _shade_disruptions(axes, _disruption_windows(metrics))
+
+        station_specs = (
+            ("AB", "arrivals_total_station_ab", "expected_station_arrivals_ab", "num_active_mobile_stations_station_ab"),
+            ("BC", "arrivals_total_station_bc", "expected_station_arrivals_bc", "num_active_mobile_stations_station_bc"),
+        )
+        demand_colors = {"AB": ("#1f77b4", "#0b3c5d"), "BC": ("#2ca02c", "#145a32")}
+        mcs_colors = {"AB": "#d62728", "BC": "#ff7f0e"}
+
+        for axis, (label, arrivals_col, expected_col, mcs_col) in zip(axes, station_specs):
+            raw_color, expected_color = demand_colors[label]
+            axis.plot(
+                metrics["global_hour"],
+                metrics[arrivals_col],
+                color=raw_color,
+                linewidth=1.1,
+                alpha=0.35,
+                label=f"{label} realized demand",
+            )
+            axis.plot(
+                metrics["global_hour"],
+                metrics[expected_col],
+                color=expected_color,
+                linewidth=2.0,
+                label=f"{label} expected demand",
+            )
+            axis.set_ylabel("Demand")
+
+            twin_axis = axis.twinx()
+            twin_axis.step(
+                metrics["global_hour"],
+                metrics[mcs_col],
+                where="post",
+                color=mcs_colors[label],
+                linewidth=2.0,
+                label=f"{label} MCS",
+            )
+            twin_axis.set_ylabel("Active MCS")
+
+            lines, labels = axis.get_legend_handles_labels()
+            twin_lines, twin_labels = twin_axis.get_legend_handles_labels()
+            axis.legend(lines + twin_lines, labels + twin_labels, loc="upper right")
+            axis.set_title(f"Station {label}: charging demand versus mobile-station allocation")
+
+        axes[-1].set_xlabel("Global hour")
+        fig.tight_layout()
+        fig.savefig(path, dpi=180)
+        plt.close(fig)
+        return True
+    except Exception as exc:  # pragma: no cover - depends on local plotting stack
+        LOGGER.warning("Skipping station demand plot because matplotlib is unavailable: %s", exc)
         if path.exists():
             path.unlink()
         return False
@@ -255,9 +335,13 @@ def _build_mobile_comparison_rollout(
                 "hour_of_day": hour_of_day,
                 "time_label": f"{int(hour_of_day):02d}:{int((hour_of_day % 1.0) * 60):02d}",
                 "expected_passing_total": float(info.get("expected_passing_total", info.get("expected_arrivals_vehicles", 0.0))),
+                "expected_station_arrivals_ab": float(info.get("expected_station_arrivals_ab", 0.0)),
+                "expected_station_arrivals_bc": float(info.get("expected_station_arrivals_bc", 0.0)),
                 "expected_passing_ab": float(info.get("expected_passing_ab", 0.0)),
                 "expected_passing_ba": float(info.get("expected_passing_ba", 0.0)),
                 "arrivals_total": float(info.get("arrivals_total", info.get("arrivals_vehicles", 0.0))),
+                "arrivals_total_station_ab": float(info.get("arrivals_total_station_ab", 0.0)),
+                "arrivals_total_station_bc": float(info.get("arrivals_total_station_bc", 0.0)),
                 "arrivals_ab": float(info.get("arrivals_ab", 0.0)),
                 "arrivals_ba": float(info.get("arrivals_ba", 0.0)),
                 "starts_total": float(info.get("starts_total", info.get("served_demand", 0.0))),
@@ -315,6 +399,7 @@ def _build_mobile_comparison_rollout(
     summary_path = output_dir / "comparison_rollout_summary.json"
     plot_path = output_dir / "comparison_queue_dynamics.png"
     daily_plot_path = output_dir / "comparison_daily_patterns.png"
+    station_plot_path = output_dir / "comparison_station_demand_vs_mcs.png"
     frame.to_csv(metrics_path, index=False)
     summary = {
         "num_days": num_days,
@@ -344,6 +429,7 @@ def _build_mobile_comparison_rollout(
     write_json(summary_path, summary)
     _maybe_plot_queue_dynamics(frame, plot_path)
     _maybe_plot_daily_patterns(frame, daily_plot_path)
+    _maybe_plot_station_demand_vs_mcs(frame, station_plot_path)
 
     wandb_frame = frame.loc[:, [column for column in frame.columns if column in SIM_WANDB_COLUMNS]].copy()
     for column in wandb_frame.columns:
@@ -360,11 +446,19 @@ def _build_mobile_comparison_rollout(
     log_artifact(run=run, path=summary_path, artifact_name=f"{config['experiment']['name']}-comparison-rollout-summary", artifact_type="metrics", aliases=["latest"])
     log_artifact(run=run, path=plot_path, artifact_name=f"{config['experiment']['name']}-comparison-rollout-plot", artifact_type="plot", aliases=["latest"])
     log_artifact(run=run, path=daily_plot_path, artifact_name=f"{config['experiment']['name']}-comparison-daily-patterns", artifact_type="plot", aliases=["latest"])
+    log_artifact(
+        run=run,
+        path=station_plot_path,
+        artifact_name=f"{config['experiment']['name']}-comparison-station-demand-vs-mcs",
+        artifact_type="plot",
+        aliases=["latest"],
+    )
     return {
         "metrics_path": str(metrics_path),
         "summary_path": str(summary_path),
         "plot_path": str(plot_path),
         "daily_plot_path": str(daily_plot_path),
+        "station_plot_path": str(station_plot_path),
         "summary": summary,
     }
 
