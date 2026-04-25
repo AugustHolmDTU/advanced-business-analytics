@@ -15,7 +15,7 @@ comparison_rollout:
       duration_hours: 2.0
       severity: 4.0
     - disruption_type: demand_surge
-      target: od_ac
+      target: od_ab
       day_index: 0
       start_hour: 16.0
       duration_hours: 2.0
@@ -33,7 +33,7 @@ comparison_rollout:
       duration_hours: 1.5
       severity: 0.0
     - disruption_type: demand_surge
-      target: od_ca
+      target: od_bc
       day_index: 2
       start_hour: 7.0
       duration_hours: 2.0
