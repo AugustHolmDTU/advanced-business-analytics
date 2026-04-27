@@ -215,6 +215,21 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
     def _normalized(self, value: float, scale: float) -> float:
         return float(value) / max(scale, 1e-6)
 
+    def _affected_station_indices_for_target(self, disruption_target: str) -> list[int]:
+        target = str(disruption_target)
+        if target == "station_ab":
+            return [0]
+        if target == "station_bc":
+            return [1]
+        if target == "all_stations":
+            return [0, 1]
+        if target in getattr(self.simulator, "trip_definitions", {}):
+            weights = np.asarray(self.simulator.trip_definitions[target].station_weights, dtype=np.float32)
+            return [int(index) for index, weight in enumerate(weights) if float(weight) > 0.0]
+        if target in {"eastbound", "westbound", "all_ods"}:
+            return [0, 1]
+        return []
+
     def _get_observation(self) -> np.ndarray:
         disruption_state = self.simulator._disruption_state(self.step_index, self.disruption_by_step)
         expected = self.simulator.expected_traffic(
@@ -353,17 +368,23 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         activated = np.maximum(self.current_mobile_stations_by_station - previous_mobile_stations, 0)
         adjusted = np.abs(self.current_mobile_stations_by_station - previous_mobile_stations)
         mean_queue_wait = float(queue_wait_means.mean())
+        queue_wait_burden = float(np.dot(queue_lengths.astype(np.float32), queue_wait_means.astype(np.float32)))
+        affected_station_indices = self._affected_station_indices_for_target(disruption_state.get("disruption_target", "none"))
+        disruption_response_bonus_term = 0.0
+        if float(disruption_state["disruption_active"]) > 0.0 and affected_station_indices:
+            has_response_on_affected_station = bool(self.current_mobile_stations_by_station[affected_station_indices].sum() > 0)
+            disruption_response_bonus_term = self.disruption_response_bonus * float(has_response_on_affected_station)
         reward = (
             self.served_reward_weight * served_total
             - self.unmet_penalty * unmet_total
             - self.queue_length_penalty * unmet_total
-            - self.queue_wait_penalty * mean_queue_wait
+            - self.queue_wait_penalty * queue_wait_burden
             - self.active_mobile_station_cost * float(self.current_mobile_stations_by_station.sum())
             - self.activation_cost * float(activated.sum())
             - self.adjustment_cost * float(adjusted.sum())
             - self.idle_capacity_penalty * idle_capacity
             + self.utilization_bonus * float(utilization_by_station.mean())
-            + self.disruption_response_bonus * float(disruption_state["disruption_active"]) * float(self.current_mobile_stations_by_station.sum() > 0)
+            + disruption_response_bonus_term
         )
         reward *= self.reward_scale
 
@@ -385,6 +406,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "arrivals_vehicles": float(len(arrivals)),
             "queue_length": float(queue_lengths.sum()),
             "queue_wait_mean_minutes": mean_queue_wait,
+            "queue_wait_burden_minutes": queue_wait_burden,
             "service_capacity_vehicles": float(effective_num_plugs_by_station.sum()),
             "num_active_mobile_stations": int(self.current_mobile_stations_by_station.sum()),
             "num_active_mobile_stations_station_ab": int(self.current_mobile_stations_by_station[0]),
@@ -408,10 +430,13 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "activated_mobile_stations": int(activated.sum()),
             "adjusted_mobile_stations": int(adjusted.sum()),
             "idle_capacity": idle_capacity,
+            "reward_queue_wait_penalty_term": float(self.queue_wait_penalty * queue_wait_burden),
+            "reward_disruption_response_bonus_term": float(disruption_response_bonus_term),
             "disruption_active": int(disruption_state["disruption_active"]),
             "disruption_type": str(disruption_state["disruption_type"]),
             "disruption_type_code": int(disruption_state["disruption_type_code"]),
             "disruption_target": str(disruption_state.get("disruption_target", "none")),
+            "disruption_target_code": int(disruption_state.get("disruption_target_code", 0)),
             "disruption_day_index": int(disruption_state["disruption_day_index"]),
             "disruption_remaining_steps": float(disruption_state["disruption_remaining_minutes"]) / float(self.simulator.step_minutes),
             "disruption_remaining_minutes": float(disruption_state["disruption_remaining_minutes"]),

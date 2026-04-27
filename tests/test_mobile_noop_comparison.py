@@ -141,6 +141,7 @@ class MobileNoopComparisonTest(unittest.TestCase):
             self.assertTrue(any(column.startswith("starts_") for column in frame.columns))
             self.assertTrue(any(column.startswith("started_") for column in frame.columns))
             self.assertTrue(any(column.startswith("completions_") for column in frame.columns))
+            self.assertIn("disruption_target_code", frame.columns)
 
     def test_runs_seeded_test_id_noop_comparison(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -284,6 +285,9 @@ class MobileNoopComparisonTest(unittest.TestCase):
             self.assertEqual(frame["num_active_mobile_stations"].max(), 0.0)
             self.assertGreaterEqual(int(frame["disruption_active"].sum()), 2)
             self.assertGreater(len(frame.loc[frame["disruption_active"] == 1, "day_index"].dropna().unique()), 1)
+            self.assertIn("disruption_target_code", frame.columns)
+            self.assertIn("disruption_target_is_od_ab", frame.columns)
+            self.assertIn("disruption_target_is_od_bc", frame.columns)
             active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
             self.assertTrue(active_targets.intersection({"od_ab", "od_ba"}))
             self.assertTrue(active_targets.intersection({"od_bc", "od_cb"}))

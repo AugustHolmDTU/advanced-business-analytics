@@ -176,6 +176,7 @@ class MobileRlComparisonTest(unittest.TestCase):
             self.assertEqual(len(frame), 864)
             self.assertIn("num_active_mobile_stations_station_ab", frame.columns)
             self.assertIn("expected_passing_od_ac", frame.columns)
+            self.assertIn("disruption_target_code", frame.columns)
 
     def test_runs_longer_test_id_seeded_heldout_rollout(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -254,6 +255,9 @@ class MobileRlComparisonTest(unittest.TestCase):
             self.assertGreaterEqual(int(frame["disruption_active"].sum()), 2)
             self.assertIn("allocation_vs_demand_alignment", frame.columns)
             self.assertGreater(len(frame.loc[frame["disruption_active"] == 1, "day_index"].dropna().unique()), 1)
+            self.assertIn("disruption_target_code", frame.columns)
+            self.assertIn("disruption_target_is_od_ab", frame.columns)
+            self.assertIn("disruption_target_is_od_bc", frame.columns)
             active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
             self.assertTrue(active_targets.intersection({"od_ab", "od_ba"}))
             self.assertTrue(active_targets.intersection({"od_bc", "od_cb"}))

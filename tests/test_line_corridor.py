@@ -1,3 +1,4 @@
+from collections import deque
 import logging
 import tempfile
 import unittest
@@ -8,8 +9,8 @@ import pandas as pd
 from evch.baselines.policies import mobile_threshold_policy
 from evch.envs.factory import make_env
 from evch.envs.line_corridor_mobile_env import LineCorridorMobileStationEnv
+from evch.sim.line_corridor import ActiveSession, LineCorridorQueueSimulator, QueuedVehicle
 from evch.train.run_mobile_noop_comparison import run_mobile_noop_comparison
-from evch.sim.line_corridor import LineCorridorQueueSimulator
 
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
@@ -222,6 +223,116 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
 
         self.assertGreaterEqual(action, 0)
         self.assertLess(action, env.action_space.n)
+
+    def test_reward_queue_wait_penalty_uses_local_queue_burden(self) -> None:
+        env_config = {
+            **self.env_config,
+            "reward_scale": 1.0,
+            "reward": {
+                **self.env_config["reward"],
+                "served_reward_weight": 0.0,
+                "unmet_penalty": 0.0,
+                "active_mobile_station_cost": 0.0,
+                "activation_cost": 0.0,
+                "adjustment_cost": 0.0,
+                "idle_capacity_penalty": 0.0,
+                "utilization_bonus": 0.0,
+                "queue_length_penalty": 0.0,
+                "queue_wait_penalty": 1.0,
+                "disruption_response_bonus": 0.0,
+            },
+            "simulation": {
+                **self.env_config["simulation"],
+                "charging_stop_probability": 0.0,
+                "num_plugs": [1, 1],
+                "disruption": {"enabled": False},
+            },
+        }
+        env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
+        env.reset(seed=4)
+        env.active_sessions_by_station = [
+            [],
+            [
+                ActiveSession(
+                    arrival_step=0,
+                    start_step=0,
+                    end_step=100,
+                    trip_key="od_bc",
+                    station_index=1,
+                    service_minutes=30.0,
+                )
+            ],
+        ]
+        env.queue_by_station = [
+            deque(),
+            deque(
+                [
+                    QueuedVehicle(
+                        arrival_step=-4,
+                        trip_key="od_bc",
+                        station_index=1,
+                        base_service_minutes=30.0,
+                    )
+                ]
+            ),
+        ]
+
+        _, reward, _, _, info = env.step(env.action_from_mobile_station_allocation((0, 0)))
+
+        self.assertAlmostEqual(info["queue_wait_mean_minutes_station_ab"], 0.0)
+        self.assertAlmostEqual(info["queue_wait_mean_minutes_station_bc"], 20.0)
+        self.assertAlmostEqual(info["queue_wait_burden_minutes"], 20.0)
+        self.assertAlmostEqual(info["reward_queue_wait_penalty_term"], 20.0)
+        self.assertAlmostEqual(reward, -20.0)
+
+    def test_disruption_response_bonus_only_rewards_affected_station(self) -> None:
+        env_config = {
+            **self.env_config,
+            "reward_scale": 1.0,
+            "reward": {
+                **self.env_config["reward"],
+                "served_reward_weight": 0.0,
+                "unmet_penalty": 0.0,
+                "active_mobile_station_cost": 0.0,
+                "activation_cost": 0.0,
+                "adjustment_cost": 0.0,
+                "idle_capacity_penalty": 0.0,
+                "utilization_bonus": 0.0,
+                "queue_length_penalty": 0.0,
+                "queue_wait_penalty": 0.0,
+                "disruption_response_bonus": 5.0,
+            },
+            "simulation": {
+                **self.env_config["simulation"],
+                "charging_stop_probability": 0.0,
+                "disruption": {
+                    "enabled": True,
+                    "mode": "scripted",
+                    "scripted_events": [
+                        {
+                            "disruption_type": "demand_surge",
+                            "target": "od_bc",
+                            "day_index": 0,
+                            "start_hour": 0.0,
+                            "duration_hours": 1.0,
+                            "severity": 3.0,
+                        }
+                    ],
+                },
+            },
+        }
+        env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
+        env.reset(seed=4)
+
+        _, reward_wrong, _, _, info_wrong = env.step(env.action_from_mobile_station_allocation((1, 0)))
+        env.reset(seed=4)
+        _, reward_right, _, _, info_right = env.step(env.action_from_mobile_station_allocation((0, 1)))
+
+        self.assertEqual(info_wrong["disruption_target"], "od_bc")
+        self.assertAlmostEqual(info_wrong["reward_disruption_response_bonus_term"], 0.0)
+        self.assertAlmostEqual(info_right["reward_disruption_response_bonus_term"], 5.0)
+        self.assertAlmostEqual(reward_wrong, 0.0)
+        self.assertAlmostEqual(reward_right, 5.0)
 
     def test_noop_comparison_logs_three_day_time_series_with_od_columns(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:

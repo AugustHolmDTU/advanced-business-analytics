@@ -83,6 +83,25 @@ class LineCorridorQueueSimulator:
 
     STATION_KEYS = ("station_ab", "station_bc")
     TRIP_KEYS = ("od_ab", "od_ba", "od_bc", "od_cb", "od_ac", "od_ca")
+    DISRUPTION_TARGET_CODES = {
+        "none": 0,
+        "station_ab": 1,
+        "station_bc": 2,
+        "all_stations": 3,
+        "od_ab": 4,
+        "od_ba": 5,
+        "od_bc": 6,
+        "od_cb": 7,
+        "od_ac": 8,
+        "od_ca": 9,
+        "eastbound": 10,
+        "westbound": 11,
+        "all_ods": 12,
+    }
+
+    @classmethod
+    def target_indicator_columns(cls) -> list[str]:
+        return [f"disruption_target_is_{target}" for target in cls.DISRUPTION_TARGET_CODES if target != "none"]
 
     def __init__(self, config: dict[str, Any], seed: int = 0) -> None:
         self.config = config
@@ -615,6 +634,7 @@ class LineCorridorQueueSimulator:
                 "disruption_type": "none",
                 "disruption_type_code": 0,
                 "disruption_target": "none",
+                "disruption_target_code": 0,
                 "disruption_day_index": -1,
                 "disruption_remaining_minutes": 0.0,
                 "effective_num_plugs_by_station": self.num_plugs_by_station.copy(),
@@ -627,6 +647,7 @@ class LineCorridorQueueSimulator:
             "disruption_type": event.disruption_type,
             "disruption_type_code": self.DISRUPTION_TYPE_CODES[event.disruption_type],
             "disruption_target": event.target,
+            "disruption_target_code": self.DISRUPTION_TARGET_CODES.get(event.target, 0),
             "disruption_day_index": event.day_index,
             "disruption_remaining_minutes": float(max(event.end_step - step, 0) * self.step_minutes),
             "effective_num_plugs_by_station": np.asarray(event.effective_num_plugs_by_station, dtype=np.int32),
@@ -790,6 +811,7 @@ class LineCorridorQueueSimulator:
                         "disruption_type": str(disruption_state["disruption_type"]),
                         "disruption_type_code": int(disruption_state["disruption_type_code"]),
                         "disruption_target": str(disruption_state["disruption_target"]),
+                        "disruption_target_code": int(disruption_state["disruption_target_code"]),
                         "disruption_day_index": int(disruption_state["disruption_day_index"]),
                         "disruption_remaining_minutes": float(disruption_state["disruption_remaining_minutes"]),
                     },

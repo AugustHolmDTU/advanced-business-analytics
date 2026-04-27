@@ -15,6 +15,7 @@ from evch.config.loader import build_config_parser, load_config
 from evch.envs.factory import make_env
 from evch.rl.evaluation import evaluate_policy
 from evch.rl.simple_dqn import SimpleDQNAgent
+from evch.sim.line_corridor import LineCorridorQueueSimulator
 from evch.train.eval_suites import build_seed_list, evaluate_policy_suites, resolve_train_seed_range
 from evch.utils.io import ensure_dir, write_json
 from evch.utils.logging import configure_logging
@@ -66,8 +67,10 @@ SIM_WANDB_COLUMNS = {
     "disruption_active",
     "disruption_type_code",
     "disruption_target",
+    "disruption_target_code",
     "reward",
 }
+SIM_WANDB_COLUMNS.update(LineCorridorQueueSimulator.target_indicator_columns())
 
 
 def _deep_merge_dicts(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
@@ -515,6 +518,7 @@ def _build_mobile_comparison_rollout(
                 "disruption_type": str(info.get("disruption_type", "none")),
                 "disruption_type_code": int(info.get("disruption_type_code", 0)),
                 "disruption_target": str(info.get("disruption_target", "none")),
+                "disruption_target_code": int(info.get("disruption_target_code", 0)),
                 "disruption_day_index": int(info.get("disruption_day_index", -1)),
                 "disruption_remaining_minutes": float(info.get("disruption_remaining_steps", 0.0)) * float(env.planning_step_minutes),
                 "rl_action_mcs": float(action),
@@ -580,6 +584,9 @@ def _build_mobile_comparison_rollout(
             -frame["allocation_bias_ab_minus_bc"],
             np.nan,
         )
+    disruption_targets = [target for target in LineCorridorQueueSimulator.DISRUPTION_TARGET_CODES if target != "none"]
+    for target in disruption_targets:
+        frame[f"disruption_target_is_{target}"] = ((frame["disruption_target"] == target) & (frame["disruption_active"] == 1)).astype(np.int32)
     from evch.train.run_simple_corridor_sim import _add_derived_metrics, _maybe_plot_daily_patterns, _maybe_plot_queue_dynamics
 
     frame = _add_derived_metrics(frame, step_minutes=int(env.planning_step_minutes))
