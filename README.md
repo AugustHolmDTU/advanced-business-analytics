@@ -94,6 +94,11 @@ The old one-off scripted rollout helpers still exist:
 
 These are useful for manual diagnostics, but they are not the main experiment any more.
 
+For line-ABC, the `bsub/run_mobile_rl_line_abc.bsub` and `bsub/run_mobile_noop_line_abc.bsub` jobs use
+`configs/experiment/mobile_mcs_line_abc_heldout_comparison.yaml`, which picks one fixed seed from the held-out
+`test_id` split and logs the full `sim/*` time series. This keeps the W&B overlays comparable while still using an
+unseen scenario from the main test distribution.
+
 ## W&B Logs: What They Mean
 
 The project logs are grouped into namespaces.

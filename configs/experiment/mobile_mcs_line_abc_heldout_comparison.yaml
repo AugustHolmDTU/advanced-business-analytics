@@ -1,24 +1,8 @@
-# Legacy fixed rollout override for one-off visual diagnostics.
-# The primary experiment now uses train_val_test.* seed banks in
-# configs/experiment/mobile_mcs_line_abc.yaml.
+# Single-scenario held-out comparison override for W&B `sim/*` overlays.
+# This uses one fixed seed from the `train_val_test.test_id` split so
+# RL and baseline runs see the exact same unseen simulated day.
 comparison_rollout:
   enabled: true
-  num_days: 5
-  seed: 777
-  repeat_daily_disruptions: false
-  scripted_events: []
-  environment_overrides:
-    simulation:
-      disruption:
-        enabled: true
-        mode: random
-        daily_event_probability: 0.8
-        event_types:
-          - demand_surge
-        demand_surge:
-          duration_hours: [2.0, 3.5]
-          start_hour_range: [6.0, 20.0]
-          multiplier: 2.4
-          targets:
-            - od_ab
-            - od_ba
+  seed_source: test_id
+  seed_index: 0
+  use_seeded_episode: true

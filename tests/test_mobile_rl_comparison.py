@@ -180,24 +180,33 @@ class MobileRlComparisonTest(unittest.TestCase):
     def test_runs_five_day_random_heldout_station_ab_demand_surge_rollout(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = _base_config(tmp_dir)
+            config["train_val_test"] = {
+                "test_id": {
+                    "enabled": True,
+                    "seeds": {
+                        "start": 20000,
+                        "count": 3,
+                    },
+                }
+            }
             config["comparison_rollout"] = {
                 "enabled": True,
-                "num_days": 5,
-                "seed": 777,
-                "repeat_daily_disruptions": False,
-                "scripted_events": [],
+                "seed_source": "test_id",
+                "seed_index": 0,
+                "use_seeded_episode": True,
                 "environment_overrides": {
                     "simulation": {
+                        "duration_days_range": [1, 3],
                         "disruption": {
                             "enabled": True,
                             "mode": "random",
-                            "daily_event_probability": 0.8,
+                            "day_disruption_count_weights": {0: 0.2, 1: 0.8},
                             "event_types": ["demand_surge"],
                             "demand_surge": {
-                                "duration_hours": [1.5, 3.0],
+                                "duration_hours": [2.0, 3.5],
                                 "start_hour_range": [6.0, 20.0],
-                                "multiplier": 1.8,
-                                "targets": ["od_ab"],
+                                "multiplier": 2.4,
+                                "targets": ["od_ab", "od_ba"],
                             },
                         }
                     }
@@ -221,11 +230,11 @@ class MobileRlComparisonTest(unittest.TestCase):
             metrics_path = output_dir / "comparison_timestep_metrics.csv"
             self.assertTrue(metrics_path.exists())
             frame = pd.read_csv(metrics_path)
-            self.assertEqual(len(frame), 1440)
-            self.assertTrue(set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().unique()).issubset({"od_ab"}))
+            self.assertIn(len(frame), {288, 576, 864})
+            self.assertEqual(result["summary"]["seed"], 20000)
             self.assertIn("allocation_vs_demand_alignment", frame.columns)
             active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
-            self.assertTrue(active_targets.issubset({"od_ab"}))
+            self.assertTrue(active_targets.issubset({"od_ab", "od_ba"}))
 
 
 if __name__ == "__main__":

@@ -142,6 +142,130 @@ class MobileNoopComparisonTest(unittest.TestCase):
             self.assertTrue(any(column.startswith("started_") for column in frame.columns))
             self.assertTrue(any(column.startswith("completions_") for column in frame.columns))
 
+    def test_runs_seeded_test_id_noop_comparison(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = {
+                "seed": 21,
+                "experiment": {
+                    "name": "mobile_mcs_line_abc",
+                    "output_root": tmp_dir,
+                    "save_plots": False,
+                },
+                "logging": {"level": "INFO", "wandb": {"enabled": False}},
+                "demand": {},
+                "train_val_test": {
+                    "test_id": {
+                        "enabled": True,
+                        "seeds": {
+                            "start": 20000,
+                            "count": 3,
+                        },
+                    }
+                },
+                "comparison_rollout": {
+                    "enabled": True,
+                    "seed_source": "test_id",
+                    "seed_index": 0,
+                    "use_seeded_episode": True,
+                    "environment_overrides": {
+                        "simulation": {
+                            "duration_days_range": [1, 3],
+                            "disruption": {
+                                "enabled": True,
+                                "mode": "random",
+                                "day_disruption_count_weights": {
+                                    0: 0.2,
+                                    1: 0.8,
+                                },
+                                "event_types": ["demand_surge"],
+                                "demand_surge": {
+                                    "duration_hours": [2.0, 3.5],
+                                    "start_hour_range": [6.0, 20.0],
+                                    "multiplier": 2.4,
+                                    "targets": ["od_ab", "od_ba"],
+                                },
+                            },
+                        }
+                    },
+                },
+                "environment": {
+                    "env_type": "line_corridor_mobile_mcs",
+                    "max_mobile_stations": 10,
+                    "mobile_station_chargers": 2,
+                    "mobile_station_capacity": 20.0,
+                    "reward_scale": 0.1,
+                    "reward": {
+                        "served_reward_weight": 1.0,
+                        "unmet_penalty": 2.5,
+                        "active_mobile_station_cost": 24.0,
+                        "activation_cost": 6.0,
+                        "adjustment_cost": 2.0,
+                        "idle_capacity_penalty": 0.1,
+                        "utilization_bonus": 1.0,
+                        "queue_length_penalty": 2.5,
+                        "queue_wait_penalty": 0.02,
+                    },
+                    "simulation": {
+                        "duration_days_range": [1, 3],
+                        "city_names": ["City A", "City B", "City C"],
+                        "inter_city_distance_km": 100.0,
+                        "station_positions_km": [50.0, 150.0],
+                        "num_plugs": [12, 12],
+                        "step_minutes": 5,
+                        "duration_hours": 24.0,
+                        "charging_stop_probability": 0.055,
+                        "service_time": {
+                            "mean_minutes": 30.0,
+                            "std_minutes": 8.0,
+                            "min_minutes": 15.0,
+                            "max_minutes": 50.0,
+                        },
+                        "traffic": {
+                            "baseline_cars_per_step": 22.0,
+                            "morning_peak_hour": 8.0,
+                            "evening_peak_hour": 17.0,
+                            "morning_peak_cars_per_step": 45.0,
+                            "evening_peak_cars_per_step": 50.0,
+                            "midday_bump_hour": 12.5,
+                            "midday_bump_cars_per_step": 10.0,
+                            "peak_width_hours": 1.6,
+                            "directional_bias_amplitude": 0.24,
+                            "middle_city_share": 0.34,
+                            "long_trip_share": 0.35,
+                            "middle_destination_bias_amplitude": 0.18,
+                        },
+                        "disruption": {
+                            "enabled": True,
+                            "mode": "random",
+                            "day_disruption_count_weights": {
+                                0: 0.2,
+                                1: 0.8,
+                            },
+                            "event_types": ["demand_surge"],
+                            "demand_surge": {
+                                "duration_hours": [2.0, 3.5],
+                                "start_hour_range": [6.0, 20.0],
+                                "multiplier": 2.4,
+                                "targets": ["od_ab", "od_ba"],
+                            },
+                        },
+                    },
+                },
+            }
+
+            result = run_mobile_noop_comparison(config)
+
+            self.assertIsNotNone(result)
+            output_dir = Path(tmp_dir) / "mobile_mcs_line_abc" / "mobile_noop_comparison"
+            metrics_path = output_dir / "comparison_timestep_metrics.csv"
+            self.assertTrue(metrics_path.exists())
+            frame = pd.read_csv(metrics_path)
+            self.assertIn(len(frame), {288, 576, 864})
+            self.assertEqual(result["summary"]["seed"], 20000)
+            self.assertEqual(frame["num_active_mobile_stations"].max(), 0.0)
+            active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
+            self.assertTrue(active_targets.issubset({"od_ab", "od_ba"}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -401,17 +401,28 @@ def _build_mobile_comparison_rollout(
         return None
 
     env_cfg = copy.deepcopy(config["environment"])
+    seed_source = str(rollout_cfg.get("seed_source", "")).strip().lower()
+    seed_index = int(rollout_cfg.get("seed_index", 0))
+    if seed_source == "test_id":
+        test_id_cfg = dict(config.get("train_val_test", {}).get("test_id", {}))
+        test_id_overrides = test_id_cfg.get("environment_overrides")
+        if isinstance(test_id_overrides, dict) and test_id_overrides:
+            env_cfg = _deep_merge_dicts(env_cfg, test_id_overrides)
+
     env_overrides = rollout_cfg.get("environment_overrides")
     if isinstance(env_overrides, dict) and env_overrides:
         env_cfg = _deep_merge_dicts(env_cfg, env_overrides)
 
-    num_days = int(rollout_cfg.get("num_days", 3))
+    use_seeded_episode = bool(rollout_cfg.get("use_seeded_episode", False))
+    raw_num_days = rollout_cfg.get("num_days")
+    num_days = int(raw_num_days) if raw_num_days is not None else None
     if env_type == "mobile_station_capacity":
-        horizon = int(env_cfg["horizon"])
-        env_cfg["max_steps"] = horizon * num_days
+        if num_days is not None:
+            horizon = int(env_cfg["horizon"])
+            env_cfg["max_steps"] = horizon * num_days
         disruption_cfg = dict(env_cfg.get("disruption", {}))
         scripted_events = [dict(event) for event in disruption_cfg.get("scripted_events", [])]
-        if scripted_events and bool(rollout_cfg.get("repeat_daily_disruptions", True)):
+        if num_days is not None and scripted_events and bool(rollout_cfg.get("repeat_daily_disruptions", True)):
             for event in scripted_events:
                 event.setdefault("repeat_daily", True)
                 event.pop("day_index", None)
@@ -419,15 +430,20 @@ def _build_mobile_comparison_rollout(
             env_cfg["disruption"] = disruption_cfg
     else:
         sim_cfg = dict(env_cfg.get("simulation", {}))
-        sim_cfg["duration_hours"] = 24.0 * num_days
-        sim_cfg.pop("duration_days_range", None)
+        if num_days is not None:
+            sim_cfg["duration_hours"] = 24.0 * num_days
+            sim_cfg.pop("duration_days_range", None)
+        elif not use_seeded_episode:
+            fallback_num_days = 3
+            sim_cfg["duration_hours"] = 24.0 * fallback_num_days
+            sim_cfg.pop("duration_days_range", None)
         disruption_cfg = dict(sim_cfg.get("disruption", {}))
         comparison_events = rollout_cfg.get("scripted_events")
         if comparison_events:
             disruption_cfg["enabled"] = True
             disruption_cfg["mode"] = "scripted"
             disruption_cfg["scripted_events"] = [dict(event) for event in comparison_events]
-        elif disruption_cfg.get("mode", "random") == "scripted":
+        elif num_days is not None and disruption_cfg.get("mode", "random") == "scripted":
             scripted_events = [dict(event) for event in disruption_cfg.get("scripted_events", [])]
             if scripted_events and bool(rollout_cfg.get("repeat_daily_disruptions", True)):
                 repeated_events: list[dict[str, Any]] = []
@@ -442,6 +458,12 @@ def _build_mobile_comparison_rollout(
         env_cfg["simulation"] = sim_cfg
 
     rollout_seed = int(rollout_cfg.get("seed", 123))
+    if seed_source == "test_id":
+        test_id_cfg = dict(config.get("train_val_test", {}).get("test_id", {}))
+        test_id_seeds = build_seed_list(test_id_cfg.get("seeds", test_id_cfg))
+        if test_id_seeds:
+            bounded_index = min(max(seed_index, 0), len(test_id_seeds) - 1)
+            rollout_seed = int(test_id_seeds[bounded_index])
     env = make_env(env_cfg, config["demand"], seed=rollout_seed)
     observation, _ = env.reset(seed=rollout_seed)
     rows: list[dict[str, Any]] = []
@@ -568,7 +590,7 @@ def _build_mobile_comparison_rollout(
     station_plot_path = output_dir / "comparison_station_demand_vs_mcs.png"
     frame.to_csv(metrics_path, index=False)
     summary = {
-        "num_days": num_days,
+        "num_days": int(getattr(env.simulator, "num_days", num_days or 0)),
         "seed": rollout_seed,
         "mean_queue_length": float(frame["queue_length"].mean()),
         "peak_queue_length": float(frame["queue_length"].max()),
