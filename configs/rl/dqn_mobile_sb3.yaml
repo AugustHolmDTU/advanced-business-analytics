@@ -7,7 +7,7 @@ rl:
   evaluation_episodes: 12
   deterministic_eval: true
   sb3:
-    total_timesteps: 69120
+    total_timesteps: 18000000
     buffer_size: 40000
     learning_starts: 2000
     batch_size: 64

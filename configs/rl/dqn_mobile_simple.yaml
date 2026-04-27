@@ -1,8 +1,9 @@
 rl:
-  backend: torch_dqn
-  checkpoint_name: best_model.pt
+  backend: torch_dqn  checkpoint_name: best_model.pt
+<<<<<<< HEAD
   episodes: 80
   max_steps_per_episode: 288
+>>>>>>> 87c9889 (8 hours run)
   gamma: 0.98
   learning_rate: 0.0005
   batch_size: 64
