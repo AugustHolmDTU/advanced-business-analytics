@@ -192,6 +192,24 @@ class MobileRlComparisonTest(unittest.TestCase):
                             "duration_days_range": [5, 10],
                             "disruption": {
                                 "day_disruption_count_weights": {1: 0.6, 2: 0.4},
+                                "required_events": [
+                                    {
+                                        "disruption_type": "demand_surge",
+                                        "day_index_range": [0, 8],
+                                        "duration_hours": [3.0, 4.5],
+                                        "start_hour_range": [6.0, 18.0],
+                                        "multiplier": [2.8, 3.2],
+                                        "targets": ["od_ab", "od_ba"],
+                                    },
+                                    {
+                                        "disruption_type": "demand_surge",
+                                        "day_index_range": [1, 9],
+                                        "duration_hours": [3.0, 4.5],
+                                        "start_hour_range": [6.0, 18.0],
+                                        "multiplier": [2.8, 3.2],
+                                        "targets": ["od_bc", "od_cb"],
+                                    },
+                                ],
                             },
                         }
                     },
@@ -236,6 +254,9 @@ class MobileRlComparisonTest(unittest.TestCase):
             self.assertGreaterEqual(int(frame["disruption_active"].sum()), 2)
             self.assertIn("allocation_vs_demand_alignment", frame.columns)
             self.assertGreater(len(frame.loc[frame["disruption_active"] == 1, "day_index"].dropna().unique()), 1)
+            active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
+            self.assertTrue(active_targets.intersection({"od_ab", "od_ba"}))
+            self.assertTrue(active_targets.intersection({"od_bc", "od_cb"}))
 
 
 if __name__ == "__main__":

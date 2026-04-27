@@ -450,8 +450,16 @@ class LineCorridorQueueSimulator:
         if not self.event_types:
             return None
         disruption_type = str(self.rng.choice(self.event_types))
+        return self._sample_event_from_cfg(disruption_type=disruption_type, cfg=None, day_index=day_index)
+
+    def _sample_event_from_cfg(
+        self,
+        disruption_type: str,
+        cfg: dict[str, Any] | None,
+        day_index: int,
+    ) -> LineDisruptionEvent | None:
+        cfg = dict(self.disruption_cfg.get(disruption_type, {})) if cfg is None else dict(cfg)
         if disruption_type == "capacity_drop":
-            cfg = dict(self.disruption_cfg.get("capacity_drop", {}))
             duration_hours = self._coerce_duration_hours(cfg.get("duration_hours", 2.0))
             start_hour = self._resolve_start_hour(cfg.get("start_hour_range", [7.0, 18.0]), duration_hours)
             severity = self._coerce_numeric_value(
@@ -460,17 +468,14 @@ class LineCorridorQueueSimulator:
                 maximum=float(self.num_plugs_by_station.max()),
             )
         elif disruption_type == "station_outage":
-            cfg = dict(self.disruption_cfg.get("station_outage", {}))
             duration_hours = self._coerce_duration_hours(cfg.get("duration_hours", 1.5))
             start_hour = self._resolve_start_hour(cfg.get("start_hour_range", [7.0, 19.5]), duration_hours)
             severity = 0.0
         elif disruption_type == "demand_surge":
-            cfg = dict(self.disruption_cfg.get("demand_surge", {}))
             duration_hours = self._coerce_duration_hours(cfg.get("duration_hours", 2.0))
             start_hour = self._resolve_start_hour(cfg.get("start_hour_range", [7.0, 19.0]), duration_hours)
             severity = self._coerce_numeric_value(cfg.get("multiplier", cfg.get("multiplier_range", 1.8)), minimum=1.0)
         else:
-            cfg = dict(self.disruption_cfg.get("service_time_inflation", {}))
             duration_hours = self._coerce_duration_hours(cfg.get("duration_hours", 2.0))
             start_hour = self._resolve_start_hour(cfg.get("start_hour_range", [7.0, 19.0]), duration_hours)
             severity = self._coerce_numeric_value(cfg.get("multiplier", cfg.get("multiplier_range", 1.5)), minimum=1.0)
@@ -486,10 +491,58 @@ class LineCorridorQueueSimulator:
             scripted=False,
         )
 
-    def _sample_random_events_for_day(self, day_index: int) -> list[LineDisruptionEvent]:
+    def _sample_required_random_events(self) -> list[LineDisruptionEvent]:
+        required_payloads = list(self.disruption_cfg.get("required_events", []))
+        if not required_payloads:
+            return []
+        sampled: list[LineDisruptionEvent] = []
+        max_attempts = max(32, len(required_payloads) * 24)
+        for payload in required_payloads:
+            disruption_type = str(payload["disruption_type"])
+            if disruption_type not in self.SUPPORTED_DISRUPTION_TYPES:
+                raise ValueError(f"Unsupported required random disruption type: {disruption_type}")
+            cfg = dict(payload)
+            cfg.pop("disruption_type", None)
+            day_range = cfg.pop("day_index_range", None)
+            fixed_day_index = cfg.pop("day_index", None)
+            attempts = 0
+            event: LineDisruptionEvent | None = None
+            while attempts < max_attempts:
+                attempts += 1
+                if fixed_day_index is not None:
+                    day_index = int(fixed_day_index)
+                elif isinstance(day_range, (list, tuple)) and len(day_range) == 2:
+                    low = int(day_range[0])
+                    high = int(day_range[1])
+                    if high < low:
+                        low, high = high, low
+                    bounded_low = max(low, 0)
+                    bounded_high = min(high, self.num_days - 1)
+                    day_index = int(self.rng.integers(bounded_low, bounded_high + 1))
+                else:
+                    day_index = int(self.rng.integers(0, self.num_days))
+                candidate = self._sample_event_from_cfg(disruption_type=disruption_type, cfg=cfg, day_index=day_index)
+                if candidate is None:
+                    continue
+                overlaps_existing = any(
+                    candidate.start_step < existing.end_step and existing.start_step < candidate.end_step
+                    for existing in sampled
+                )
+                if overlaps_existing:
+                    continue
+                event = candidate
+                break
+            if event is None:
+                raise ValueError(f"Unable to sample required random disruption without overlap: {payload}")
+            sampled.append(event)
+        sampled.sort(key=lambda item: (item.start_step, item.end_step))
+        return sampled
+
+    def _sample_random_events_for_day(self, day_index: int, existing_events: list[LineDisruptionEvent] | None = None) -> list[LineDisruptionEvent]:
         target_count = self._sample_day_disruption_count()
         if target_count <= 0:
             return []
+        existing_events = [] if existing_events is None else list(existing_events)
         sampled: list[LineDisruptionEvent] = []
         attempts = 0
         max_attempts = max(24, target_count * 16)
@@ -500,6 +553,9 @@ class LineCorridorQueueSimulator:
                 continue
             overlaps_existing = any(event.start_step < existing.end_step and existing.start_step < event.end_step for existing in sampled)
             if overlaps_existing:
+                continue
+            overlaps_required = any(event.start_step < existing.end_step and existing.start_step < event.end_step for existing in existing_events)
+            if overlaps_required:
                 continue
             sampled.append(event)
         sampled.sort(key=lambda event: (event.start_step, event.end_step))
@@ -530,8 +586,10 @@ class LineCorridorQueueSimulator:
                     )
                 )
         elif self.disruption_mode == "random":
+            events.extend(self._sample_required_random_events())
             for day_index in range(self.num_days):
-                events.extend(self._sample_random_events_for_day(day_index))
+                day_existing_events = [event for event in events if event.day_index == day_index]
+                events.extend(self._sample_random_events_for_day(day_index, existing_events=day_existing_events))
         else:
             raise ValueError(f"Unknown disruption mode: {self.disruption_mode}")
 

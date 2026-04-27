@@ -44,6 +44,9 @@ For the current line-ABC setup, the main held-out `test_id` split is heavier tha
 - 5-10 day episodes
 - at least one disruption per day
 - some days with two disruptions
+- guaranteed large demand surge on the AB-side station at some point
+- guaranteed large demand surge on the BC-side station at some point
+- harsher disruption severities than training for demand surges, outages, capacity drops, and service inflation
 
 An unseen seed is treated as an unseen simulated day. The seed determines the stochastic demand realization, charging-stop decisions, service times, disruption count, disruption type, disruption target, disruption timing, and disruption severity. This makes held-out seeds a valid in-distribution generalization test for the simulator.
 
