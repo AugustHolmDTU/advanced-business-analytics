@@ -265,11 +265,14 @@ Training exports include:
 
 ## HPC Commands
 
-Train and run the internal validation/test suites:
+Train only and save the checkpoint/history:
 
 ```bash
 bsub < bsub/train_mobile_line_abc.bsub
 ```
+
+This job now stops after fitting and checkpointing. It does not run the held-out seed bank, stress suite, or
+held-out comparison rollout.
 
 Re-run the paired held-out seed evaluation and stress suite for an existing checkpoint:
 
@@ -282,6 +285,8 @@ Train the stronger SB3 DQN variant:
 ```bash
 bsub < bsub/train_mobile_line_abc_sb3.bsub
 ```
+
+This SB3 job is also train-only and exits after saving the checkpoint/history.
 
 Run the paired held-out seed evaluation for the SB3 DQN checkpoint:
 

@@ -49,4 +49,5 @@ python -m evch.train.train_rl \
   --config "$CONFIG_DIR/logging/base.yaml" \
   --config "$CONFIG_DIR/logging/wandb_online.yaml" \
   --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml" \
-  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_sb3.yaml"
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_sb3.yaml" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_train_only.yaml"

@@ -843,6 +843,8 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
     val_cfg = dict(split_cfg.get("validation", {}))
     test_id_cfg = dict(split_cfg.get("test_id", {}))
     stress_cfg = dict(split_cfg.get("test_stress", {}))
+    val_enabled = bool(val_cfg.get("enabled", True))
+    periodic_eval_enabled = bool(val_cfg.get("periodic_enabled", val_enabled))
 
     val_env_overrides = val_cfg.get("environment_overrides", {})
     val_env_cfg = (
@@ -850,10 +852,11 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         if isinstance(val_env_overrides, dict) and val_env_overrides
         else copy.deepcopy(config["environment"])
     )
-    val_seed_list = build_seed_list(val_cfg.get("seeds", val_cfg))
+    raw_val_seed_list = build_seed_list(val_cfg.get("seeds", val_cfg))
+    val_seed_list = raw_val_seed_list if val_enabled else []
     val_episodes = len(val_seed_list) if val_seed_list else int(val_cfg.get("episodes", rl_cfg["evaluation_episodes"]))
-    periodic_eval_seed_count = int(val_cfg.get("periodic_seed_count", min(max(val_episodes, 1), 32)))
-    periodic_eval_seeds = val_seed_list[:periodic_eval_seed_count] if val_seed_list else None
+    periodic_eval_seed_count = int(val_cfg.get("periodic_seed_count", min(max(len(raw_val_seed_list), 1), 32)))
+    periodic_eval_seeds = raw_val_seed_list[:periodic_eval_seed_count] if (periodic_eval_enabled and raw_val_seed_list) else None
 
     train_env_cfg = copy.deepcopy(config["environment"])
     train_seed_range = resolve_train_seed_range(training_cfg)
@@ -877,22 +880,26 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
             seed=seed,
             output_dir=output_dir,
             run=run,
-            eval_env_factory=lambda eval_seed: make_env(val_env_cfg, config["demand"], seed=eval_seed),
-            eval_episode_seeds=periodic_eval_seeds,
+            eval_env_factory=(lambda eval_seed: make_env(val_env_cfg, config["demand"], seed=eval_seed))
+            if periodic_eval_enabled
+            else None,
+            eval_episode_seeds=periodic_eval_seeds if periodic_eval_enabled else None,
         )
 
-    eval_env = make_env(val_env_cfg, config["demand"], seed=(val_seed_list[0] if val_seed_list else seed + 17))
     policy = _make_rl_policy(backend, checkpoint_path)
-    evaluation = evaluate_policy(
-        env=eval_env,
-        policy=policy,
-        episodes=val_episodes,
-        seed=seed,
-        deterministic=bool(rl_cfg.get("deterministic_eval", True)),
-        episode_seeds=val_seed_list if val_seed_list else None,
-    )
-    run.log({f"validation/{key}": value for key, value in evaluation.items() if key not in {"episodes", "episode_seeds"}})
-    run.log({"validation/num_seeds": float(len(val_seed_list)) if val_seed_list else float(val_episodes)})
+    evaluation: dict[str, Any] | None = None
+    if val_enabled and val_episodes > 0:
+        eval_env = make_env(val_env_cfg, config["demand"], seed=(val_seed_list[0] if val_seed_list else seed + 17))
+        evaluation = evaluate_policy(
+            env=eval_env,
+            policy=policy,
+            episodes=val_episodes,
+            seed=seed,
+            deterministic=bool(rl_cfg.get("deterministic_eval", True)),
+            episode_seeds=val_seed_list if val_seed_list else None,
+        )
+        run.log({f"validation/{key}": value for key, value in evaluation.items() if key not in {"episodes", "episode_seeds"}})
+        run.log({"validation/num_seeds": float(len(val_seed_list)) if val_seed_list else float(val_episodes)})
 
     training_summary_path = output_dir / "training_summary.json"
     write_json(
@@ -901,7 +908,11 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
             "backend": backend,
             "checkpoint_path": checkpoint_path,
             "runtime": runtime_info,
-            "validation": {key: value for key, value in evaluation.items() if key not in {"episodes", "episode_seeds"}},
+            "validation": (
+                {key: value for key, value in evaluation.items() if key not in {"episodes", "episode_seeds"}}
+                if evaluation is not None
+                else None
+            ),
         },
     )
     if history:
@@ -918,7 +929,7 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
     )
 
     suite_outputs = None
-    if bool(test_id_cfg.get("enabled", False)) or bool(stress_cfg.get("enabled", False)) or val_seed_list:
+    if bool(test_id_cfg.get("enabled", False)) or bool(stress_cfg.get("enabled", False)) or (val_enabled and bool(val_seed_list)):
         suite_outputs = evaluate_policy_suites(
             config=config,
             checkpoint_path=checkpoint_path,

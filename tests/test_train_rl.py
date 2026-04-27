@@ -1,11 +1,13 @@
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest import mock
 
 import numpy as np
 
-from evch.train.train_rl import WandbSb3Callback
+from evch.train.train_rl import WandbSb3Callback, run_training
 
 
 class _FakeBaseCallback:
@@ -21,9 +23,19 @@ class _FakeReplayBuffer:
 class _FakeRun:
     def __init__(self) -> None:
         self.logs: list[tuple[dict[str, float], int | None]] = []
+        self.finished = False
 
     def log(self, metrics: dict[str, float], step: int | None = None) -> None:
         self.logs.append((metrics, step))
+
+    def finish(self) -> None:
+        self.finished = True
+
+
+class _FakeEnv:
+    def __init__(self) -> None:
+        self.observation_space = SimpleNamespace(shape=(4,))
+        self.action_space = SimpleNamespace(n=5)
 
 
 class WandbSb3CallbackTest(unittest.TestCase):
@@ -160,6 +172,76 @@ class WandbSb3CallbackTest(unittest.TestCase):
         self.assertEqual(summary_log["rl/replay_buffer_size"], 7.0)
         self.assertEqual(summary_log["rl/epsilon"], 0.25)
         self.assertEqual(summary_log["sb3/train/loss"], 1.5)
+
+
+class RunTrainingTrainOnlyTest(unittest.TestCase):
+    def test_train_only_mode_skips_post_training_evaluation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            checkpoint_path = Path(tmp_dir) / "outputs" / "demo" / "rl" / "best_model.pt"
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+            checkpoint_path.write_text("checkpoint", encoding="utf-8")
+
+            config = {
+                "seed": 7,
+                "experiment": {
+                    "name": "demo",
+                    "output_root": str(Path(tmp_dir) / "outputs"),
+                    "save_plots": False,
+                },
+                "logging": {
+                    "level": "INFO",
+                    "wandb": {"enabled": False},
+                },
+                "demand": {},
+                "environment": {
+                    "env_type": "line_corridor_mobile_mcs",
+                },
+                "comparison_rollout": {
+                    "enabled": False,
+                },
+                "train_val_test": {
+                    "training": {"episode_seed_range": [0, 99]},
+                    "validation": {"enabled": False, "periodic_enabled": False},
+                    "test_id": {"enabled": False},
+                    "test_stress": {"enabled": False},
+                },
+                "rl": {
+                    "backend": "torch_dqn",
+                    "checkpoint_name": "best_model.pt",
+                    "episodes": 2,
+                    "evaluation_episodes": 2,
+                },
+            }
+
+            run = _FakeRun()
+            with (
+                mock.patch("evch.train.train_rl.configure_logging"),
+                mock.patch("evch.train.train_rl.set_global_seed"),
+                mock.patch("evch.train.train_rl.configure_torch_runtime", return_value={}),
+                mock.patch("evch.train.train_rl.init_wandb", return_value=run),
+                mock.patch("evch.train.train_rl.log_artifact"),
+                mock.patch("evch.train.train_rl.make_env", return_value=_FakeEnv()),
+                mock.patch(
+                    "evch.train.train_rl._train_with_torch_dqn",
+                    return_value=("torch_dql", str(checkpoint_path), [{"episode": 0.0, "reward": 1.0, "loss": 0.5}]),
+                ),
+                mock.patch("evch.train.train_rl._make_rl_policy", return_value=lambda obs, env, deterministic=True: 0),
+                mock.patch("evch.train.train_rl.evaluate_policy", side_effect=AssertionError("final validation should be skipped")),
+                mock.patch(
+                    "evch.train.train_rl.evaluate_policy_suites",
+                    side_effect=AssertionError("evaluation suites should be skipped"),
+                ),
+            ):
+                result = run_training(config)
+
+            self.assertEqual(result["backend"], "torch_dql")
+            self.assertEqual(result["checkpoint_path"], str(checkpoint_path))
+            self.assertIsNone(result["evaluation"])
+            self.assertIsNone(result["evaluation_suites"])
+            self.assertTrue(run.finished)
+
+            training_summary = Path(result["training_summary_path"]).read_text(encoding="utf-8")
+            self.assertIn('"validation": null', training_summary)
 
 
 if __name__ == "__main__":
