@@ -1,0 +1,4 @@
+summary_type,suite_name,policy_alias,mean_queue_length,peak_queue_length,mean_queue_wait_minutes,peak_queue_wait_minutes,queue_wait_target_breach_fraction,queue_wait_excess_minutes,served_demand,unmet_demand,mean_active_mobile_stations,total_activated_mobile_stations,total_adjusted_mobile_stations,mcs_hours,active_mcs_steps,reward
+test_id,test_id,fixed,26.896527777777777,137.4,20.446877988564474,104.82555236816407,0.0,0.0,3914.8,38731.0,0.0,0.0,0.0,0.0,0.0,-25464.67166745489
+test_id,test_id,rl,8.83111111111111,66.2,5.029540359994604,39.615573501586915,0.0,0.0,3926.4,12716.8,1.1275,370.8,741.6,135.3,1623.6,-11096.141333260664
+test_id,test_id,threshold,0.7218055555555555,14.4,0.09315897891090977,9.348290634155273,0.0,0.0,3924.4,1039.4,1.7476388888888887,2360.6,4721.2,209.71666666666664,2516.6,-8562.80160580574

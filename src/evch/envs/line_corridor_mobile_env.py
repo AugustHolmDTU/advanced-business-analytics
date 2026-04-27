@@ -47,6 +47,8 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.queue_length_penalty = float(reward_cfg.get("queue_length_penalty", 3.0))
         self.queue_wait_penalty = float(reward_cfg.get("queue_wait_penalty", 0.02))
         self.disruption_response_bonus = float(reward_cfg.get("disruption_response_bonus", 0.0))
+        self.spatial_deficit_alignment_bonus = float(reward_cfg.get("spatial_deficit_alignment_bonus", 0.0))
+        self.spatial_deficit_direction_bonus = float(reward_cfg.get("spatial_deficit_direction_bonus", 0.0))
 
         self.simulator = self._build_simulator(seed=self.base_seed, duration_hours=self._max_episode_duration_hours())
         self.station_keys = list(self.simulator.STATION_KEYS)
@@ -69,7 +71,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         )
 
         self.action_map = self._build_action_map()
-        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(18,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(21,), dtype=np.float32)
         self.action_space = spaces.Discrete(len(self.action_map))
 
         self.rng = np.random.default_rng(self.base_seed)
@@ -236,6 +238,23 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             step=self.step_index,
             demand_multipliers_by_trip=disruption_state["demand_multipliers_by_trip"],
         )
+        effective_base_plugs_by_station = np.asarray(disruption_state["effective_num_plugs_by_station"], dtype=np.float32)
+        effective_total_plugs_by_station = (
+            effective_base_plugs_by_station
+            + self.current_mobile_stations_by_station.astype(np.float32) * float(self.mobile_station_chargers)
+        )
+        service_time_multipliers = np.asarray(disruption_state["service_time_multiplier_by_station"], dtype=np.float32)
+        total_service_capacity_by_station = self.current_service_capacity_per_step_by_station(
+            service_time_multipliers=service_time_multipliers,
+            effective_base_plugs=effective_total_plugs_by_station,
+        )
+        local_deficit_by_station = np.maximum(
+            self.queue_lengths_by_station.astype(np.float32)
+            + np.asarray(expected["station_expected_charging"], dtype=np.float32)
+            - total_service_capacity_by_station.astype(np.float32),
+            0.0,
+        )
+        local_deficit_bias = float(local_deficit_by_station[0] - local_deficit_by_station[1])
         time_fraction = float(self.step_index % self.horizon) / float(max(self.horizon - 1, 1))
         obs = np.asarray(
             [
@@ -249,10 +268,13 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
                 self._normalized(self.last_starts_by_station[1], self.arrival_normalizer),
                 self._normalized(float(expected["station_expected_charging"][0]), self.arrival_normalizer),
                 self._normalized(float(expected["station_expected_charging"][1]), self.arrival_normalizer),
-                self._normalized(self.last_effective_num_plugs_by_station[0], self.capacity_normalizer),
-                self._normalized(self.last_effective_num_plugs_by_station[1], self.capacity_normalizer),
+                self._normalized(float(effective_total_plugs_by_station[0]), self.capacity_normalizer),
+                self._normalized(float(effective_total_plugs_by_station[1]), self.capacity_normalizer),
                 self._normalized(float(self.current_mobile_stations_by_station[0] * self.mobile_station_chargers), self.capacity_normalizer),
                 self._normalized(float(self.current_mobile_stations_by_station[1] * self.mobile_station_chargers), self.capacity_normalizer),
+                self._normalized(float(local_deficit_by_station[0]), self.queue_normalizer + self.arrival_normalizer),
+                self._normalized(float(local_deficit_by_station[1]), self.queue_normalizer + self.arrival_normalizer),
+                self._normalized(local_deficit_bias, self.queue_normalizer + self.arrival_normalizer),
                 float(disruption_state["disruption_active"]),
                 float(disruption_state["disruption_type_code"]) / 4.0,
                 np.sin(2.0 * np.pi * time_fraction),
@@ -301,6 +323,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             vehicle.arrival_step = self.step_index
             self.queue_by_station[vehicle.station_index].append(vehicle)
             arrivals_by_station[vehicle.station_index] += 1
+        pending_queue_lengths_before_service = np.asarray([len(queue) for queue in self.queue_by_station], dtype=np.float32)
 
         starts_now_by_station: list[list[ActiveSession]] = [[], []]
         for station_index in range(2):
@@ -369,11 +392,44 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         adjusted = np.abs(self.current_mobile_stations_by_station - previous_mobile_stations)
         mean_queue_wait = float(queue_wait_means.mean())
         queue_wait_burden = float(np.dot(queue_lengths.astype(np.float32), queue_wait_means.astype(np.float32)))
+        base_effective_num_plugs_by_station = np.asarray(disruption_state["effective_num_plugs_by_station"], dtype=np.float32)
+        service_time_multipliers = np.asarray(disruption_state["service_time_multiplier_by_station"], dtype=np.float32)
+        base_service_capacity_by_station = self.current_service_capacity_per_step_by_station(
+            service_time_multipliers=service_time_multipliers,
+            effective_base_plugs=base_effective_num_plugs_by_station,
+        )
+        mobile_service_capacity_by_station = np.maximum(
+            effective_num_plugs_by_station.astype(np.float32) - base_effective_num_plugs_by_station,
+            0.0,
+        ) * float(self.planning_step_minutes) / np.maximum(self.mean_service_minutes * service_time_multipliers, 1e-6)
+        local_deficit_without_mcs_by_station = np.maximum(
+            pending_queue_lengths_before_service + np.asarray(expected["station_expected_charging"], dtype=np.float32) - base_service_capacity_by_station,
+            0.0,
+        )
+        total_local_deficit_without_mcs = float(local_deficit_without_mcs_by_station.sum())
+        spatial_deficit_coverage = 0.0
+        if total_local_deficit_without_mcs > 0.0:
+            covered_deficit = np.minimum(mobile_service_capacity_by_station, local_deficit_without_mcs_by_station)
+            spatial_deficit_coverage = float(covered_deficit.sum() / total_local_deficit_without_mcs)
+        spatial_deficit_direction_alignment = 0.0
+        total_active_mobile_stations = float(self.current_mobile_stations_by_station.sum())
+        if total_local_deficit_without_mcs > 0.0 and total_active_mobile_stations > 0.0:
+            deficit_bias_norm = float(
+                (local_deficit_without_mcs_by_station[0] - local_deficit_without_mcs_by_station[1])
+                / total_local_deficit_without_mcs
+            )
+            allocation_bias_norm = float(
+                (self.current_mobile_stations_by_station[0] - self.current_mobile_stations_by_station[1])
+                / total_active_mobile_stations
+            )
+            spatial_deficit_direction_alignment = deficit_bias_norm * allocation_bias_norm
         affected_station_indices = self._affected_station_indices_for_target(disruption_state.get("disruption_target", "none"))
         disruption_response_bonus_term = 0.0
         if float(disruption_state["disruption_active"]) > 0.0 and affected_station_indices:
             has_response_on_affected_station = bool(self.current_mobile_stations_by_station[affected_station_indices].sum() > 0)
             disruption_response_bonus_term = self.disruption_response_bonus * float(has_response_on_affected_station)
+        spatial_deficit_alignment_bonus_term = self.spatial_deficit_alignment_bonus * spatial_deficit_coverage
+        spatial_deficit_direction_bonus_term = self.spatial_deficit_direction_bonus * spatial_deficit_direction_alignment
         reward = (
             self.served_reward_weight * served_total
             - self.unmet_penalty * unmet_total
@@ -385,6 +441,8 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             - self.idle_capacity_penalty * idle_capacity
             + self.utilization_bonus * float(utilization_by_station.mean())
             + disruption_response_bonus_term
+            + spatial_deficit_alignment_bonus_term
+            + spatial_deficit_direction_bonus_term
         )
         reward *= self.reward_scale
 
@@ -407,6 +465,14 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "queue_length": float(queue_lengths.sum()),
             "queue_wait_mean_minutes": mean_queue_wait,
             "queue_wait_burden_minutes": queue_wait_burden,
+            "local_deficit_without_mcs_station_ab": float(local_deficit_without_mcs_by_station[0]),
+            "local_deficit_without_mcs_station_bc": float(local_deficit_without_mcs_by_station[1]),
+            "local_deficit_without_mcs_total": float(total_local_deficit_without_mcs),
+            "local_deficit_bias_ab_minus_bc": float(local_deficit_without_mcs_by_station[0] - local_deficit_without_mcs_by_station[1]),
+            "mobile_service_capacity_station_ab": float(mobile_service_capacity_by_station[0]),
+            "mobile_service_capacity_station_bc": float(mobile_service_capacity_by_station[1]),
+            "spatial_deficit_coverage": float(spatial_deficit_coverage),
+            "spatial_deficit_direction_alignment": float(spatial_deficit_direction_alignment),
             "service_capacity_vehicles": float(effective_num_plugs_by_station.sum()),
             "num_active_mobile_stations": int(self.current_mobile_stations_by_station.sum()),
             "num_active_mobile_stations_station_ab": int(self.current_mobile_stations_by_station[0]),
@@ -432,6 +498,8 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "idle_capacity": idle_capacity,
             "reward_queue_wait_penalty_term": float(self.queue_wait_penalty * queue_wait_burden),
             "reward_disruption_response_bonus_term": float(disruption_response_bonus_term),
+            "reward_spatial_deficit_alignment_bonus_term": float(spatial_deficit_alignment_bonus_term),
+            "reward_spatial_deficit_direction_bonus_term": float(spatial_deficit_direction_bonus_term),
             "disruption_active": int(disruption_state["disruption_active"]),
             "disruption_type": str(disruption_state["disruption_type"]),
             "disruption_type_code": int(disruption_state["disruption_type_code"]),

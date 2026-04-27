@@ -1,0 +1,10 @@
+{
+  "backend": "torch_dql",
+  "checkpoint_path": "outputs/debug/mobile_mcs_line_abc_diag/rl/best_model.pt",
+  "runtime": {
+    "cpu_count": 10,
+    "device": "cpu",
+    "torch_num_threads": 8
+  },
+  "validation": null
+}

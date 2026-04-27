@@ -1,0 +1,15 @@
+rl:
+  backend: sb3_dqn
+  checkpoint_name: best_model.zip
+  learning_rate: 0.0005
+  wandb_log_interval: 250
+  wandb_step_log_interval: 24
+  evaluation_episodes: 4
+  deterministic_eval: true
+  sb3:
+    total_timesteps: 30000
+    buffer_size: 40000
+    learning_starts: 2000
+    batch_size: 64
+    tau: 1.0
+    target_update_interval: 200

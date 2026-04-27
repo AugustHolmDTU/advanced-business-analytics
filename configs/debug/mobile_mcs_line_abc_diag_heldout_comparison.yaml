@@ -1,0 +1,5 @@
+comparison_rollout:
+  enabled: true
+  seed_source: test_id
+  seed_index: 0
+  use_seeded_episode: true

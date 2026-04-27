@@ -334,6 +334,69 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         self.assertAlmostEqual(reward_wrong, 0.0)
         self.assertAlmostEqual(reward_right, 5.0)
 
+    def test_spatial_deficit_alignment_bonus_rewards_covering_local_deficit(self) -> None:
+        env_config = {
+            **self.env_config,
+            "reward_scale": 1.0,
+            "reward": {
+                **self.env_config["reward"],
+                "served_reward_weight": 0.0,
+                "unmet_penalty": 0.0,
+                "active_mobile_station_cost": 0.0,
+                "activation_cost": 0.0,
+                "adjustment_cost": 0.0,
+                "idle_capacity_penalty": 0.0,
+                "utilization_bonus": 0.0,
+                "queue_length_penalty": 0.0,
+                "queue_wait_penalty": 0.0,
+                "disruption_response_bonus": 0.0,
+                "spatial_deficit_alignment_bonus": 10.0,
+                "spatial_deficit_direction_bonus": 10.0,
+            },
+            "simulation": {
+                **self.env_config["simulation"],
+                "charging_stop_probability": 0.0,
+                "num_plugs": [1, 1],
+                "traffic": {
+                    **self.env_config["simulation"]["traffic"],
+                    "baseline_cars_per_step": 0.0,
+                    "morning_peak_cars_per_step": 0.0,
+                    "evening_peak_cars_per_step": 0.0,
+                    "midday_bump_cars_per_step": 0.0,
+                },
+                "disruption": {"enabled": False},
+            },
+        }
+        env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
+        env.reset(seed=4)
+        env.queue_by_station = [
+            deque(
+                [
+                    QueuedVehicle(arrival_step=-2, trip_key="od_ab", station_index=0, base_service_minutes=30.0),
+                    QueuedVehicle(arrival_step=-2, trip_key="od_ab", station_index=0, base_service_minutes=30.0),
+                ]
+            ),
+            deque(),
+        ]
+
+        _, reward_wrong, _, _, info_wrong = env.step(env.action_from_mobile_station_allocation((0, 1)))
+        env.reset(seed=4)
+        env.queue_by_station = [
+            deque(
+                [
+                    QueuedVehicle(arrival_step=-2, trip_key="od_ab", station_index=0, base_service_minutes=30.0),
+                    QueuedVehicle(arrival_step=-2, trip_key="od_ab", station_index=0, base_service_minutes=30.0),
+                ]
+            ),
+            deque(),
+        ]
+        _, reward_right, _, _, info_right = env.step(env.action_from_mobile_station_allocation((1, 0)))
+
+        self.assertGreater(info_right["spatial_deficit_coverage"], info_wrong["spatial_deficit_coverage"])
+        self.assertGreater(info_right["reward_spatial_deficit_alignment_bonus_term"], info_wrong["reward_spatial_deficit_alignment_bonus_term"])
+        self.assertGreater(info_right["reward_spatial_deficit_direction_bonus_term"], info_wrong["reward_spatial_deficit_direction_bonus_term"])
+        self.assertGreater(reward_right, reward_wrong)
+
     def test_noop_comparison_logs_three_day_time_series_with_od_columns(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = {

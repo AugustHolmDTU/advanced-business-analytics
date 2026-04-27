@@ -1,0 +1,62 @@
+experiment:
+  name: mobile_mcs_line_abc_diag
+  output_root: outputs/debug
+  save_plots: true
+
+comparison_rollout:
+  enabled: false
+
+train_val_test:
+  training:
+    episode_seed_range: [0, 1999]
+  validation:
+    seeds:
+      start: 10000
+      count: 8
+    periodic_seed_count: 4
+  test_id:
+    enabled: true
+    seeds:
+      start: 20000
+      count: 5
+    environment_overrides:
+      simulation:
+        duration_days_range: [5, 5]
+        disruption:
+          day_disruption_count_weights:
+            1: 0.6
+            2: 0.4
+          capacity_drop:
+            duration_hours: [2.0, 4.0]
+            start_hour_range: [6.0, 20.0]
+            target_num_plugs: [1, 4]
+          station_outage:
+            duration_hours: [1.5, 3.5]
+            start_hour_range: [6.0, 21.0]
+          service_time_inflation:
+            duration_hours: [2.0, 4.0]
+            start_hour_range: [6.0, 20.0]
+            multiplier: [1.7, 2.3]
+          demand_surge:
+            duration_hours: [2.5, 4.5]
+            start_hour_range: [6.0, 20.0]
+            multiplier: [2.4, 3.0]
+          required_events:
+            - disruption_type: demand_surge
+              day_index_range: [0, 3]
+              duration_hours: [3.5, 5.0]
+              start_hour_range: [6.0, 18.0]
+              multiplier: [3.0, 3.6]
+              targets:
+                - od_ab
+                - od_ba
+            - disruption_type: demand_surge
+              day_index_range: [1, 4]
+              duration_hours: [3.5, 5.0]
+              start_hour_range: [6.0, 18.0]
+              multiplier: [3.0, 3.6]
+              targets:
+                - od_bc
+                - od_cb
+  test_stress:
+    enabled: false

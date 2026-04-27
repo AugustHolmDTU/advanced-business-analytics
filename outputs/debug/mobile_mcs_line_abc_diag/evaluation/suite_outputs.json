@@ -1,0 +1,7 @@
+{
+  "paired_test_results_path": "outputs/debug/mobile_mcs_line_abc_diag/evaluation/paired_test_results.csv",
+  "scenario_manifest_path": "outputs/debug/mobile_mcs_line_abc_diag/evaluation/scenario_manifest.csv",
+  "test_id_summary_path": "outputs/debug/mobile_mcs_line_abc_diag/evaluation/test_id_summary.csv",
+  "test_stress_summary_path": "",
+  "validation_summary_path": "outputs/debug/mobile_mcs_line_abc_diag/evaluation/validation_summary.csv"
+}

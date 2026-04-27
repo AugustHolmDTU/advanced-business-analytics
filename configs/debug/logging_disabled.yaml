@@ -1,0 +1,4 @@
+logging:
+  level: INFO
+  wandb:
+    enabled: false

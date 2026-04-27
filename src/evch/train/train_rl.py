@@ -55,6 +55,12 @@ SIM_WANDB_COLUMNS = {
     "allocation_vs_demand_alignment",
     "allocation_bias_ab_minus_bc",
     "expected_demand_bias_ab_minus_bc",
+    "local_deficit_without_mcs_station_ab",
+    "local_deficit_without_mcs_station_bc",
+    "local_deficit_bias_ab_minus_bc",
+    "mobile_service_capacity_station_ab",
+    "mobile_service_capacity_station_bc",
+    "spatial_deficit_coverage",
     "alignment_on_station_ab_disruption",
     "alignment_on_station_bc_disruption",
     "expected_passing_total",
@@ -682,6 +688,12 @@ def _build_mobile_comparison_rollout(
                 "queue_length_station_bc": float(info.get("queue_length_station_bc", 0.0)),
                 "queue_wait_mean_minutes_station_ab": float(info.get("queue_wait_mean_minutes_station_ab", 0.0)),
                 "queue_wait_mean_minutes_station_bc": float(info.get("queue_wait_mean_minutes_station_bc", 0.0)),
+                "local_deficit_without_mcs_station_ab": float(info.get("local_deficit_without_mcs_station_ab", 0.0)),
+                "local_deficit_without_mcs_station_bc": float(info.get("local_deficit_without_mcs_station_bc", 0.0)),
+                "local_deficit_bias_ab_minus_bc": float(info.get("local_deficit_bias_ab_minus_bc", 0.0)),
+                "mobile_service_capacity_station_ab": float(info.get("mobile_service_capacity_station_ab", 0.0)),
+                "mobile_service_capacity_station_bc": float(info.get("mobile_service_capacity_station_bc", 0.0)),
+                "spatial_deficit_coverage": float(info.get("spatial_deficit_coverage", 0.0)),
                 "unused_mobile_stations_estimate_station_ab": float(info.get("unused_mobile_stations_estimate_station_ab", 0.0)),
                 "unused_mobile_stations_estimate_station_bc": float(info.get("unused_mobile_stations_estimate_station_bc", 0.0)),
                 "expected_passing_od_ab": float(info.get("expected_passing_od_ab", 0.0)),
@@ -709,14 +721,27 @@ def _build_mobile_comparison_rollout(
         frame["expected_demand_share_bc"] = (frame["expected_station_arrivals_bc"] / expected_total).fillna(0.5)
 
         allocated_total = frame["num_active_mobile_stations_station_ab"] + frame["num_active_mobile_stations_station_bc"]
-        allocated_total = allocated_total.where(allocated_total > 0.0, np.nan)
-        frame["allocation_share_ab"] = (frame["num_active_mobile_stations_station_ab"] / allocated_total).fillna(0.5)
-        frame["allocation_share_bc"] = (frame["num_active_mobile_stations_station_bc"] / allocated_total).fillna(0.5)
+        positive_allocation_mask = allocated_total > 0.0
+        frame["allocation_share_ab"] = np.where(
+            positive_allocation_mask,
+            frame["num_active_mobile_stations_station_ab"] / allocated_total.where(positive_allocation_mask, np.nan),
+            0.0,
+        )
+        frame["allocation_share_bc"] = np.where(
+            positive_allocation_mask,
+            frame["num_active_mobile_stations_station_bc"] / allocated_total.where(positive_allocation_mask, np.nan),
+            0.0,
+        )
 
         frame["allocation_demand_gap_ab"] = (frame["allocation_share_ab"] - frame["expected_demand_share_ab"]).abs()
         frame["allocation_demand_gap_bc"] = (frame["allocation_share_bc"] - frame["expected_demand_share_bc"]).abs()
-        frame["allocation_vs_demand_alignment"] = 1.0 - 0.5 * (
+        raw_alignment = 1.0 - 0.5 * (
             frame["allocation_demand_gap_ab"] + frame["allocation_demand_gap_bc"]
+        )
+        frame["allocation_vs_demand_alignment"] = np.where(
+            positive_allocation_mask,
+            raw_alignment,
+            np.where(expected_total.fillna(0.0) > 0.0, 0.0, 1.0),
         )
 
         frame["allocation_bias_ab_minus_bc"] = (
@@ -772,6 +797,12 @@ def _build_mobile_comparison_rollout(
         else 0.0,
         "mean_active_mobile_stations_disrupted": float(frame.loc[frame["disruption_active"] == 1, "num_active_mobile_stations"].mean())
         if (frame["disruption_active"] == 1).any()
+        else 0.0,
+        "mean_spatial_deficit_coverage": float(frame["spatial_deficit_coverage"].mean())
+        if "spatial_deficit_coverage" in frame
+        else 0.0,
+        "mean_spatial_deficit_coverage_disrupted": float(frame.loc[frame["disruption_active"] == 1, "spatial_deficit_coverage"].mean())
+        if ("spatial_deficit_coverage" in frame and (frame["disruption_active"] == 1).any())
         else 0.0,
         "mean_allocation_vs_demand_alignment": float(frame["allocation_vs_demand_alignment"].mean())
         if "allocation_vs_demand_alignment" in frame
