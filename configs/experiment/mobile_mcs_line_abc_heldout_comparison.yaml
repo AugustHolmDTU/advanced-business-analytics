@@ -18,3 +18,4 @@ comparison_rollout:
           multiplier: 2.4
           targets:
             - od_ab
+            - od_ba
