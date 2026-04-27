@@ -47,4 +47,5 @@ python -m evch.train.run_mobile_noop_comparison \
   --config "$CONFIG_DIR/rl/dqn_mobile_simple.yaml" \
   --config "$CONFIG_DIR/logging/base.yaml" \
   --config "$CONFIG_DIR/logging/wandb_online.yaml" \
-  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml"
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_heldout_comparison.yaml"

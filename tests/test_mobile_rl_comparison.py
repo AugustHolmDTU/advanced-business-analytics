@@ -174,12 +174,12 @@ class MobileRlComparisonTest(unittest.TestCase):
             self.assertIn("num_active_mobile_stations_station_ab", frame.columns)
             self.assertIn("expected_passing_od_ac", frame.columns)
 
-    def test_runs_ten_day_random_heldout_station_ab_outage_rollout(self) -> None:
+    def test_runs_five_day_random_heldout_station_ab_demand_surge_rollout(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = _base_config(tmp_dir)
             config["comparison_rollout"] = {
                 "enabled": True,
-                "num_days": 10,
+                "num_days": 5,
                 "seed": 777,
                 "repeat_daily_disruptions": False,
                 "scripted_events": [],
@@ -188,12 +188,13 @@ class MobileRlComparisonTest(unittest.TestCase):
                         "disruption": {
                             "enabled": True,
                             "mode": "random",
-                            "daily_event_probability": 0.75,
-                            "event_types": ["station_outage"],
-                            "station_outage": {
-                                "duration_hours": [1.0, 2.5],
-                                "start_hour_range": [6.0, 21.0],
-                                "targets": ["station_ab"],
+                            "daily_event_probability": 0.8,
+                            "event_types": ["demand_surge"],
+                            "demand_surge": {
+                                "duration_hours": [1.5, 3.0],
+                                "start_hour_range": [6.0, 20.0],
+                                "multiplier": 1.8,
+                                "targets": ["od_ab"],
                             },
                         }
                     }
@@ -217,10 +218,11 @@ class MobileRlComparisonTest(unittest.TestCase):
             metrics_path = output_dir / "comparison_timestep_metrics.csv"
             self.assertTrue(metrics_path.exists())
             frame = pd.read_csv(metrics_path)
-            self.assertEqual(len(frame), 2880)
+            self.assertEqual(len(frame), 1440)
+            self.assertTrue(set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().unique()).issubset({"od_ab"}))
             self.assertIn("allocation_vs_demand_alignment", frame.columns)
             active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
-            self.assertTrue(active_targets.issubset({"station_ab"}))
+            self.assertTrue(active_targets.issubset({"od_ab"}))
 
 
 if __name__ == "__main__":

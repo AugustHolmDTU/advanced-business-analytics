@@ -1,0 +1,20 @@
+comparison_rollout:
+  enabled: true
+  num_days: 5
+  seed: 777
+  repeat_daily_disruptions: false
+  scripted_events: []
+  environment_overrides:
+    simulation:
+      disruption:
+        enabled: true
+        mode: random
+        daily_event_probability: 0.8
+        event_types:
+          - demand_surge
+        demand_surge:
+          duration_hours: [1.5, 3.0]
+          start_hour_range: [6.0, 20.0]
+          multiplier: 1.8
+          targets:
+            - od_ab

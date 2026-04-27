@@ -23,6 +23,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         if not sim_cfg:
             raise ValueError("LineCorridorMobileStationEnv requires environment.simulation config.")
         self.simulation_config = sim_cfg
+        self.duration_days_range = self._parse_duration_days_range(sim_cfg.get("duration_days_range"))
 
         self.max_mobile_stations = int(env_config.get("max_mobile_stations", 10))
         self.mobile_station_chargers = int(env_config.get("mobile_station_chargers", 2))
@@ -41,7 +42,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.queue_wait_penalty = float(reward_cfg.get("queue_wait_penalty", 0.02))
         self.disruption_response_bonus = float(reward_cfg.get("disruption_response_bonus", 0.0))
 
-        self.simulator = LineCorridorQueueSimulator(config=sim_cfg, seed=self.base_seed)
+        self.simulator = self._build_simulator(seed=self.base_seed, duration_hours=self._max_episode_duration_hours())
         self.station_keys = list(self.simulator.STATION_KEYS)
         self.fixed_site_coords_km = np.asarray(
             [[station.position_km, 0.0] for station in self.simulator.stations],
@@ -81,6 +82,35 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.last_effective_num_plugs_by_station = self.base_station_plugs_by_station.astype(np.float32)
         self.last_disruption_state: dict[str, Any] = {}
 
+    @staticmethod
+    def _parse_duration_days_range(raw_value: Any) -> tuple[int, int] | None:
+        if not isinstance(raw_value, (list, tuple)) or len(raw_value) != 2:
+            return None
+        low = int(raw_value[0])
+        high = int(raw_value[1])
+        if low <= 0 or high <= 0:
+            raise ValueError("simulation.duration_days_range values must be positive integers")
+        if high < low:
+            low, high = high, low
+        return low, high
+
+    def _max_episode_duration_hours(self) -> float:
+        if self.duration_days_range is None:
+            return float(self.simulation_config.get("duration_hours", 24.0))
+        return 24.0 * float(self.duration_days_range[1])
+
+    def _sample_episode_duration_hours(self) -> float:
+        if self.duration_days_range is None:
+            return float(self.simulation_config.get("duration_hours", 24.0))
+        low, high = self.duration_days_range
+        sampled_days = int(self.rng.integers(low, high + 1))
+        return 24.0 * float(sampled_days)
+
+    def _build_simulator(self, seed: int, duration_hours: float) -> LineCorridorQueueSimulator:
+        sim_cfg = dict(self.simulation_config)
+        sim_cfg["duration_hours"] = float(duration_hours)
+        return LineCorridorQueueSimulator(config=sim_cfg, seed=seed)
+
     def _build_action_map(self) -> list[tuple[int, int]]:
         allocations: list[tuple[int, int]] = []
         for first in range(self.max_mobile_stations + 1):
@@ -102,7 +132,11 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
     def seed(self, seed: int | None = None) -> None:
         chosen_seed = self.base_seed if seed is None else int(seed)
         self.rng = np.random.default_rng(chosen_seed)
-        self.simulator = LineCorridorQueueSimulator(config=self.simulation_config, seed=chosen_seed)
+        self.simulator = self._build_simulator(seed=chosen_seed, duration_hours=self._sample_episode_duration_hours())
+        self.planning_step_minutes = float(self.simulator.step_minutes)
+        self.mean_service_minutes = float(self.simulator.service_mean_minutes)
+        self.horizon = int(self.simulator.steps_per_day)
+        self.max_steps = int(self.simulator.num_steps)
 
     def valid_action_mask(self) -> np.ndarray:
         return np.ones(self.action_space.n, dtype=bool)

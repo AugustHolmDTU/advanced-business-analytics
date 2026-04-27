@@ -149,6 +149,24 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         self.assertIn("queue_length_station_bc", step_info)
         self.assertIn("unused_mobile_stations_estimate_station_ab", step_info)
 
+    def test_reset_can_sample_one_to_three_day_episode_lengths(self) -> None:
+        env_config = {
+            **self.env_config,
+            "simulation": {
+                **self.env_config["simulation"],
+                "duration_days_range": [1, 3],
+            },
+        }
+        env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
+
+        sampled_steps = set()
+        for seed in range(1, 16):
+            env.reset(seed=seed)
+            sampled_steps.add(env.max_steps)
+
+        self.assertTrue(sampled_steps.issubset({288, 576, 864}))
+        self.assertGreater(len(sampled_steps), 1)
+
     def test_mobile_threshold_policy_returns_valid_two_station_action(self) -> None:
         env = LineCorridorMobileStationEnv(self.env_config, {}, seed=3)
         obs, _ = env.reset(seed=4)

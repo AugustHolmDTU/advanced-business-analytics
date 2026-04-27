@@ -417,6 +417,7 @@ def _build_mobile_comparison_rollout(
     else:
         sim_cfg = dict(env_cfg.get("simulation", {}))
         sim_cfg["duration_hours"] = 24.0 * num_days
+        sim_cfg.pop("duration_days_range", None)
         disruption_cfg = dict(sim_cfg.get("disruption", {}))
         comparison_events = rollout_cfg.get("scripted_events")
         if comparison_events:

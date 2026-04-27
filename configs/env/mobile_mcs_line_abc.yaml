@@ -19,6 +19,7 @@ environment:
     queue_length_penalty: 2.5
     queue_wait_penalty: 0.02
   simulation:
+    duration_days_range: [1, 3]
     city_names: ["City A", "City B", "City C"]
     inter_city_distance_km: 100.0
     station_positions_km: [50.0, 150.0]
@@ -46,17 +47,29 @@ environment:
       middle_destination_bias_amplitude: 0.18
     disruption:
       enabled: true
-      mode: scripted
-      scripted_events:
-        - disruption_type: capacity_drop
-          target: station_ab
-          day_index: 0
-          start_hour: 6.0
-          duration_hours: 2.0
-          severity: 4.0
-        - disruption_type: demand_surge
-          target: od_ac
-          day_index: 0
-          start_hour: 16.0
-          duration_hours: 2.0
-          severity: 1.8
+      mode: random
+      daily_event_probability: 0.9
+      event_types:
+        - capacity_drop
+        - station_outage
+        - service_time_inflation
+      capacity_drop:
+        duration_hours: [1.0, 3.0]
+        start_hour_range: [6.0, 20.0]
+        target_num_plugs: 4
+        targets:
+          - station_ab
+          - station_bc
+      station_outage:
+        duration_hours: [0.75, 2.0]
+        start_hour_range: [6.0, 21.0]
+        targets:
+          - station_ab
+          - station_bc
+      service_time_inflation:
+        duration_hours: [1.0, 3.0]
+        start_hour_range: [6.0, 20.0]
+        multiplier: 1.5
+        targets:
+          - station_ab
+          - station_bc

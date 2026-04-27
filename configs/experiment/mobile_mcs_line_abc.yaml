@@ -7,43 +7,6 @@ comparison_rollout:
   num_days: 3
   seed: 123
   repeat_daily_disruptions: false
-  scripted_events:
-    - disruption_type: capacity_drop
-      target: station_ab
-      day_index: 0
-      start_hour: 6.0
-      duration_hours: 2.0
-      severity: 4.0
-    - disruption_type: demand_surge
-      target: od_ab
-      day_index: 0
-      start_hour: 16.0
-      duration_hours: 2.0
-      severity: 1.8
-    - disruption_type: service_time_inflation
-      target: station_bc
-      day_index: 1
-      start_hour: 10.0
-      duration_hours: 2.0
-      severity: 1.5
-    - disruption_type: station_outage
-      target: station_bc
-      day_index: 1
-      start_hour: 17.0
-      duration_hours: 1.5
-      severity: 0.0
-    - disruption_type: demand_surge
-      target: od_bc
-      day_index: 2
-      start_hour: 7.0
-      duration_hours: 2.0
-      severity: 1.8
-    - disruption_type: capacity_drop
-      target: station_ab
-      day_index: 2
-      start_hour: 15.0
-      duration_hours: 2.0
-      severity: 5.0
 evaluation:
   episodes: 12
   disruptions: false
@@ -59,7 +22,7 @@ train_val_test:
   test:
     enabled: true
     comparison_rollout:
-      num_days: 10
+      num_days: 5
       seed: 777
       repeat_daily_disruptions: false
       scripted_events: []
@@ -68,11 +31,12 @@ train_val_test:
           disruption:
             enabled: true
             mode: random
-            daily_event_probability: 0.75
+            daily_event_probability: 0.8
             event_types:
-              - station_outage
-            station_outage:
-              duration_hours: [1.0, 2.5]
-              start_hour_range: [6.0, 21.0]
+              - demand_surge
+            demand_surge:
+              duration_hours: [1.5, 3.0]
+              start_hour_range: [6.0, 20.0]
+              multiplier: 1.8
               targets:
-                - station_ab
+                - od_ab
