@@ -269,7 +269,7 @@ def _log_station_overlay_panels(run: Any, metrics: pd.DataFrame) -> None:
 
 
 class WandbSb3Callback:
-    def __init__(self, run: Any, log_interval: int) -> None:
+    def __init__(self, run: Any, log_interval: int, step_log_interval: int) -> None:
         from stable_baselines3.common.callbacks import BaseCallback  # type: ignore
 
         class _Callback(BaseCallback):
@@ -283,15 +283,139 @@ class WandbSb3Callback:
         self.callback = _Callback(self)
         self.run = run
         self.log_interval = max(log_interval, 1)
+        self.step_log_interval = max(step_log_interval, 1)
+        self.episode_index = 0
+        self.latest_train_loss = 0.0
+        self._reset_episode_accumulators()
+
+    def _reset_episode_accumulators(self) -> None:
+        self.episode_reward = 0.0
+        self.served_total = 0.0
+        self.unmet_total = 0.0
+        self.invalid_actions = 0.0
+        self.action_trace: list[float] = []
+        self.active_chargers_trace: list[float] = []
+        self.mobile_stations_trace: list[float] = []
+        self.utilization_trace: list[float] = []
+        self.idle_capacity_trace: list[float] = []
+        self.effective_capacity_trace: list[float] = []
+        self.unused_mobile_chargers_trace: list[float] = []
+        self.unused_mobile_stations_trace: list[float] = []
+        self.activated_trace: list[float] = []
+        self.adjusted_trace: list[float] = []
+        self.queue_length_trace: list[float] = []
+        self.queue_wait_trace: list[float] = []
+        self.queue_wait_station_ab_trace: list[float] = []
+        self.queue_wait_station_bc_trace: list[float] = []
+        self.queue_wait_excess_trace: list[float] = []
+        self.queue_wait_breach_trace: list[float] = []
+        self.disruption_trace: list[float] = []
+
+    @staticmethod
+    def _scalar_at(value: Any, index: int = 0) -> float:
+        array = np.asarray(value)
+        if array.ndim == 0:
+            return float(array)
+        return float(array.reshape(-1)[index])
+
+    def _update_episode_accumulators(self, reward: float, action: float, info: dict[str, Any]) -> None:
+        self.episode_reward += reward
+        self.served_total += float(info.get("served_demand", 0.0))
+        self.unmet_total += float(info.get("unmet_demand", 0.0))
+        self.invalid_actions += float(not info.get("action_valid", True))
+        self.action_trace.append(action)
+        self.active_chargers_trace.append(float(info.get("num_active_chargers", 0.0)))
+        self.mobile_stations_trace.append(float(info.get("num_active_mobile_stations", 0.0)))
+        self.utilization_trace.append(float(info.get("utilization", 0.0)))
+        self.idle_capacity_trace.append(float(info.get("idle_capacity", 0.0)))
+        self.effective_capacity_trace.append(float(info.get("effective_capacity_total", 0.0)))
+        self.unused_mobile_chargers_trace.append(float(info.get("unused_mobile_chargers", 0.0)))
+        self.unused_mobile_stations_trace.append(float(info.get("unused_mobile_stations_estimate", 0.0)))
+        self.activated_trace.append(float(info.get("activated_mobile_stations", 0.0)))
+        self.adjusted_trace.append(float(info.get("adjusted_mobile_stations", 0.0)))
+        self.queue_length_trace.append(float(info.get("queue_length", 0.0)))
+        self.queue_wait_trace.append(float(info.get("queue_wait_mean_minutes", 0.0)))
+        self.queue_wait_station_ab_trace.append(float(info.get("queue_wait_mean_minutes_station_ab", 0.0)))
+        self.queue_wait_station_bc_trace.append(float(info.get("queue_wait_mean_minutes_station_bc", 0.0)))
+        self.queue_wait_excess_trace.append(float(info.get("queue_wait_excess_minutes", 0.0)))
+        self.queue_wait_breach_trace.append(float(info.get("queue_wait_target_breached", 0.0)))
+        self.disruption_trace.append(float(info.get("disruption_active", 0.0)))
+
+    def _log_step_metrics(self, timesteps: int, action: float, reward: float, info: dict[str, Any]) -> None:
+        self.run.log(
+            {
+                "rl_step/action": float(action),
+                "rl_step/reward": float(reward),
+                "rl_step/served_demand": float(info.get("served_demand", 0.0)),
+                "rl_step/unmet_demand": float(info.get("unmet_demand", 0.0)),
+                "rl_step/active_mobile_stations": float(info.get("num_active_mobile_stations", 0.0)),
+                "rl_step/active_mobile_stations_station_ab": float(info.get("num_active_mobile_stations_station_ab", 0.0)),
+                "rl_step/active_mobile_stations_station_bc": float(info.get("num_active_mobile_stations_station_bc", 0.0)),
+                "rl_step/active_chargers": float(info.get("num_active_chargers", 0.0)),
+                "rl_step/queue_length": float(info.get("queue_length", 0.0)),
+                "rl_step/queue_wait_mean_minutes": float(info.get("queue_wait_mean_minutes", 0.0)),
+                "rl_step/queue_length_station_ab": float(info.get("queue_length_station_ab", 0.0)),
+                "rl_step/queue_length_station_bc": float(info.get("queue_length_station_bc", 0.0)),
+                "rl_step/queue_wait_mean_minutes_station_ab": float(info.get("queue_wait_mean_minutes_station_ab", 0.0)),
+                "rl_step/queue_wait_mean_minutes_station_bc": float(info.get("queue_wait_mean_minutes_station_bc", 0.0)),
+                "rl_step/unused_mobile_chargers": float(info.get("unused_mobile_chargers", 0.0)),
+                "rl_step/unused_mobile_stations_estimate": float(info.get("unused_mobile_stations_estimate", 0.0)),
+                "rl_step/utilization": float(info.get("utilization", 0.0)),
+                "rl_step/utilization_station_ab": float(info.get("utilization_station_ab", 0.0)),
+                "rl_step/utilization_station_bc": float(info.get("utilization_station_bc", 0.0)),
+                "rl_step/disruption_active": float(info.get("disruption_active", 0.0)),
+                "rl_step/disruption_type_code": float(info.get("disruption_type_code", 0.0)),
+                "rl_step/activated_mobile_stations": float(info.get("activated_mobile_stations", 0.0)),
+                "rl_step/adjusted_mobile_stations": float(info.get("adjusted_mobile_stations", 0.0)),
+            },
+            step=int(timesteps),
+        )
+
+    def _log_episode_metrics(self, timesteps: int, epsilon: float | None) -> None:
+        if not self.action_trace:
+            return
+
+        record = {
+            "episode": float(self.episode_index),
+            "reward": float(self.episode_reward),
+            "served_demand": float(self.served_total),
+            "unmet_demand": float(self.unmet_total),
+            "invalid_actions": float(self.invalid_actions),
+            "epsilon": float(epsilon if epsilon is not None else 0.0),
+            "loss": float(self.latest_train_loss),
+            "mean_action": float(np.mean(self.action_trace)),
+            "max_action": float(np.max(self.action_trace)),
+            "mean_active_chargers": float(np.mean(self.active_chargers_trace)),
+            "max_active_chargers": float(np.max(self.active_chargers_trace)),
+            "mean_active_mobile_stations": float(np.mean(self.mobile_stations_trace)),
+            "max_active_mobile_stations": float(np.max(self.mobile_stations_trace)),
+            "total_activated_mobile_stations": float(np.sum(self.activated_trace)),
+            "total_adjusted_mobile_stations": float(np.sum(self.adjusted_trace)),
+            "mean_utilization": float(np.mean(self.utilization_trace)),
+            "mean_idle_capacity": float(np.mean(self.idle_capacity_trace)),
+            "mean_effective_capacity": float(np.mean(self.effective_capacity_trace)),
+            "mean_unused_mobile_chargers": float(np.mean(self.unused_mobile_chargers_trace)),
+            "mean_unused_mobile_stations_estimate": float(np.mean(self.unused_mobile_stations_trace)),
+            "mean_queue_length": float(np.mean(self.queue_length_trace)),
+            "max_queue_length": float(np.max(self.queue_length_trace)),
+            "mean_queue_wait_minutes": float(np.mean(self.queue_wait_trace)),
+            "mean_queue_wait_minutes_station_ab": float(np.mean(self.queue_wait_station_ab_trace)),
+            "mean_queue_wait_minutes_station_bc": float(np.mean(self.queue_wait_station_bc_trace)),
+            "mean_queue_wait_excess_minutes": float(np.mean(self.queue_wait_excess_trace)),
+            "queue_wait_target_breach_fraction": float(np.mean(self.queue_wait_breach_trace)),
+            "disruption_step_fraction": float(np.mean(self.disruption_trace)),
+        }
+        self.run.log({f"rl/{key}": value for key, value in record.items()}, step=int(timesteps))
+        self.episode_index += 1
+        self._reset_episode_accumulators()
 
     def on_step(self, callback: Any) -> bool:
-        if callback.num_timesteps % self.log_interval != 0:
-            return True
-
         metrics: dict[str, float] = {"rl/timesteps": float(callback.num_timesteps)}
         exploration_rate = getattr(callback.model, "exploration_rate", None)
+        epsilon = float(exploration_rate) if exploration_rate is not None else None
         if exploration_rate is not None:
             metrics["rl/exploration_rate"] = float(exploration_rate)
+            metrics["rl/epsilon"] = float(exploration_rate)
 
         replay_buffer = getattr(callback.model, "replay_buffer", None)
         if replay_buffer is not None:
@@ -301,8 +425,33 @@ class WandbSb3Callback:
         for key, value in getattr(callback.model.logger, "name_to_value", {}).items():
             if isinstance(value, (int, float, np.integer, np.floating)) and np.isfinite(value):
                 metrics[f"sb3/{key}"] = float(value)
+                if key == "train/loss":
+                    self.latest_train_loss = float(value)
+                elif key == "rollout/exploration_rate":
+                    metrics["rl/epsilon"] = float(value)
+                    epsilon = float(value)
 
-        self.run.log(metrics, step=int(callback.num_timesteps))
+        infos = callback.locals.get("infos") or []
+        rewards = callback.locals.get("rewards")
+        dones = callback.locals.get("dones")
+        actions = callback.locals.get("actions")
+        if infos:
+            info = infos[0]
+            reward = self._scalar_at(rewards) if rewards is not None else 0.0
+            action = self._scalar_at(actions) if actions is not None else 0.0
+            self._update_episode_accumulators(reward=reward, action=action, info=info)
+            if callback.num_timesteps % self.step_log_interval == 0:
+                self._log_step_metrics(
+                    timesteps=int(callback.num_timesteps),
+                    action=action,
+                    reward=reward,
+                    info=info,
+                )
+            if dones is not None and bool(np.asarray(dones).reshape(-1)[0]):
+                self._log_episode_metrics(timesteps=int(callback.num_timesteps), epsilon=epsilon)
+
+        if callback.num_timesteps % self.log_interval == 0:
+            self.run.log(metrics, step=int(callback.num_timesteps))
         return True
 
 
@@ -325,7 +474,11 @@ def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Pat
         seed=seed,
         device=str(device),
     )
-    callback = WandbSb3Callback(run=run, log_interval=int(rl_cfg.get("wandb_log_interval", 100))).callback
+    callback = WandbSb3Callback(
+        run=run,
+        log_interval=int(rl_cfg.get("wandb_log_interval", 100)),
+        step_log_interval=int(rl_cfg.get("wandb_step_log_interval", 1)),
+    ).callback
     model.learn(total_timesteps=int(sb3_cfg["total_timesteps"]), callback=callback)
     checkpoint = output_dir / "best_model.zip"
     model.save(checkpoint)

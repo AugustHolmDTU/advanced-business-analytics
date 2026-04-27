@@ -93,6 +93,10 @@ PYTHONPATH=src python -m evch.train.train_rl \
   --config configs/experiment/mobile_mcs_line_abc_sb3.yaml
 ```
 
+The SB3 DQN variant uses the same randomized train/validation/test scenario split as the simple learner and is
+configured to the same order of magnitude of training exposure. The SB3 training budget is set to `69,120`
+timesteps, matching the simple learner's expected average exposure from `120` episodes of random `1-3` day runs.
+
 ### Evaluate Paired Held-Out Seeds and Stress Scenarios
 
 ```bash
@@ -137,6 +141,10 @@ Logged once per episode during training, including:
 - queue and utilization aggregates
 - periodic validation metrics (`rl/eval_mean_reward`, `rl/eval_td_loss`, etc.)
 
+For the overlapping fields, both the simple learner and SB3 DQN now use the same `rl/*` names and the same
+episode-level semantics, so these curves can be compared directly. SB3-specific internals are also kept under
+`sb3/*`.
+
 Use these to evaluate learning progress and generalization on validation episodes.
 
 ### 2) Training Step Logs (`rl_step/*`)
@@ -148,6 +156,8 @@ Logged every `wandb_step_log_interval` simulation steps:
 - station-specific queue and wait
 - utilization and unused mobile capacity
 - disruption indicators (`rl_step/disruption_active`, `rl_step/disruption_type_code`)
+
+These `rl_step/*` diagnostics are now emitted by both the simple learner and the SB3 DQN path.
 
 Use these to diagnose behavior at fine timescale, especially around disruptions.
 
