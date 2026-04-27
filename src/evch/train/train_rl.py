@@ -701,8 +701,11 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         train_env_cfg["episode_seed_range"] = [int(train_seed_range[0]), int(train_seed_range[1])]
 
     env = make_env(train_env_cfg, config["demand"], seed=seed)
-    use_sb3 = False
-    use_sb3 = importlib.util.find_spec("stable_baselines3") is not None and rl_cfg.get("backend", "auto") == "sb3_dqn"
+    requested_backend = str(rl_cfg.get("backend", "auto")).strip().lower()
+    has_sb3 = importlib.util.find_spec("stable_baselines3") is not None
+    if requested_backend == "sb3_dqn" and not has_sb3:
+        raise RuntimeError("RL backend `sb3_dqn` requires `stable_baselines3`, but it is not installed in this environment.")
+    use_sb3 = has_sb3 and requested_backend == "sb3_dqn"
 
     history: list[dict[str, float]] = []
     if use_sb3:

@@ -25,6 +25,7 @@ This branch uses a simple online DQL agent for the corridor benchmark:
 - environment: `configs/env/mobile_mcs_line_abc.yaml`
 - experiment setup: `configs/experiment/mobile_mcs_line_abc.yaml`
 - default corridor RL config: `configs/rl/dqn_mobile_simple.yaml`
+- stronger SB3 DQN override: `configs/rl/dqn_mobile_sb3.yaml`
 - W&B online logging config: `configs/logging/wandb_online.yaml`
 
 W&B project used by this branch:
@@ -66,6 +67,22 @@ PYTHONPATH=src python -m evch.train.train_rl \
   --config configs/logging/base.yaml \
   --config configs/logging/wandb_online.yaml \
   --config configs/experiment/mobile_mcs_line_abc.yaml
+```
+
+This is the current simple online DQL path, even though the compatibility config name still says `dqn_mobile_simple`.
+
+### Train Stronger SB3 DQN
+
+```bash
+PYTHONPATH=src python -m evch.train.train_rl \
+  --config configs/env/mobile_mcs_line_abc.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/rl/dqn_mobile_simple.yaml \
+  --config configs/rl/dqn_mobile_sb3.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/logging/wandb_online.yaml \
+  --config configs/experiment/mobile_mcs_line_abc.yaml \
+  --config configs/experiment/mobile_mcs_line_abc_sb3.yaml
 ```
 
 ### Evaluate Paired Held-Out Seeds and Stress Scenarios
@@ -240,6 +257,25 @@ Re-run the paired held-out seed evaluation and stress suite for an existing chec
 
 ```bash
 bsub < bsub/eval_mobile_rl.bsub
+```
+
+Train the stronger SB3 DQN variant:
+
+```bash
+bsub < bsub/train_mobile_line_abc_sb3.bsub
+```
+
+Run the paired held-out seed evaluation for the SB3 DQN checkpoint:
+
+```bash
+bsub < bsub/eval_mobile_rl_sb3.bsub
+```
+
+Run old-style `sim/*` overlays on one held-out seed for the SB3 DQN variant:
+
+```bash
+bsub < bsub/run_mobile_rl_line_abc_sb3.bsub
+bsub < bsub/run_mobile_noop_line_abc_sb3.bsub
 ```
 
 ## Baselines
