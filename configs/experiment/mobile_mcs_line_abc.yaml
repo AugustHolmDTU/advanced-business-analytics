@@ -22,6 +22,13 @@ train_val_test:
     seeds:
       start: 20000
       count: 500
+    environment_overrides:
+      simulation:
+        duration_days_range: [5, 10]
+        disruption:
+          day_disruption_count_weights:
+            1: 0.6
+            2: 0.4
   test_stress:
     enabled: true
     scenarios:

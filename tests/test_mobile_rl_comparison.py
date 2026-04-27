@@ -177,7 +177,7 @@ class MobileRlComparisonTest(unittest.TestCase):
             self.assertIn("num_active_mobile_stations_station_ab", frame.columns)
             self.assertIn("expected_passing_od_ac", frame.columns)
 
-    def test_runs_five_day_random_heldout_station_ab_demand_surge_rollout(self) -> None:
+    def test_runs_longer_test_id_seeded_heldout_rollout(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = _base_config(tmp_dir)
             config["train_val_test"] = {
@@ -186,6 +186,14 @@ class MobileRlComparisonTest(unittest.TestCase):
                     "seeds": {
                         "start": 20000,
                         "count": 3,
+                    },
+                    "environment_overrides": {
+                        "simulation": {
+                            "duration_days_range": [5, 10],
+                            "disruption": {
+                                "day_disruption_count_weights": {1: 0.6, 2: 0.4},
+                            },
+                        }
                     },
                 }
             }
@@ -196,18 +204,10 @@ class MobileRlComparisonTest(unittest.TestCase):
                 "use_seeded_episode": True,
                 "environment_overrides": {
                     "simulation": {
-                        "duration_days_range": [1, 3],
                         "disruption": {
                             "enabled": True,
                             "mode": "random",
-                            "day_disruption_count_weights": {0: 0.2, 1: 0.8},
                             "event_types": ["demand_surge"],
-                            "demand_surge": {
-                                "duration_hours": [2.0, 3.5],
-                                "start_hour_range": [6.0, 20.0],
-                                "multiplier": 2.4,
-                                "targets": ["od_ab", "od_ba"],
-                            },
                         }
                     }
                 },
@@ -230,11 +230,12 @@ class MobileRlComparisonTest(unittest.TestCase):
             metrics_path = output_dir / "comparison_timestep_metrics.csv"
             self.assertTrue(metrics_path.exists())
             frame = pd.read_csv(metrics_path)
-            self.assertIn(len(frame), {288, 576, 864})
+            self.assertIn(len(frame), {1440, 2880})
             self.assertEqual(result["summary"]["seed"], 20000)
+            self.assertIn(result["summary"]["num_days"], {5, 10})
+            self.assertGreaterEqual(int(frame["disruption_active"].sum()), 2)
             self.assertIn("allocation_vs_demand_alignment", frame.columns)
-            active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
-            self.assertTrue(active_targets.issubset({"od_ab", "od_ba"}))
+            self.assertGreater(len(frame.loc[frame["disruption_active"] == 1, "day_index"].dropna().unique()), 1)
 
 
 if __name__ == "__main__":

@@ -40,6 +40,11 @@ The A-B-C benchmark now uses a seed-driven scenario split.
 - main test: fixed held-out seeds from the same generator (`train_val_test.test_id`)
 - stress/OOD: separate fixed stress scenarios (`train_val_test.test_stress`)
 
+For the current line-ABC setup, the main held-out `test_id` split is heavier than training:
+- 5-10 day episodes
+- at least one disruption per day
+- some days with two disruptions
+
 An unseen seed is treated as an unseen simulated day. The seed determines the stochastic demand realization, charging-stop decisions, service times, disruption count, disruption type, disruption target, disruption timing, and disruption severity. This makes held-out seeds a valid in-distribution generalization test for the simulator.
 
 The primary claim is therefore:
