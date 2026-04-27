@@ -1,3 +1,6 @@
+# Legacy fixed rollout override for one-off visual diagnostics.
+# The primary experiment now uses train_val_test.* seed banks in
+# configs/experiment/mobile_mcs_line_abc.yaml.
 comparison_rollout:
   enabled: true
   num_days: 5

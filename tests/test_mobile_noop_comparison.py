@@ -1,3 +1,4 @@
+import logging
 import tempfile
 import unittest
 from pathlib import Path
@@ -5,6 +6,8 @@ from pathlib import Path
 import pandas as pd
 
 from evch.train.run_mobile_noop_comparison import run_mobile_noop_comparison
+
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 
 class MobileNoopComparisonTest(unittest.TestCase):

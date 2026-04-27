@@ -7,10 +7,18 @@ import numpy as np
 PolicyCallable = Callable[[np.ndarray, Any, bool], int]
 
 
-def evaluate_policy(env: Any, policy: PolicyCallable, episodes: int, seed: int, deterministic: bool = True) -> dict[str, Any]:
+def evaluate_policy(
+    env: Any,
+    policy: PolicyCallable,
+    episodes: int,
+    seed: int,
+    deterministic: bool = True,
+    episode_seeds: list[int] | None = None,
+) -> dict[str, Any]:
     episode_records: list[dict[str, float]] = []
-    for episode in range(episodes):
-        observation, _ = env.reset(seed=seed + episode)
+    seeds = list(episode_seeds) if episode_seeds is not None else [seed + episode for episode in range(episodes)]
+    for episode_seed in seeds:
+        observation, _ = env.reset(seed=int(episode_seed))
         totals = {
             "reward": 0.0,
             "served_demand": 0.0,
@@ -34,6 +42,6 @@ def evaluate_policy(env: Any, policy: PolicyCallable, episodes: int, seed: int, 
         "mean_unmet_demand": float(np.mean([record["unmet_demand"] for record in episode_records])),
         "mean_true_demand_total": float(np.mean([record["true_demand_total"] for record in episode_records])),
         "episodes": episode_records,
+        "episode_seeds": seeds,
     }
     return summary
-

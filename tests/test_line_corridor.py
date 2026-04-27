@@ -1,3 +1,4 @@
+import logging
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,6 +10,8 @@ from evch.envs.factory import make_env
 from evch.envs.line_corridor_mobile_env import LineCorridorMobileStationEnv
 from evch.train.run_mobile_noop_comparison import run_mobile_noop_comparison
 from evch.sim.line_corridor import LineCorridorQueueSimulator
+
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 
 def _base_line_config() -> dict:
@@ -166,6 +169,50 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
 
         self.assertTrue(sampled_steps.issubset({288, 576, 864}))
         self.assertGreater(len(sampled_steps), 1)
+
+    def test_reset_reproduces_same_randomized_scenario_for_same_seed(self) -> None:
+        env_config = {
+            **self.env_config,
+            "simulation": {
+                **self.env_config["simulation"],
+                "duration_days_range": [1, 3],
+                "disruption": {
+                    "enabled": True,
+                    "mode": "random",
+                    "day_disruption_count_weights": {0: 0.2, 1: 0.6, 2: 0.2},
+                    "event_types": ["capacity_drop", "demand_surge"],
+                    "capacity_drop": {
+                        "duration_hours": [1.0, 2.0],
+                        "start_hour_range": [6.0, 12.0],
+                        "target_num_plugs": [3, 5],
+                        "targets": ["station_ab", "station_bc"],
+                    },
+                    "demand_surge": {
+                        "duration_hours": [1.0, 2.0],
+                        "start_hour_range": [8.0, 18.0],
+                        "multiplier": [1.6, 2.0],
+                        "targets": ["od_ab", "od_bc"],
+                    },
+                },
+            },
+        }
+        env_a = LineCorridorMobileStationEnv(env_config, {}, seed=11)
+        env_b = LineCorridorMobileStationEnv(env_config, {}, seed=99)
+
+        env_a.reset(seed=1234)
+        env_b.reset(seed=1234)
+
+        schedule_a = [
+            (event.disruption_type, event.target, event.day_index, round(event.start_hour, 3), event.start_step, event.end_step, round(event.severity, 3))
+            for event in env_a.current_disruption_schedule
+        ]
+        schedule_b = [
+            (event.disruption_type, event.target, event.day_index, round(event.start_hour, 3), event.start_step, event.end_step, round(event.severity, 3))
+            for event in env_b.current_disruption_schedule
+        ]
+
+        self.assertEqual(env_a.max_steps, env_b.max_steps)
+        self.assertEqual(schedule_a, schedule_b)
 
     def test_mobile_threshold_policy_returns_valid_two_station_action(self) -> None:
         env = LineCorridorMobileStationEnv(self.env_config, {}, seed=3)

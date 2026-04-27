@@ -1,3 +1,4 @@
+import logging
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +8,8 @@ import pandas as pd
 from evch.envs.line_corridor_mobile_env import LineCorridorMobileStationEnv
 from evch.rl.simple_dqn import SimpleDQNAgent
 from evch.train.run_mobile_rl_comparison import run_mobile_rl_comparison
+
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 
 def _base_config(tmp_dir: str) -> dict:

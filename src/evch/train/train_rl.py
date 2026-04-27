@@ -15,6 +15,7 @@ from evch.config.loader import build_config_parser, load_config
 from evch.envs.factory import make_env
 from evch.rl.evaluation import evaluate_policy
 from evch.rl.simple_dqn import SimpleDQNAgent
+from evch.train.eval_suites import build_seed_list, evaluate_policy_suites, resolve_train_seed_range
 from evch.utils.io import ensure_dir, write_json
 from evch.utils.logging import configure_logging
 from evch.utils.seeding import set_global_seed
@@ -335,6 +336,7 @@ def _train_with_torch_dqn(
     output_dir: Path,
     run: Any,
     eval_env_factory: Callable[[int], Any] | None = None,
+    eval_episode_seeds: list[int] | None = None,
 ) -> tuple[str, str, list[dict[str, float]]]:
     agent = SimpleDQNAgent(
         obs_dim=int(env.observation_space.shape[0]),
@@ -351,6 +353,7 @@ def _train_with_torch_dqn(
         eval_interval=int(rl_cfg.get("eval_interval_episodes", max(1, int(rl_cfg["episodes"]) // 8))),
         eval_episodes=int(rl_cfg.get("eval_during_training_episodes", max(1, int(rl_cfg.get("evaluation_episodes", 1))))),
         eval_seed=seed + 10_000,
+        eval_episode_seeds=eval_episode_seeds,
     )
     checkpoint = output_dir / str(rl_cfg["checkpoint_name"])
     agent.save(checkpoint)
@@ -654,8 +657,10 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
     run.log({f"runtime/{key}": value for key, value in runtime_info.items()})
 
     split_cfg = dict(config.get("train_val_test", {}))
+    training_cfg = dict(split_cfg.get("training", {}))
     val_cfg = dict(split_cfg.get("validation", {}))
-    test_cfg = dict(split_cfg.get("test", {}))
+    test_id_cfg = dict(split_cfg.get("test_id", {}))
+    stress_cfg = dict(split_cfg.get("test_stress", {}))
 
     val_env_overrides = val_cfg.get("environment_overrides", {})
     val_env_cfg = (
@@ -663,10 +668,17 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         if isinstance(val_env_overrides, dict) and val_env_overrides
         else copy.deepcopy(config["environment"])
     )
-    val_episodes = int(val_cfg.get("episodes", rl_cfg["evaluation_episodes"]))
-    val_seed_offset = int(val_cfg.get("seed_offset", 17))
+    val_seed_list = build_seed_list(val_cfg.get("seeds", val_cfg))
+    val_episodes = len(val_seed_list) if val_seed_list else int(val_cfg.get("episodes", rl_cfg["evaluation_episodes"]))
+    periodic_eval_seed_count = int(val_cfg.get("periodic_seed_count", min(max(val_episodes, 1), 32)))
+    periodic_eval_seeds = val_seed_list[:periodic_eval_seed_count] if val_seed_list else None
 
-    env = make_env(config["environment"], config["demand"], seed=seed)
+    train_env_cfg = copy.deepcopy(config["environment"])
+    train_seed_range = resolve_train_seed_range(training_cfg)
+    if train_seed_range is not None:
+        train_env_cfg["episode_seed_range"] = [int(train_seed_range[0]), int(train_seed_range[1])]
+
+    env = make_env(train_env_cfg, config["demand"], seed=seed)
     use_sb3 = False
     use_sb3 = importlib.util.find_spec("stable_baselines3") is not None and rl_cfg.get("backend", "auto") == "sb3_dqn"
 
@@ -681,9 +693,10 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
             output_dir=output_dir,
             run=run,
             eval_env_factory=lambda eval_seed: make_env(val_env_cfg, config["demand"], seed=eval_seed),
+            eval_episode_seeds=periodic_eval_seeds,
         )
 
-    eval_env = make_env(val_env_cfg, config["demand"], seed=seed + val_seed_offset)
+    eval_env = make_env(val_env_cfg, config["demand"], seed=(val_seed_list[0] if val_seed_list else seed + 17))
     policy = _make_rl_policy(backend, checkpoint_path)
     evaluation = evaluate_policy(
         env=eval_env,
@@ -691,9 +704,10 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         episodes=val_episodes,
         seed=seed,
         deterministic=bool(rl_cfg.get("deterministic_eval", True)),
+        episode_seeds=val_seed_list if val_seed_list else None,
     )
-    run.log({f"rl_eval/{key}": value for key, value in evaluation.items() if not isinstance(value, list)})
-    run.log({"rl_eval/split": "validation"})
+    run.log({f"validation/{key}": value for key, value in evaluation.items() if key not in {"episodes", "episode_seeds"}})
+    run.log({"validation/num_seeds": float(len(val_seed_list)) if val_seed_list else float(val_episodes)})
 
     training_summary_path = output_dir / "training_summary.json"
     write_json(
@@ -702,7 +716,7 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
             "backend": backend,
             "checkpoint_path": checkpoint_path,
             "runtime": runtime_info,
-            "evaluation": {key: value for key, value in evaluation.items() if key != "episodes"},
+            "validation": {key: value for key, value in evaluation.items() if key not in {"episodes", "episode_seeds"}},
         },
     )
     if history:
@@ -718,28 +732,14 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         run=run,
     )
 
-    test_rollout = None
-    if bool(test_cfg.get("enabled", False)):
-        test_config = copy.deepcopy(config)
-        if isinstance(test_cfg.get("environment_overrides"), dict) and test_cfg.get("environment_overrides"):
-            test_config["environment"] = _deep_merge_dicts(test_config["environment"], test_cfg["environment_overrides"])
-
-        test_rollout_cfg = _deep_merge_dicts(
-            dict(test_config.get("comparison_rollout", {})),
-            dict(test_cfg.get("comparison_rollout", {})),
-        )
-        test_rollout_cfg["enabled"] = True
-        test_config["comparison_rollout"] = test_rollout_cfg
-
-        test_output_dir = ensure_dir(output_dir / "test_split")
-        test_rollout = _build_mobile_comparison_rollout(
-            config=test_config,
-            policy=policy,
-            output_dir=test_output_dir,
+    suite_outputs = None
+    if bool(test_id_cfg.get("enabled", False)) or bool(stress_cfg.get("enabled", False)) or val_seed_list:
+        suite_outputs = evaluate_policy_suites(
+            config=config,
+            checkpoint_path=checkpoint_path,
             run=run,
+            output_dir=ensure_dir(output_dir / "evaluation_suites"),
         )
-        if test_rollout is not None:
-            run.log({f"test_split/{key}": value for key, value in test_rollout["summary"].items()})
 
     log_artifact(
         run=run,
@@ -780,7 +780,7 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         "training_summary_path": str(training_summary_path),
         "runtime": runtime_info,
         "comparison_rollout": comparison_rollout,
-        "test_rollout": test_rollout,
+        "evaluation_suites": suite_outputs,
     }
 
 

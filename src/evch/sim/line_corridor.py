@@ -36,6 +36,7 @@ class QueuedVehicle:
     arrival_step: int
     trip_key: str
     station_index: int
+    base_service_minutes: float
 
 
 @dataclass(slots=True)
@@ -172,6 +173,9 @@ class LineCorridorQueueSimulator:
         self.disruption_enabled = bool(self.disruption_cfg.get("enabled", False))
         self.disruption_mode = str(self.disruption_cfg.get("mode", "scripted")).lower()
         self.daily_event_probability = float(self.disruption_cfg.get("daily_event_probability", 0.0))
+        self.day_disruption_count_weights = self._parse_day_disruption_count_weights(
+            self.disruption_cfg.get("day_disruption_count_weights")
+        )
         self.event_types = [
             str(event_type)
             for event_type in self.disruption_cfg.get("event_types", list(self.SUPPORTED_DISRUPTION_TYPES))
@@ -179,6 +183,15 @@ class LineCorridorQueueSimulator:
         for event_type in self.event_types:
             if event_type not in self.SUPPORTED_DISRUPTION_TYPES:
                 raise ValueError(f"Unsupported disruption type: {event_type}")
+
+    def _parse_day_disruption_count_weights(self, raw_value: Any) -> dict[int, float]:
+        default_weights = {0: max(1.0 - self.daily_event_probability, 0.0), 1: self.daily_event_probability, 2: 0.0}
+        if not isinstance(raw_value, dict) or not raw_value:
+            return default_weights
+        weights: dict[int, float] = {}
+        for key, value in raw_value.items():
+            weights[int(key)] = max(float(value), 0.0)
+        return weights
 
     def _time_hours(self, step: int) -> float:
         return step * self.step_minutes / 60.0
@@ -257,25 +270,42 @@ class LineCorridorQueueSimulator:
             "station_expected_charging": station_expected_charging,
         }
 
-    def _sample_service_minutes(self, service_time_multiplier: float = 1.0) -> float:
-        sampled = self.rng.normal(self.service_mean_minutes * service_time_multiplier, self.service_std_minutes)
+    def _sample_service_minutes(self, service_time_multiplier: float = 1.0, rng: np.random.Generator | None = None) -> float:
+        local_rng = self.rng if rng is None else rng
+        sampled = local_rng.normal(self.service_mean_minutes * service_time_multiplier, self.service_std_minutes)
         return float(np.clip(sampled, self.service_min_minutes, self.service_max_minutes * service_time_multiplier))
 
-    def _sample_arrivals(self, expected_by_trip: dict[str, float]) -> list[QueuedVehicle]:
+    def _apply_service_time_multiplier(self, base_service_minutes: float, service_time_multiplier: float = 1.0) -> float:
+        scaled = float(base_service_minutes) * float(service_time_multiplier)
+        return float(np.clip(scaled, self.service_min_minutes, self.service_max_minutes * float(service_time_multiplier)))
+
+    def _step_rng(self, step: int, channel: int) -> np.random.Generator:
+        return np.random.default_rng(np.random.SeedSequence([self.seed, step, channel]))
+
+    def _sample_arrivals(self, step: int, expected_by_trip: dict[str, float]) -> list[QueuedVehicle]:
+        arrival_rng = self._step_rng(step, 1)
+        assignment_rng = self._step_rng(step, 2)
+        service_rng = self._step_rng(step, 3)
         arrivals: list[QueuedVehicle] = []
         for trip_key, expected_passing in expected_by_trip.items():
-            passing = int(self.rng.poisson(max(expected_passing, 0.0)))
-            charging = int(self.rng.binomial(passing, self.stop_probability))
+            passing = int(arrival_rng.poisson(max(expected_passing, 0.0)))
+            charging = int(arrival_rng.binomial(passing, self.stop_probability))
             if charging <= 0:
                 continue
             weights = np.asarray(self.trip_definitions[trip_key].station_weights, dtype=np.float64)
-            station_counts = self.rng.multinomial(charging, weights / max(weights.sum(), 1e-6))
+            station_counts = assignment_rng.multinomial(charging, weights / max(weights.sum(), 1e-6))
             for station_index, count in enumerate(station_counts):
                 arrivals.extend(
-                    QueuedVehicle(arrival_step=-1, trip_key=trip_key, station_index=station_index) for _ in range(int(count))
+                    QueuedVehicle(
+                        arrival_step=-1,
+                        trip_key=trip_key,
+                        station_index=station_index,
+                        base_service_minutes=self._sample_service_minutes(service_time_multiplier=1.0, rng=service_rng),
+                    )
+                    for _ in range(int(count))
                 )
         if arrivals:
-            self.rng.shuffle(arrivals)
+            assignment_rng.shuffle(arrivals)
         return arrivals
 
     def _steps_from_hours(self, hours: float) -> int:
@@ -289,6 +319,21 @@ class LineCorridorQueueSimulator:
                 low, high = high, low
             return float(self.rng.uniform(low, high))
         return float(value)
+
+    def _coerce_numeric_value(self, value: Any, minimum: float | None = None, maximum: float | None = None) -> float:
+        if isinstance(value, (list, tuple)) and len(value) == 2:
+            low = float(value[0])
+            high = float(value[1])
+            if high < low:
+                low, high = high, low
+            sampled = float(self.rng.uniform(low, high))
+        else:
+            sampled = float(value)
+        if minimum is not None:
+            sampled = max(sampled, minimum)
+        if maximum is not None:
+            sampled = min(sampled, maximum)
+        return sampled
 
     def _resolve_start_hour(self, raw_range: Any, duration_hours: float) -> float:
         if isinstance(raw_range, (list, tuple)) and len(raw_range) == 2:
@@ -393,15 +438,27 @@ class LineCorridorQueueSimulator:
             service_time_multiplier_by_station=(float(service_time_multipliers[0]), float(service_time_multipliers[1])),
         )
 
+    def _sample_day_disruption_count(self) -> int:
+        counts = np.asarray(sorted(self.day_disruption_count_weights.keys()), dtype=np.int32)
+        weights = np.asarray([self.day_disruption_count_weights[int(count)] for count in counts], dtype=np.float64)
+        if weights.sum() <= 0.0:
+            return 0
+        probabilities = weights / weights.sum()
+        return int(self.rng.choice(counts, p=probabilities))
+
     def _sample_random_event(self, day_index: int) -> LineDisruptionEvent | None:
-        if not self.event_types or self.rng.random() > self.daily_event_probability:
+        if not self.event_types:
             return None
         disruption_type = str(self.rng.choice(self.event_types))
         if disruption_type == "capacity_drop":
             cfg = dict(self.disruption_cfg.get("capacity_drop", {}))
             duration_hours = self._coerce_duration_hours(cfg.get("duration_hours", 2.0))
             start_hour = self._resolve_start_hour(cfg.get("start_hour_range", [7.0, 18.0]), duration_hours)
-            severity = float(cfg.get("target_num_plugs", 3))
+            severity = self._coerce_numeric_value(
+                cfg.get("target_num_plugs", cfg.get("target_num_plugs_range", 3)),
+                minimum=0.0,
+                maximum=float(self.num_plugs_by_station.max()),
+            )
         elif disruption_type == "station_outage":
             cfg = dict(self.disruption_cfg.get("station_outage", {}))
             duration_hours = self._coerce_duration_hours(cfg.get("duration_hours", 1.5))
@@ -411,12 +468,12 @@ class LineCorridorQueueSimulator:
             cfg = dict(self.disruption_cfg.get("demand_surge", {}))
             duration_hours = self._coerce_duration_hours(cfg.get("duration_hours", 2.0))
             start_hour = self._resolve_start_hour(cfg.get("start_hour_range", [7.0, 19.0]), duration_hours)
-            severity = float(cfg.get("multiplier", 1.8))
+            severity = self._coerce_numeric_value(cfg.get("multiplier", cfg.get("multiplier_range", 1.8)), minimum=1.0)
         else:
             cfg = dict(self.disruption_cfg.get("service_time_inflation", {}))
             duration_hours = self._coerce_duration_hours(cfg.get("duration_hours", 2.0))
             start_hour = self._resolve_start_hour(cfg.get("start_hour_range", [7.0, 19.0]), duration_hours)
-            severity = float(cfg.get("multiplier", 1.5))
+            severity = self._coerce_numeric_value(cfg.get("multiplier", cfg.get("multiplier_range", 1.5)), minimum=1.0)
         target_options = [str(value) for value in cfg.get("targets", self._default_targets_for_type(disruption_type))]
         target = str(self.rng.choice(target_options))
         return self._make_disruption_event(
@@ -428,6 +485,25 @@ class LineCorridorQueueSimulator:
             severity=severity,
             scripted=False,
         )
+
+    def _sample_random_events_for_day(self, day_index: int) -> list[LineDisruptionEvent]:
+        target_count = self._sample_day_disruption_count()
+        if target_count <= 0:
+            return []
+        sampled: list[LineDisruptionEvent] = []
+        attempts = 0
+        max_attempts = max(24, target_count * 16)
+        while len(sampled) < target_count and attempts < max_attempts:
+            attempts += 1
+            event = self._sample_random_event(day_index)
+            if event is None:
+                continue
+            overlaps_existing = any(event.start_step < existing.end_step and existing.start_step < event.end_step for existing in sampled)
+            if overlaps_existing:
+                continue
+            sampled.append(event)
+        sampled.sort(key=lambda event: (event.start_step, event.end_step))
+        return sampled
 
     def _build_disruption_schedule(self) -> list[LineDisruptionEvent]:
         if not self.disruption_enabled:
@@ -455,9 +531,7 @@ class LineCorridorQueueSimulator:
                 )
         elif self.disruption_mode == "random":
             for day_index in range(self.num_days):
-                event = self._sample_random_event(day_index)
-                if event is not None:
-                    events.append(event)
+                events.extend(self._sample_random_events_for_day(day_index))
         else:
             raise ValueError(f"Unknown disruption mode: {self.disruption_mode}")
 
@@ -514,7 +588,12 @@ class LineCorridorQueueSimulator:
             return
         for session in sorted(sessions, key=lambda item: (item.arrival_step, item.start_step), reverse=True):
             queue_by_station[station_index].appendleft(
-                QueuedVehicle(arrival_step=session.arrival_step, trip_key=session.trip_key, station_index=station_index)
+                QueuedVehicle(
+                    arrival_step=session.arrival_step,
+                    trip_key=session.trip_key,
+                    station_index=station_index,
+                    base_service_minutes=session.service_minutes,
+                )
             )
 
     def _summary_stats(self, metrics: pd.DataFrame) -> dict[str, float]:
@@ -566,7 +645,7 @@ class LineCorridorQueueSimulator:
                 step=step,
                 demand_multipliers_by_trip=disruption_state["demand_multipliers_by_trip"],
             )
-            arrivals = self._sample_arrivals(expected_by_trip=expected["expected_by_trip"])
+            arrivals = self._sample_arrivals(step=step, expected_by_trip=expected["expected_by_trip"])
             arrivals_by_station = np.zeros(2, dtype=np.int32)
             for vehicle in arrivals:
                 vehicle.arrival_step = step
@@ -579,8 +658,9 @@ class LineCorridorQueueSimulator:
                 available_plugs = max(effective_num_plugs - len(active_sessions_by_station[station_index]), 0)
                 for _ in range(min(available_plugs, len(queue_by_station[station_index]))):
                     vehicle = queue_by_station[station_index].popleft()
-                    service_minutes = self._sample_service_minutes(
-                        service_time_multiplier=float(disruption_state["service_time_multiplier_by_station"][station_index])
+                    service_minutes = self._apply_service_time_multiplier(
+                        base_service_minutes=vehicle.base_service_minutes,
+                        service_time_multiplier=float(disruption_state["service_time_multiplier_by_station"][station_index]),
                     )
                     service_steps = max(1, int(np.ceil(service_minutes / self.step_minutes)))
                     session = ActiveSession(

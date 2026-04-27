@@ -24,8 +24,7 @@ This branch uses a simple online DQL agent for the corridor benchmark:
 
 - environment: `configs/env/mobile_mcs_line_abc.yaml`
 - experiment setup: `configs/experiment/mobile_mcs_line_abc.yaml`
-- default simple DQL config: `configs/rl/simple_dql.yaml`
-- longer training override: `configs/rl/simple_dql_long.yaml`
+- default corridor RL config: `configs/rl/dqn_mobile_simple.yaml`
 - W&B online logging config: `configs/logging/wandb_online.yaml`
 
 W&B project used by this branch:
@@ -33,12 +32,20 @@ W&B project used by this branch:
 
 ## Train / Validation / Test Design
 
-Training is scenario-based and split-aware:
-- train: RL training episodes from the configured environment
-- validation: periodic evaluation during and after training (`train_val_test.validation`)
-- held-out test rollout: separate rollout recipe (`train_val_test.test`) with 10 days and random station_outage events on station_ab
+The A-B-C benchmark now uses a seed-driven scenario split.
 
-This is not a timestep split of one trajectory; each split is a separate scenario recipe.
+- training: randomized 1-3 day episodes drawn from the environment generator
+- validation: fixed held-out seeds from the same generator (`train_val_test.validation`)
+- main test: fixed held-out seeds from the same generator (`train_val_test.test_id`)
+- stress/OOD: separate fixed stress scenarios (`train_val_test.test_stress`)
+
+An unseen seed is treated as an unseen simulated day. The seed determines the stochastic demand realization, charging-stop decisions, service times, disruption count, disruption type, disruption target, disruption timing, and disruption severity. This makes held-out seeds a valid in-distribution generalization test for the simulator.
+
+The primary claim is therefore:
+
+`The policy generalizes to unseen simulated days drawn from the same randomized scenario distribution.`
+
+Stress scenarios are reported separately and should be interpreted as robustness tests, not the main in-distribution test.
 
 ## Local Commands
 
@@ -49,53 +56,43 @@ $env:PYTHONPATH='src'
 & "C:\Users\augus\miniconda3\envs\vae\python.exe" -m evch.train.train_rl ...
 ```
 
-### Train (default simple DQL)
+### Train
 
 ```bash
 PYTHONPATH=src python -m evch.train.train_rl \
   --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
-  --config configs/logging/base.yaml \
-  --config configs/logging/wandb_online.yaml \
-  --config configs/rl/simple_dql.yaml \
-  --config configs/experiment/mobile_mcs_line_abc.yaml
-```
-
-### Train Longer (simple DQL + override)
-
-```bash
-PYTHONPATH=src python -m evch.train.train_rl \
-  --config configs/env/mobile_mcs_line_abc.yaml \
-  --config configs/demand/base.yaml \
-  --config configs/logging/base.yaml \
-  --config configs/logging/wandb_online.yaml \
-  --config configs/rl/simple_dql.yaml \
-  --config configs/rl/simple_dql_long.yaml \
-  --config configs/experiment/mobile_mcs_line_abc.yaml
-```
-
-### No-op Comparison (fixed scripted 3-day rollout)
-
-```bash
-PYTHONPATH=src python -m evch.train.run_mobile_noop_comparison \
-  --config configs/env/mobile_mcs_line_abc.yaml \
-  --config configs/demand/base.yaml \
+  --config configs/rl/dqn_mobile_simple.yaml \
   --config configs/logging/base.yaml \
   --config configs/logging/wandb_online.yaml \
   --config configs/experiment/mobile_mcs_line_abc.yaml
 ```
 
-### RL Comparison (fixed scripted 3-day rollout)
+### Evaluate Paired Held-Out Seeds and Stress Scenarios
 
 ```bash
-PYTHONPATH=src python -m evch.train.run_mobile_rl_comparison \
+PYTHONPATH=src python -m evch.train.evaluate_policies \
   --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
+  --config configs/rl/dqn_mobile_simple.yaml \
   --config configs/logging/base.yaml \
   --config configs/logging/wandb_online.yaml \
   --config configs/experiment/mobile_mcs_line_abc.yaml \
   --agent-checkpoint outputs/mobile_mcs_line_abc/rl/best_model.pt
 ```
+
+This evaluates all configured policies on the exact same validation seeds, main test seeds, and stress scenarios:
+- `mobile_noop` (exported as `fixed`)
+- `mobile_threshold` (exported as `threshold`)
+- RL policy (`rl`)
+
+### Legacy Scripted Rollout Diagnostics
+
+The old one-off scripted rollout helpers still exist:
+- `evch.train.run_mobile_noop_comparison`
+- `evch.train.run_mobile_rl_comparison`
+
+These are useful for manual diagnostics, but they are not the main experiment any more.
 
 ## W&B Logs: What They Mean
 
@@ -124,9 +121,26 @@ Logged every `wandb_step_log_interval` simulation steps:
 
 Use these to diagnose behavior at fine timescale, especially around disruptions.
 
-### 3) Comparison Rollout Time-Series (`sim/*`)
+### 3) Validation / Test / Stress Summaries
 
-Logged from fixed comparison rollouts (`run_mobile_noop_comparison` or `run_mobile_rl_comparison`), including:
+The main experiment logs split-specific summaries:
+- `validation/*`
+- `test_id/*`
+- `test_stress/*`
+- `paired_test/*`
+
+`validation/*` and `test_id/*` report per-policy operational summaries on fixed held-out seeds.
+
+`paired_test/*` reports paired RL improvements against the fixed and threshold baselines on the exact same test seeds, including:
+- queue reduction
+- wait reduction
+- breach-rate reduction
+- reward difference
+- extra MCS usage
+
+### 4) Legacy Comparison Rollout Time-Series (`sim/*`)
+
+If you run the legacy scripted rollout helpers, they still log `sim/*`, including:
 - queue and wait metrics (global and station-specific)
 - active plugs, effective plugs, utilization
 - active/unused mobile station estimates
@@ -135,7 +149,7 @@ Logged from fixed comparison rollouts (`run_mobile_noop_comparison` or `run_mobi
 
 These series are logged against `sim/global_hour` for consistent timeline plots.
 
-### 4) Comparison Summary Metrics (`sim_summary/*`)
+### 5) Legacy Comparison Summary Metrics (`sim_summary/*`)
 
 Aggregated from the rollout and stored in both W&B and JSON summary:
 - mean/peak queue and wait
@@ -144,7 +158,7 @@ Aggregated from the rollout and stored in both W&B and JSON summary:
 - mean MCS activation in normal vs disrupted periods
 - alignment summary metrics (described below)
 
-### 5) Overlay Panels (`sim_overlay/*`)
+### 6) Legacy Overlay Panels (`sim_overlay/*`)
 
 Custom line panels designed for decision-quality inspection:
 - `sim_overlay/station_ab_demand_vs_mcs`
@@ -188,7 +202,16 @@ Positive values on these two disruption-conditioned metrics indicate movement in
 
 ## Produced Artifacts
 
-Comparison runs export:
+Paired evaluation exports:
+- `validation_summary.csv`
+- `validation_manifest.csv`
+- `test_id_summary.csv`
+- `paired_test_results.csv`
+- `test_stress_summary.csv`
+- `scenario_manifest.csv`
+- `suite_outputs.json`
+
+Legacy comparison runs export:
 - `comparison_timestep_metrics.csv`
 - `comparison_rollout_summary.json`
 - `comparison_queue_dynamics.png`
@@ -199,6 +222,20 @@ Training exports include:
 - `outputs/<experiment>/rl/best_model.pt`
 - `outputs/<experiment>/rl/training_summary.json`
 - `outputs/<experiment>/rl/history.json` (for torch_dql backend)
+
+## HPC Commands
+
+Train and run the internal validation/test suites:
+
+```bash
+bsub < bsub/train_mobile_line_abc.bsub
+```
+
+Re-run the paired held-out seed evaluation and stress suite for an existing checkpoint:
+
+```bash
+bsub < bsub/eval_mobile_rl.bsub
+```
 
 ## Baselines
 

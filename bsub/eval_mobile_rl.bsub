@@ -3,7 +3,7 @@
 ### -- specify queue --
 #BSUB -q hpc
 ### -- set the job Name --
-#BSUB -J evch_mobile_eval
+#BSUB -J evch_line_abc_eval
 ### -- ask for number of cores (default: 1) --
 #BSUB -n 2
 ### -- specify that the cores must be on the same host --
@@ -22,14 +22,14 @@
 ### -- send notification at completion --
 ##BSUB -N
 ### -- Specify the output and error file. %J is the job-id --
-#BSUB -o logs/eval_mobile_rl_%J.out
-#BSUB -e logs/eval_mobile_rl_%J.err
+#BSUB -o logs/eval_mobile_line_abc_%J.out
+#BSUB -e logs/eval_mobile_line_abc_%J.err
 
 set -euo pipefail
 
 PROJECT_ROOT="${PROJECT_ROOT:-${LS_SUBCWD:-$PWD}}"
 CONFIG_DIR="${CONFIG_DIR:-$PROJECT_ROOT/configs}"
-AGENT_CHECKPOINT="${AGENT_CHECKPOINT:-$PROJECT_ROOT/outputs/mobile_mcs_simple/rl/best_model.pt}"
+AGENT_CHECKPOINT="${AGENT_CHECKPOINT:-$PROJECT_ROOT/outputs/mobile_mcs_line_abc/rl/best_model.pt}"
 
 ### Activate your environment here.
 module load python3
@@ -40,15 +40,15 @@ cd "$PROJECT_ROOT"
 
 export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
 export MPLCONFIGDIR="${MPLCONFIGDIR:-$PROJECT_ROOT/.cache/matplotlib}"
-export WANDB_PROJECT="${WANDB_PROJECT:-adaptive-ev-charging}"
+export WANDB_PROJECT="${WANDB_PROJECT:-A-B-C}"
 export WANDB_ENTITY="${WANDB_ENTITY:-EV-charging}"
 mkdir -p "$MPLCONFIGDIR"
 
 python -m evch.train.evaluate_policies \
-  --config "$CONFIG_DIR/env/mobile_mcs_simple.yaml" \
+  --config "$CONFIG_DIR/env/mobile_mcs_line_abc.yaml" \
   --config "$CONFIG_DIR/demand/base.yaml" \
   --config "$CONFIG_DIR/rl/dqn_mobile_simple.yaml" \
   --config "$CONFIG_DIR/logging/base.yaml" \
   --config "$CONFIG_DIR/logging/wandb_online.yaml" \
-  --config "$CONFIG_DIR/experiment/mobile_mcs_simple.yaml" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml" \
   --agent-checkpoint "$AGENT_CHECKPOINT"

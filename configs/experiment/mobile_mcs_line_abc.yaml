@@ -3,41 +3,137 @@ experiment:
   output_root: outputs
   save_plots: true
 comparison_rollout:
-  enabled: true
-  num_days: 3
-  seed: 123
-  repeat_daily_disruptions: false
+  enabled: false
 evaluation:
-  episodes: 12
-  disruptions: false
   policies:
     - rl
     - mobile_threshold
     - mobile_noop
-    - random
 train_val_test:
+  training:
+    episode_seed_range: [0, 9999]
   validation:
-    episodes: 12
-    seed_offset: 17
-  test:
+    seeds:
+      start: 10000
+      count: 200
+    periodic_seed_count: 32
+  test_id:
     enabled: true
-    comparison_rollout:
-      num_days: 5
-      seed: 777
-      repeat_daily_disruptions: false
-      scripted_events: []
-      environment_overrides:
-        simulation:
-          disruption:
-            enabled: true
-            mode: random
-            daily_event_probability: 0.8
-            event_types:
-              - demand_surge
-            demand_surge:
-              duration_hours: [2.0, 3.5]
-              start_hour_range: [6.0, 20.0]
-              multiplier: 2.4
-              targets:
-                - od_ab
-                - od_ba
+    seeds:
+      start: 20000
+      count: 500
+  test_stress:
+    enabled: true
+    scenarios:
+      - scenario_id: severe_station_ab_capacity_drop_morning_peak
+        seeds:
+          - 30001
+        num_days: 1
+        scripted_events:
+          - disruption_type: capacity_drop
+            target: station_ab
+            day_index: 0
+            start_hour: 7.5
+            duration_hours: 3.0
+            severity: 2.0
+      - scenario_id: severe_station_bc_capacity_drop_evening_peak
+        seeds:
+          - 30002
+        num_days: 1
+        scripted_events:
+          - disruption_type: capacity_drop
+            target: station_bc
+            day_index: 0
+            start_hour: 16.5
+            duration_hours: 3.0
+            severity: 2.0
+      - scenario_id: od_ac_demand_surge_peak
+        seeds:
+          - 30003
+        num_days: 1
+        scripted_events:
+          - disruption_type: demand_surge
+            target: od_ac
+            day_index: 0
+            start_hour: 8.0
+            duration_hours: 3.0
+            severity: 2.6
+      - scenario_id: long_duration_station_ab_outage
+        seeds:
+          - 30004
+        num_days: 1
+        scripted_events:
+          - disruption_type: station_outage
+            target: station_ab
+            day_index: 0
+            start_hour: 9.0
+            duration_hours: 5.0
+            severity: 0.0
+      - scenario_id: combined_capacity_drop_and_demand_surge
+        seeds:
+          - 30005
+        num_days: 1
+        scripted_events:
+          - disruption_type: capacity_drop
+            target: station_ab
+            day_index: 0
+            start_hour: 7.0
+            duration_hours: 2.0
+            severity: 4.0
+          - disruption_type: demand_surge
+            target: od_bc
+            day_index: 0
+            start_hour: 14.0
+            duration_hours: 2.5
+            severity: 2.3
+      - scenario_id: two_disruptions_same_day
+        seeds:
+          - 30006
+        num_days: 1
+        scripted_events:
+          - disruption_type: service_time_inflation
+            target: station_bc
+            day_index: 0
+            start_hour: 10.0
+            duration_hours: 2.0
+            severity: 1.8
+          - disruption_type: demand_surge
+            target: od_ca
+            day_index: 0
+            start_hour: 16.0
+            duration_hours: 2.5
+            severity: 2.2
+      - scenario_id: demand_surge_ab_with_capacity_drop_bc
+        seeds:
+          - 30007
+        num_days: 1
+        scripted_events:
+          - disruption_type: demand_surge
+            target: od_ab
+            day_index: 0
+            start_hour: 8.0
+            duration_hours: 3.0
+            severity: 2.4
+          - disruption_type: capacity_drop
+            target: station_bc
+            day_index: 0
+            start_hour: 8.0
+            duration_hours: 3.0
+            severity: 4.0
+      - scenario_id: demand_surge_ba_with_capacity_drop_ab
+        seeds:
+          - 30008
+        num_days: 1
+        scripted_events:
+          - disruption_type: demand_surge
+            target: od_ba
+            day_index: 0
+            start_hour: 16.0
+            duration_hours: 3.0
+            severity: 2.4
+          - disruption_type: capacity_drop
+            target: station_ab
+            day_index: 0
+            start_hour: 16.0
+            duration_hours: 3.0
+            severity: 4.0

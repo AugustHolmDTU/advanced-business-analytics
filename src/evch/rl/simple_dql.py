@@ -122,10 +122,11 @@ class SimpleDQLAgent:
         self.optimizer.step()
         return float(loss.item())
 
-    def evaluate_td_loss(self, env: Any, episodes: int, seed: int) -> float:
+    def evaluate_td_loss(self, env: Any, episodes: int, seed: int, episode_seeds: list[int] | None = None) -> float:
         transitions: list[Transition] = []
-        for episode in range(episodes):
-            observation, _ = env.reset(seed=seed + episode)
+        seeds = list(episode_seeds) if episode_seeds is not None else [seed + episode for episode in range(episodes)]
+        for episode_seed in seeds:
+            observation, _ = env.reset(seed=int(episode_seed))
             while True:
                 action = self.act(observation, deterministic=True, env=env)
                 next_observation, reward, terminated, truncated, _info = env.step(action)
@@ -165,10 +166,11 @@ class SimpleDQLAgent:
         eval_interval: int = 0,
         eval_episodes: int = 1,
         eval_seed: int = 12345,
+        eval_episode_seeds: list[int] | None = None,
     ) -> list[dict[str, float]]:
         history: list[dict[str, float]] = []
         for episode in range(episodes):
-            observation, _ = env.reset(seed=int(self.rng.integers(1_000_000)))
+            observation, _ = env.reset(seed=None)
             episode_reward = 0.0
             served_total = 0.0
             unmet_total = 0.0
@@ -310,12 +312,18 @@ class SimpleDQLAgent:
                     episodes=max(eval_episodes, 1),
                     seed=eval_seed,
                     deterministic=True,
+                    episode_seeds=eval_episode_seeds,
                 )
                 if hasattr(reward_env, "close"):
                     reward_env.close()
 
                 loss_env = eval_env_factory(eval_seed)
-                eval_td_loss = self.evaluate_td_loss(loss_env, episodes=max(eval_episodes, 1), seed=eval_seed)
+                eval_td_loss = self.evaluate_td_loss(
+                    loss_env,
+                    episodes=max(eval_episodes, 1),
+                    seed=eval_seed,
+                    episode_seeds=eval_episode_seeds,
+                )
                 if hasattr(loss_env, "close"):
                     loss_env.close()
 

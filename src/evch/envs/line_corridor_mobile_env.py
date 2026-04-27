@@ -18,6 +18,12 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.base_seed = int(seed)
         self.reset_counter = 0
         self.reset_seed_stride = int(env_config.get("reset_seed_stride", 97))
+        raw_episode_seed_range = env_config.get("episode_seed_range")
+        self.episode_seed_range = (
+            (int(raw_episode_seed_range[0]), int(raw_episode_seed_range[1]))
+            if isinstance(raw_episode_seed_range, (list, tuple)) and len(raw_episode_seed_range) == 2
+            else None
+        )
 
         sim_cfg = dict(env_config.get("simulation", {}))
         if not sim_cfg:
@@ -67,6 +73,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.action_space = spaces.Discrete(len(self.action_map))
 
         self.rng = np.random.default_rng(self.base_seed)
+        self.seed_stream_rng = np.random.default_rng(self.base_seed + 1_001)
         self.queue_by_station = [deque(), deque()]
         self.active_sessions_by_station: list[list[ActiveSession]] = [[], []]
         self.disruption_by_step: dict[int, Any] = {}
@@ -81,6 +88,8 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.last_expected_station_arrivals = np.zeros(2, dtype=np.float32)
         self.last_effective_num_plugs_by_station = self.base_station_plugs_by_station.astype(np.float32)
         self.last_disruption_state: dict[str, Any] = {}
+        self.current_disruption_schedule: list[Any] = []
+        self.current_episode_seed = self.base_seed
 
     @staticmethod
     def _parse_duration_days_range(raw_value: Any) -> tuple[int, int] | None:
@@ -168,14 +177,22 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[np.ndarray, dict[str, Any]]:
         del options
-        episode_seed = self.base_seed + self.reset_counter * self.reset_seed_stride if seed is None else int(seed)
+        if seed is None and self.episode_seed_range is not None:
+            low, high = self.episode_seed_range
+            if high < low:
+                low, high = high, low
+            episode_seed = int(self.seed_stream_rng.integers(low, high + 1))
+        else:
+            episode_seed = self.base_seed + self.reset_counter * self.reset_seed_stride if seed is None else int(seed)
         self.reset_counter += 1
         self.seed(episode_seed)
+        self.current_episode_seed = int(episode_seed)
         self.queue_by_station = [deque(), deque()]
         self.active_sessions_by_station = [[], []]
         self.current_mobile_stations_by_station = np.zeros(2, dtype=np.int32)
         self.step_index = 0
         disruption_schedule = self.simulator._build_disruption_schedule()
+        self.current_disruption_schedule = list(disruption_schedule)
         self.disruption_by_step = self.simulator._event_map(disruption_schedule)
 
         self.last_arrivals_by_station = np.zeros(2, dtype=np.float32)
@@ -262,7 +279,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             step=self.step_index,
             demand_multipliers_by_trip=disruption_state["demand_multipliers_by_trip"],
         )
-        arrivals = self.simulator._sample_arrivals(expected["expected_by_trip"])
+        arrivals = self.simulator._sample_arrivals(self.step_index, expected["expected_by_trip"])
 
         arrivals_by_station = np.zeros(2, dtype=np.int32)
         for vehicle in arrivals:
@@ -279,8 +296,9 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             available_plugs = max(total_effective_num_plugs - len(self.active_sessions_by_station[station_index]), 0)
             for _ in range(min(available_plugs, len(self.queue_by_station[station_index]))):
                 vehicle = self.queue_by_station[station_index].popleft()
-                service_minutes = self.simulator._sample_service_minutes(
-                    service_time_multiplier=float(disruption_state["service_time_multiplier_by_station"][station_index])
+                service_minutes = self.simulator._apply_service_time_multiplier(
+                    base_service_minutes=vehicle.base_service_minutes,
+                    service_time_multiplier=float(disruption_state["service_time_multiplier_by_station"][station_index]),
                 )
                 service_steps = max(1, int(np.ceil(service_minutes / self.simulator.step_minutes)))
                 session = ActiveSession(
