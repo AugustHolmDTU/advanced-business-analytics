@@ -174,6 +174,54 @@ class MobileRlComparisonTest(unittest.TestCase):
             self.assertIn("num_active_mobile_stations_station_ab", frame.columns)
             self.assertIn("expected_passing_od_ac", frame.columns)
 
+    def test_runs_ten_day_random_heldout_station_ab_outage_rollout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = _base_config(tmp_dir)
+            config["comparison_rollout"] = {
+                "enabled": True,
+                "num_days": 10,
+                "seed": 777,
+                "repeat_daily_disruptions": False,
+                "scripted_events": [],
+                "environment_overrides": {
+                    "simulation": {
+                        "disruption": {
+                            "enabled": True,
+                            "mode": "random",
+                            "daily_event_probability": 0.75,
+                            "event_types": ["station_outage"],
+                            "station_outage": {
+                                "duration_hours": [1.0, 2.5],
+                                "start_hour_range": [6.0, 21.0],
+                                "targets": ["station_ab"],
+                            },
+                        }
+                    }
+                },
+            }
+
+            env = LineCorridorMobileStationEnv(config["environment"], {}, seed=5)
+            agent = SimpleDQNAgent(
+                obs_dim=int(env.observation_space.shape[0]),
+                action_dim=int(env.action_space.n),
+                config=config["rl"],
+                seed=5,
+            )
+            checkpoint_path = Path(tmp_dir) / "dummy_agent.pt"
+            agent.save(checkpoint_path)
+
+            result = run_mobile_rl_comparison(config, checkpoint_path=str(checkpoint_path))
+
+            self.assertIsNotNone(result)
+            output_dir = Path(tmp_dir) / "mobile_mcs_line_abc" / "mobile_rl_comparison"
+            metrics_path = output_dir / "comparison_timestep_metrics.csv"
+            self.assertTrue(metrics_path.exists())
+            frame = pd.read_csv(metrics_path)
+            self.assertEqual(len(frame), 2880)
+            self.assertIn("allocation_vs_demand_alignment", frame.columns)
+            active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
+            self.assertTrue(active_targets.issubset({"station_ab"}))
+
 
 if __name__ == "__main__":
     unittest.main()

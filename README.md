@@ -2,88 +2,79 @@
 
 Research codebase for a DTU course project on resilient EV charging operations under disruption.
 
-The current main benchmark is a synthetic `A-B-C` line corridor:
-- cities `A -> B -> C`
-- `100 km` between neighboring cities
-- one fixed charging station between `A-B`
-- one fixed charging station between `B-C`
-- mobile charging stations allocated across the two fixed stations
+The main benchmark is a synthetic A-B-C corridor:
+- cities A -> B -> C
+- 100 km between neighboring cities
+- one fixed charging station between A-B
+- one fixed charging station between B-C
+- mobile charging stations (MCS) allocated between the two fixed stations
 
-## Current Focus
+## Current Branch State
 
-The active question is:
-- can a controller allocate mobile charging stations to the correct station when disruptions happen,
-- and does it do better than simple baselines on the same fixed 3-day scenario.
+This branch uses a simple online DQL agent for the corridor benchmark:
+- file: `src/evch/rl/simple_dql.py`
+- architecture: plain MLP mapping observation -> Q-values
+- exploration: epsilon-greedy
+- update rule: 1-step TD, online update on each transition
+- intentionally removed from this agent: replay buffer, target network, dueling head, heuristic priors
 
-This is not just a generic RL benchmark. The important outputs are station-specific:
-- queue length and wait at `AB` and `BC`
-- number of MCS allocated to `AB` and `BC`
-- whether allocation follows the disruption location
+`src/evch/rl/simple_dqn.py` is kept as a compatibility shim that imports this new implementation.
 
-## Repo Structure
+## Main Configs
 
-```text
-.
-├── bsub/
-├── configs/
-├── src/evch/
-│   ├── baselines/
-│   ├── config/
-│   ├── data/
-│   ├── envs/
-│   ├── models/
-│   ├── rl/
-│   ├── sim/
-│   ├── train/
-│   └── utils/
-├── tests/
-├── context.md
-├── IMPLEMENTATION_NOTES.md
-├── RL_CHANGELOG.md
-└── README.md
+- environment: `configs/env/mobile_mcs_line_abc.yaml`
+- experiment setup: `configs/experiment/mobile_mcs_line_abc.yaml`
+- default simple DQL config: `configs/rl/simple_dql.yaml`
+- longer training override: `configs/rl/simple_dql_long.yaml`
+- W&B online logging config: `configs/logging/wandb_online.yaml`
+
+W&B project used by this branch:
+- `A-B-C`
+
+## Train / Validation / Test Design
+
+Training is scenario-based and split-aware:
+- train: RL training episodes from the configured environment
+- validation: periodic evaluation during and after training (`train_val_test.validation`)
+- held-out test rollout: separate rollout recipe (`train_val_test.test`) with 10 days and random station_outage events on station_ab
+
+This is not a timestep split of one trajectory; each split is a separate scenario recipe.
+
+## Local Commands
+
+If your default interpreter is missing project dependencies, run with the known working environment interpreter on Windows:
+
+```powershell
+$env:PYTHONPATH='src'
+& "C:\Users\augus\miniconda3\envs\vae\python.exe" -m evch.train.train_rl ...
 ```
 
-## Main Benchmark
-
-The active `A-B-C` environment is defined in:
-- [mobile_mcs_line_abc.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/env/mobile_mcs_line_abc.yaml)
-- [mobile_mcs_line_abc.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/experiment/mobile_mcs_line_abc.yaml)
-
-It currently uses:
-- `12` base plugs at `station_ab`
-- `12` base plugs at `station_bc`
-- up to `10` mobile charging stations total
-- `2` plugs per mobile charging station
-- maximum corridor capacity of `44` plugs when all MCS are deployed
-
-The fixed comparison rollout is:
-- `3` days
-- scripted disruptions
-- the same scenario for noop and trained RL comparisons
-
-## Install
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
-## Main Local Commands
-
-Train the current `A-B-C` RL setup:
+### Train (default simple DQL)
 
 ```bash
 PYTHONPATH=src python -m evch.train.train_rl \
   --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
-  --config configs/rl/dqn_mobile_simple.yaml \
   --config configs/logging/base.yaml \
   --config configs/logging/wandb_online.yaml \
+  --config configs/rl/simple_dql.yaml \
   --config configs/experiment/mobile_mcs_line_abc.yaml
 ```
 
-Run the fixed 3-day noop comparison:
+### Train Longer (simple DQL + override)
+
+```bash
+PYTHONPATH=src python -m evch.train.train_rl \
+  --config configs/env/mobile_mcs_line_abc.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/logging/wandb_online.yaml \
+  --config configs/rl/simple_dql.yaml \
+  --config configs/rl/simple_dql_long.yaml \
+  --config configs/experiment/mobile_mcs_line_abc.yaml
+```
+
+### No-op Comparison (fixed scripted 3-day rollout)
 
 ```bash
 PYTHONPATH=src python -m evch.train.run_mobile_noop_comparison \
@@ -94,7 +85,7 @@ PYTHONPATH=src python -m evch.train.run_mobile_noop_comparison \
   --config configs/experiment/mobile_mcs_line_abc.yaml
 ```
 
-Run the fixed 3-day trained RL comparison:
+### RL Comparison (fixed scripted 3-day rollout)
 
 ```bash
 PYTHONPATH=src python -m evch.train.run_mobile_rl_comparison \
@@ -106,111 +97,121 @@ PYTHONPATH=src python -m evch.train.run_mobile_rl_comparison \
   --agent-checkpoint outputs/mobile_mcs_line_abc/rl/best_model.pt
 ```
 
-Run the no-disruption sanity check:
+## W&B Logs: What They Mean
 
-```bash
-PYTHONPATH=src python -m evch.train.run_mobile_noop_comparison \
-  --config configs/env/mobile_mcs_line_abc_no_disruptions.yaml \
-  --config configs/demand/base.yaml \
-  --config configs/logging/base.yaml \
-  --config configs/logging/wandb_online.yaml \
-  --config configs/experiment/mobile_mcs_line_abc_no_disruptions.yaml
-```
+The project logs are grouped into namespaces.
 
-## DTU HPC
+### 1) Training Episode Logs (`rl/*`)
 
-The current `A-B-C` `bsub` scripts are:
-- [run_mobile_noop_line_abc.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/run_mobile_noop_line_abc.bsub)
-- [train_mobile_line_abc.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/train_mobile_line_abc.bsub)
-- [run_mobile_rl_line_abc.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/run_mobile_rl_line_abc.bsub)
-- [sweep_mobile_line_abc.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/sweep_mobile_line_abc.bsub)
-- [run_mobile_noop_line_abc_no_disruptions.bsub](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/bsub/run_mobile_noop_line_abc_no_disruptions.bsub)
+Logged once per episode during training, including:
+- reward and loss (`rl/reward`, `rl/loss`)
+- exploration (`rl/epsilon`)
+- demand served vs unmet (`rl/served_demand`, `rl/unmet_demand`)
+- queue and utilization aggregates
+- periodic validation metrics (`rl/eval_mean_reward`, `rl/eval_td_loss`, etc.)
 
-Typical order:
+Use these to evaluate learning progress and generalization on validation episodes.
 
-```bash
-bsub < bsub/run_mobile_noop_line_abc.bsub
-bsub < bsub/train_mobile_line_abc.bsub
-bsub < bsub/run_mobile_rl_line_abc.bsub
-```
+### 2) Training Step Logs (`rl_step/*`)
 
-The RL comparison script loads:
+Logged every `wandb_step_log_interval` simulation steps:
+- action and reward
+- served and unmet demand
+- station-specific MCS allocation (`..._station_ab`, `..._station_bc`)
+- station-specific queue and wait
+- utilization and unused mobile capacity
+- disruption indicators (`rl_step/disruption_active`, `rl_step/disruption_type_code`)
 
-```text
-outputs/mobile_mcs_line_abc/rl/best_model.pt
-```
+Use these to diagnose behavior at fine timescale, especially around disruptions.
 
-The current sweep is a 24-run full grid:
+### 3) Comparison Rollout Time-Series (`sim/*`)
 
-```bash
-bsub < bsub/sweep_mobile_line_abc.bsub
-```
+Logged from fixed comparison rollouts (`run_mobile_noop_comparison` or `run_mobile_rl_comparison`), including:
+- queue and wait metrics (global and station-specific)
+- active plugs, effective plugs, utilization
+- active/unused mobile station estimates
+- expected station arrivals and OD flow signals
+- disruption state (`sim/disruption_active`, `sim/disruption_type_code`, `sim/disruption_target`)
 
-## W&B Logging
+These series are logged against `sim/global_hour` for consistent timeline plots.
 
-The current comparison runs log:
-- aggregate queue and wait metrics
-- station-specific queue and wait metrics
-- station-specific MCS allocation
-- expected passing demand by OD
-- expected charging demand at `AB` and `BC`
-- disruption type and disruption target
+### 4) Comparison Summary Metrics (`sim_summary/*`)
 
-Important metrics include:
-- `sim/queue_wait_mean_minutes_station_ab`
-- `sim/queue_wait_mean_minutes_station_bc`
-- `sim/num_active_mobile_stations_station_ab`
-- `sim/num_active_mobile_stations_station_bc`
-- `sim/expected_station_arrivals_ab`
-- `sim/expected_station_arrivals_bc`
-- `sim/disruption_target`
+Aggregated from the rollout and stored in both W&B and JSON summary:
+- mean/peak queue and wait
+- queue target breach rate and excess wait
+- mean utilization
+- mean MCS activation in normal vs disrupted periods
+- alignment summary metrics (described below)
 
-Comparison runs also produce:
+### 5) Overlay Panels (`sim_overlay/*`)
+
+Custom line panels designed for decision-quality inspection:
+- `sim_overlay/station_ab_demand_vs_mcs`
+- `sim_overlay/station_bc_demand_vs_mcs`
+- `sim_overlay/allocation_bias_vs_expected_bias`
+
+These directly show if allocation follows expected demand and disruption location.
+
+## Derived Alignment Metrics (Important)
+
+These are computed during comparison rollout logging.
+
+Let:
+- `E_ab`, `E_bc`: expected station arrivals at AB and BC
+- `M_ab`, `M_bc`: active mobile stations at AB and BC
+
+Then:
+- `expected_demand_share_ab = E_ab / (E_ab + E_bc)` (fallback 0.5 when denominator is 0)
+- `expected_demand_share_bc = E_bc / (E_ab + E_bc)` (fallback 0.5)
+- `allocation_share_ab = M_ab / (M_ab + M_bc)` (fallback 0.5)
+- `allocation_share_bc = M_bc / (M_ab + M_bc)` (fallback 0.5)
+
+Alignment score:
+- `allocation_demand_gap_ab = |allocation_share_ab - expected_demand_share_ab|`
+- `allocation_demand_gap_bc = |allocation_share_bc - expected_demand_share_bc|`
+- `allocation_vs_demand_alignment = 1 - 0.5 * (allocation_demand_gap_ab + allocation_demand_gap_bc)`
+
+Interpretation:
+- 1.0 = perfect share alignment
+- lower values = allocation diverges from expected demand split
+
+Directional bias metrics:
+- `allocation_bias_ab_minus_bc = M_ab - M_bc`
+- `expected_demand_bias_ab_minus_bc = E_ab - E_bc`
+
+Disruption-conditioned alignment diagnostics:
+- `alignment_on_station_ab_disruption`: equals `allocation_bias_ab_minus_bc` during active station_ab disruptions, otherwise NaN
+- `alignment_on_station_bc_disruption`: equals `-(allocation_bias_ab_minus_bc)` during active station_bc disruptions, otherwise NaN
+
+Positive values on these two disruption-conditioned metrics indicate movement in the intuitively correct direction.
+
+## Produced Artifacts
+
+Comparison runs export:
 - `comparison_timestep_metrics.csv`
 - `comparison_rollout_summary.json`
 - `comparison_queue_dynamics.png`
 - `comparison_daily_patterns.png`
 - `comparison_station_demand_vs_mcs.png`
 
-There are also custom W&B overlay panels for:
-- `sim_overlay/station_ab_demand_vs_mcs`
-- `sim_overlay/station_bc_demand_vs_mcs`
-
-Those are intended to show whether MCS are allocated to the correct station when a disruption occurs.
+Training exports include:
+- `outputs/<experiment>/rl/best_model.pt`
+- `outputs/<experiment>/rl/training_summary.json`
+- `outputs/<experiment>/rl/history.json` (for torch_dql backend)
 
 ## Baselines
 
-The most relevant baselines for the current setup are:
+Primary baselines for A-B-C:
 - `mobile_noop`
 - `mobile_threshold`
-- trained RL
+- trained RL (simple DQL)
 
-`mobile_noop` is the clean "do nothing" baseline.
-`mobile_threshold` is the main simple rule-based baseline.
-An untrained RL policy is only a sanity check, not a main benchmark.
+`mobile_noop` is the do-nothing baseline.
+`mobile_threshold` is the simple rule-based baseline.
 
 ## Tests
-
-Run:
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
-
-## What Is Implemented
-
-- two-city and three-city corridor queue simulators
-- mobile charging support environments
-- uncertainty-aware supervised models
-- RL training and evaluation
-- fixed 3-day comparison rollouts
-- DTU HPC `bsub` templates
-- W&B logging and artifact export
-- station-level diagnostics for the `A-B-C` setup
-
-## What Is Still Open
-
-- stronger heuristic baselines for the `A-B-C` environment
-- richer OD-to-station charging choice behavior
-- more systematic hyperparameter sweeps
-- clearer final evaluation story around when RL is justified

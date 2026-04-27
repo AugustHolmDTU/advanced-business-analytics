@@ -4,6 +4,7 @@ import contextlib
 import copy
 import io
 import logging
+import importlib.util
 from pathlib import Path
 from typing import Any, Callable
 
@@ -33,20 +34,28 @@ SIM_WANDB_COLUMNS = {
     "queue_wait_mean_minutes",
     "queue_wait_mean_minutes_station_ab",
     "queue_wait_mean_minutes_station_bc",
+    "utilization",
     "active_plugs",
     "effective_num_plugs",
-    "utilization",
+    "num_active_mobile_stations",
+    "num_active_mobile_stations_station_ab",
+    "num_active_mobile_stations_station_bc",
     "unused_mobile_chargers",
     "unused_mobile_stations_estimate",
     "unused_mobile_stations_estimate_station_ab",
     "unused_mobile_stations_estimate_station_bc",
-    "rl_action_mcs",
-    "num_active_mobile_stations",
-    "num_active_mobile_stations_station_ab",
-    "num_active_mobile_stations_station_bc",
-    "expected_passing_total",
     "expected_station_arrivals_ab",
     "expected_station_arrivals_bc",
+    "expected_demand_share_ab",
+    "expected_demand_share_bc",
+    "allocation_share_ab",
+    "allocation_share_bc",
+    "allocation_vs_demand_alignment",
+    "allocation_bias_ab_minus_bc",
+    "expected_demand_bias_ab_minus_bc",
+    "alignment_on_station_ab_disruption",
+    "alignment_on_station_bc_disruption",
+    "expected_passing_total",
     "expected_passing_od_ab",
     "expected_passing_od_ba",
     "expected_passing_od_bc",
@@ -58,6 +67,16 @@ SIM_WANDB_COLUMNS = {
     "disruption_target",
     "reward",
 }
+
+
+def _deep_merge_dicts(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
+    merged = copy.deepcopy(base)
+    for key, value in incoming.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge_dicts(merged[key], value)
+        else:
+            merged[key] = copy.deepcopy(value)
+    return merged
 
 
 def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> bool:
@@ -198,6 +217,8 @@ def _log_station_overlay_panels(run: Any, metrics: pd.DataFrame) -> None:
         "expected_station_arrivals_bc",
         "num_active_mobile_stations_station_ab",
         "num_active_mobile_stations_station_bc",
+        "allocation_bias_ab_minus_bc",
+        "expected_demand_bias_ab_minus_bc",
     }
     if not required_columns.issubset(metrics.columns):
         return
@@ -225,6 +246,16 @@ def _log_station_overlay_panels(run: Any, metrics: pd.DataFrame) -> None:
                     ],
                     keys=["BC expected charging demand", "BC allocated MCS"],
                     title="Station BC: demand vs allocated MCS",
+                    xname="Global hour",
+                ),
+                "sim_overlay/allocation_bias_vs_expected_bias": wandb.plot.line_series(
+                    xs=metrics["global_hour"].tolist(),
+                    ys=[
+                        metrics["expected_demand_bias_ab_minus_bc"].tolist(),
+                        metrics["allocation_bias_ab_minus_bc"].tolist(),
+                    ],
+                    keys=["Expected demand bias (AB - BC)", "Allocated MCS bias (AB - BC)"],
+                    title="Allocation bias vs expected demand bias",
                     xname="Global hour",
                 ),
             }
@@ -323,7 +354,7 @@ def _train_with_torch_dqn(
     )
     checkpoint = output_dir / str(rl_cfg["checkpoint_name"])
     agent.save(checkpoint)
-    return "torch_dqn", str(checkpoint), history
+    return "torch_dql", str(checkpoint), history
 
 
 def _make_rl_policy(backend: str, checkpoint_path: str) -> Callable[[np.ndarray, Any, bool], int]:
@@ -367,6 +398,10 @@ def _build_mobile_comparison_rollout(
         return None
 
     env_cfg = copy.deepcopy(config["environment"])
+    env_overrides = rollout_cfg.get("environment_overrides")
+    if isinstance(env_overrides, dict) and env_overrides:
+        env_cfg = _deep_merge_dicts(env_cfg, env_overrides)
+
     num_days = int(rollout_cfg.get("num_days", 3))
     if env_type == "mobile_station_capacity":
         horizon = int(env_cfg["horizon"])
@@ -479,6 +514,46 @@ def _build_mobile_comparison_rollout(
             break
 
     frame = pd.DataFrame(rows)
+    if {
+        "expected_station_arrivals_ab",
+        "expected_station_arrivals_bc",
+        "num_active_mobile_stations_station_ab",
+        "num_active_mobile_stations_station_bc",
+    }.issubset(frame.columns):
+        expected_total = frame["expected_station_arrivals_ab"] + frame["expected_station_arrivals_bc"]
+        expected_total = expected_total.where(expected_total > 0.0, np.nan)
+        frame["expected_demand_share_ab"] = (frame["expected_station_arrivals_ab"] / expected_total).fillna(0.5)
+        frame["expected_demand_share_bc"] = (frame["expected_station_arrivals_bc"] / expected_total).fillna(0.5)
+
+        allocated_total = frame["num_active_mobile_stations_station_ab"] + frame["num_active_mobile_stations_station_bc"]
+        allocated_total = allocated_total.where(allocated_total > 0.0, np.nan)
+        frame["allocation_share_ab"] = (frame["num_active_mobile_stations_station_ab"] / allocated_total).fillna(0.5)
+        frame["allocation_share_bc"] = (frame["num_active_mobile_stations_station_bc"] / allocated_total).fillna(0.5)
+
+        frame["allocation_demand_gap_ab"] = (frame["allocation_share_ab"] - frame["expected_demand_share_ab"]).abs()
+        frame["allocation_demand_gap_bc"] = (frame["allocation_share_bc"] - frame["expected_demand_share_bc"]).abs()
+        frame["allocation_vs_demand_alignment"] = 1.0 - 0.5 * (
+            frame["allocation_demand_gap_ab"] + frame["allocation_demand_gap_bc"]
+        )
+
+        frame["allocation_bias_ab_minus_bc"] = (
+            frame["num_active_mobile_stations_station_ab"] - frame["num_active_mobile_stations_station_bc"]
+        )
+        frame["expected_demand_bias_ab_minus_bc"] = (
+            frame["expected_station_arrivals_ab"] - frame["expected_station_arrivals_bc"]
+        )
+
+        disruption_target_series = frame["disruption_target"] if "disruption_target" in frame else pd.Series(["none"] * len(frame))
+        frame["alignment_on_station_ab_disruption"] = np.where(
+            (frame["disruption_active"] == 1) & (disruption_target_series == "station_ab"),
+            frame["allocation_bias_ab_minus_bc"],
+            np.nan,
+        )
+        frame["alignment_on_station_bc_disruption"] = np.where(
+            (frame["disruption_active"] == 1) & (disruption_target_series == "station_bc"),
+            -frame["allocation_bias_ab_minus_bc"],
+            np.nan,
+        )
     from evch.train.run_simple_corridor_sim import _add_derived_metrics, _maybe_plot_daily_patterns, _maybe_plot_queue_dynamics
 
     frame = _add_derived_metrics(frame, step_minutes=int(env.planning_step_minutes))
@@ -511,6 +586,20 @@ def _build_mobile_comparison_rollout(
         else 0.0,
         "mean_active_mobile_stations_disrupted": float(frame.loc[frame["disruption_active"] == 1, "num_active_mobile_stations"].mean())
         if (frame["disruption_active"] == 1).any()
+        else 0.0,
+        "mean_allocation_vs_demand_alignment": float(frame["allocation_vs_demand_alignment"].mean())
+        if "allocation_vs_demand_alignment" in frame
+        else 0.0,
+        "mean_allocation_vs_demand_alignment_disrupted": float(
+            frame.loc[frame["disruption_active"] == 1, "allocation_vs_demand_alignment"].mean()
+        )
+        if ("allocation_vs_demand_alignment" in frame and (frame["disruption_active"] == 1).any())
+        else 0.0,
+        "mean_ab_minus_bc_allocation_bias_on_station_ab_disruptions": float(frame["alignment_on_station_ab_disruption"].mean())
+        if "alignment_on_station_ab_disruption" in frame
+        else 0.0,
+        "mean_bc_minus_ab_allocation_bias_on_station_bc_disruptions": float(frame["alignment_on_station_bc_disruption"].mean())
+        if "alignment_on_station_bc_disruption" in frame
         else 0.0,
     }
     write_json(summary_path, summary)
@@ -563,14 +652,22 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
     run = init_wandb(config=config, job_type="train_rl", run_name=f"{experiment_cfg['name']}_rl")
     run.log({f"runtime/{key}": value for key, value in runtime_info.items()})
 
+    split_cfg = dict(config.get("train_val_test", {}))
+    val_cfg = dict(split_cfg.get("validation", {}))
+    test_cfg = dict(split_cfg.get("test", {}))
+
+    val_env_overrides = val_cfg.get("environment_overrides", {})
+    val_env_cfg = (
+        _deep_merge_dicts(config["environment"], val_env_overrides)
+        if isinstance(val_env_overrides, dict) and val_env_overrides
+        else copy.deepcopy(config["environment"])
+    )
+    val_episodes = int(val_cfg.get("episodes", rl_cfg["evaluation_episodes"]))
+    val_seed_offset = int(val_cfg.get("seed_offset", 17))
+
     env = make_env(config["environment"], config["demand"], seed=seed)
     use_sb3 = False
-    try:
-        import stable_baselines3  # noqa: F401
-
-        use_sb3 = rl_cfg.get("backend", "auto") == "sb3_dqn"
-    except ImportError:
-        use_sb3 = False
+    use_sb3 = importlib.util.find_spec("stable_baselines3") is not None and rl_cfg.get("backend", "auto") == "sb3_dqn"
 
     history: list[dict[str, float]] = []
     if use_sb3:
@@ -582,19 +679,20 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
             seed=seed,
             output_dir=output_dir,
             run=run,
-            eval_env_factory=lambda eval_seed: make_env(config["environment"], config["demand"], seed=eval_seed),
+            eval_env_factory=lambda eval_seed: make_env(val_env_cfg, config["demand"], seed=eval_seed),
         )
 
-    eval_env = make_env(config["environment"], config["demand"], seed=seed + 17)
+    eval_env = make_env(val_env_cfg, config["demand"], seed=seed + val_seed_offset)
     policy = _make_rl_policy(backend, checkpoint_path)
     evaluation = evaluate_policy(
         env=eval_env,
         policy=policy,
-        episodes=int(rl_cfg["evaluation_episodes"]),
+        episodes=val_episodes,
         seed=seed,
         deterministic=bool(rl_cfg.get("deterministic_eval", True)),
     )
     run.log({f"rl_eval/{key}": value for key, value in evaluation.items() if not isinstance(value, list)})
+    run.log({"rl_eval/split": "validation"})
 
     training_summary_path = output_dir / "training_summary.json"
     write_json(
@@ -618,6 +716,29 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         output_dir=output_dir,
         run=run,
     )
+
+    test_rollout = None
+    if bool(test_cfg.get("enabled", False)):
+        test_config = copy.deepcopy(config)
+        if isinstance(test_cfg.get("environment_overrides"), dict) and test_cfg.get("environment_overrides"):
+            test_config["environment"] = _deep_merge_dicts(test_config["environment"], test_cfg["environment_overrides"])
+
+        test_rollout_cfg = _deep_merge_dicts(
+            dict(test_config.get("comparison_rollout", {})),
+            dict(test_cfg.get("comparison_rollout", {})),
+        )
+        test_rollout_cfg["enabled"] = True
+        test_config["comparison_rollout"] = test_rollout_cfg
+
+        test_output_dir = ensure_dir(output_dir / "test_split")
+        test_rollout = _build_mobile_comparison_rollout(
+            config=test_config,
+            policy=policy,
+            output_dir=test_output_dir,
+            run=run,
+        )
+        if test_rollout is not None:
+            run.log({f"test_split/{key}": value for key, value in test_rollout["summary"].items()})
 
     log_artifact(
         run=run,
@@ -658,6 +779,7 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         "training_summary_path": str(training_summary_path),
         "runtime": runtime_info,
         "comparison_rollout": comparison_rollout,
+        "test_rollout": test_rollout,
     }
 
 

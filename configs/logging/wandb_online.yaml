@@ -2,3 +2,4 @@ logging:
   wandb:
     enabled: true
     mode: online
+    project: A-B-C

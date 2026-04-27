@@ -52,3 +52,27 @@ evaluation:
     - mobile_threshold
     - mobile_noop
     - random
+train_val_test:
+  validation:
+    episodes: 12
+    seed_offset: 17
+  test:
+    enabled: true
+    comparison_rollout:
+      num_days: 10
+      seed: 777
+      repeat_daily_disruptions: false
+      scripted_events: []
+      environment_overrides:
+        simulation:
+          disruption:
+            enabled: true
+            mode: random
+            daily_event_probability: 0.75
+            event_types:
+              - station_outage
+            station_outage:
+              duration_hours: [1.0, 2.5]
+              start_hour_range: [6.0, 21.0]
+              targets:
+                - station_ab

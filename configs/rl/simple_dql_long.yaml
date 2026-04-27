@@ -1,0 +1,7 @@
+rl:
+  episodes: 240
+  max_steps_per_episode: 288
+  epsilon_decay_steps: 20000
+  evaluation_episodes: 16
+  eval_interval_episodes: 20
+  eval_during_training_episodes: 8
