@@ -1,0 +1,53 @@
+#!/bin/sh
+### General options
+### -- specify queue --
+#BSUB -q hpc
+### -- set the job Name --
+#BSUB -J evch_line_abc_rl_12h_surge
+### -- ask for number of cores (default: 1) --
+#BSUB -n 2
+### -- specify that the cores must be on the same host --
+#BSUB -R "span[hosts=1]"
+### -- specify that we need 4GB of memory per core/slot --
+#BSUB -R "rusage[mem=4GB]"
+### -- specify that we want the job to get killed if it exceeds 5 GB per core/slot --
+#BSUB -M 5GB
+### -- set walltime limit: hh:mm --
+#BSUB -W 02:00
+### -- set the email address --
+##BSUB -u your_email_address
+### -- send notification at start --
+##BSUB -B
+### -- send notification at completion --
+##BSUB -N
+### -- Specify the output and error file. %J is the job-id --
+#BSUB -o logs/run_mobile_rl_line_abc_12h_surge_%J.out
+#BSUB -e logs/run_mobile_rl_line_abc_12h_surge_%J.err
+
+set -euo pipefail
+
+PROJECT_ROOT="${PROJECT_ROOT:-${LS_SUBCWD:-$PWD}}"
+CONFIG_DIR="${CONFIG_DIR:-$PROJECT_ROOT/configs}"
+AGENT_CHECKPOINT="${AGENT_CHECKPOINT:-$PROJECT_ROOT/outputs/mobile_mcs_line_abc/rl/best_model.pt}"
+
+module load python3
+source "$PROJECT_ROOT/.venv/bin/activate"
+
+mkdir -p "$PROJECT_ROOT/logs"
+cd "$PROJECT_ROOT"
+
+export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
+export MPLCONFIGDIR="${MPLCONFIGDIR:-$PROJECT_ROOT/.cache/matplotlib}"
+export WANDB_PROJECT="${WANDB_PROJECT:-A-B-C}"
+export WANDB_ENTITY="${WANDB_ENTITY:-EV-charging}"
+mkdir -p "$MPLCONFIGDIR"
+
+python -m evch.train.run_mobile_rl_comparison \
+  --config "$CONFIG_DIR/env/mobile_mcs_line_abc.yaml" \
+  --config "$CONFIG_DIR/demand/base.yaml" \
+  --config "$CONFIG_DIR/rl/dqn_mobile_simple.yaml" \
+  --config "$CONFIG_DIR/logging/base.yaml" \
+  --config "$CONFIG_DIR/logging/wandb_online.yaml" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml" \
+  --config "$CONFIG_DIR/debug/mobile_mcs_line_abc_bc_then_ab_surge.yaml" \
+  --agent-checkpoint "$AGENT_CHECKPOINT"
