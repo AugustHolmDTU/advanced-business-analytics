@@ -31,6 +31,19 @@ train_val_test:
             1: 0.55
             2: 0.3
             3: 0.1
+          required_events:
+            - disruption_type: demand_surge
+              day_index_range: [0, 4]
+              duration_hours: [2.0, 4.0]
+              start_hour_range: [6.0, 11.0]
+              multiplier: [2.0, 2.6]
+              targets: ["od_ab", "od_ba"]
+            - disruption_type: demand_surge
+              day_index_range: [0, 4]
+              duration_hours: [2.0, 4.0]
+              start_hour_range: [13.0, 20.0]
+              multiplier: [2.0, 2.6]
+              targets: ["od_bc", "od_cb"]
           capacity_drop:
             duration_hours: [1.5, 3.0]
             start_hour_range: [6.0, 20.0]
