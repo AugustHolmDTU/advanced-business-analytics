@@ -179,11 +179,13 @@ class SimpleDQLAgent:
         run: Any | None = None,
         eval_env_factory: Any | None = None,
         eval_interval: int = 0,
+        eval_interval_steps: int = 0,
         eval_episodes: int = 1,
         eval_seed: int = 12345,
         eval_episode_seeds: list[int] | None = None,
     ) -> list[dict[str, float]]:
         history: list[dict[str, float]] = []
+        next_eval_step = max(int(eval_interval_steps), 0) if eval_interval_steps > 0 else 0
         for episode in range(episodes):
             observation, _ = env.reset(seed=None)
             episode_reward = 0.0
@@ -298,6 +300,7 @@ class SimpleDQLAgent:
                 "served_demand": served_total,
                 "unmet_demand": unmet_total,
                 "invalid_actions": invalid_actions,
+                "total_steps": float(self.total_steps),
                 "epsilon": self._epsilon(),
                 "loss": float(np.mean(losses)) if losses else 0.0,
                 "replay_buffer_size": float(len(self.replay_buffer)),
@@ -322,11 +325,15 @@ class SimpleDQLAgent:
                 "mean_queue_wait_excess_minutes": float(np.mean(queue_wait_excess_trace)) if queue_wait_excess_trace else 0.0,
                 "queue_wait_target_breach_fraction": float(np.mean(queue_wait_breach_trace)) if queue_wait_breach_trace else 0.0,
                 "disruption_step_fraction": float(np.mean(disruption_trace)) if disruption_trace else 0.0,
+                "eval_mean_reward": float("nan"),
+                "eval_mean_served_demand": float("nan"),
+                "eval_mean_unmet_demand": float("nan"),
+                "eval_td_loss": float("nan"),
             }
-            should_eval = (
-                eval_env_factory is not None
-                and eval_interval > 0
-                and (((episode + 1) % eval_interval == 0) or (episode == episodes - 1))
+            episode_interval_reached = eval_interval > 0 and ((episode + 1) % eval_interval == 0)
+            step_interval_reached = eval_interval_steps > 0 and self.total_steps >= next_eval_step
+            should_eval = eval_env_factory is not None and (
+                step_interval_reached or episode_interval_reached or (episode == episodes - 1)
             )
             if should_eval:
                 reward_env = eval_env_factory(eval_seed)
@@ -359,6 +366,8 @@ class SimpleDQLAgent:
                         "eval_td_loss": float(eval_td_loss),
                     }
                 )
+                while eval_interval_steps > 0 and self.total_steps >= next_eval_step:
+                    next_eval_step += eval_interval_steps
             history.append(record)
             if run is not None:
                 run.log({f"rl/{key}": value for key, value in record.items()})

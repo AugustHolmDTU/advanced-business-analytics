@@ -7,7 +7,7 @@ from unittest import mock
 
 import numpy as np
 
-from evch.train.train_rl import WandbSb3Callback, run_training
+from evch.train.train_rl import WandbSb3Callback, _maybe_plot_training_curve, _train_with_torch_dqn, run_training
 
 
 class _FakeBaseCallback:
@@ -242,6 +242,91 @@ class RunTrainingTrainOnlyTest(unittest.TestCase):
 
             training_summary = Path(result["training_summary_path"]).read_text(encoding="utf-8")
             self.assertIn('"validation": null', training_summary)
+
+
+class TrainingCurvePlotTest(unittest.TestCase):
+    def test_training_curve_includes_sparse_eval_metrics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            plot_path = Path(tmp_dir) / "training_curve.png"
+            history = [
+                {
+                    "episode": 0.0,
+                    "reward": -10.0,
+                    "loss": 5.0,
+                    "eval_mean_reward": float("nan"),
+                    "eval_td_loss": float("nan"),
+                },
+                {
+                    "episode": 1.0,
+                    "reward": -8.0,
+                    "loss": 4.0,
+                    "eval_mean_reward": -7.5,
+                    "eval_td_loss": 3.5,
+                },
+                {
+                    "episode": 2.0,
+                    "reward": -6.0,
+                    "loss": 3.0,
+                    "eval_mean_reward": float("nan"),
+                    "eval_td_loss": float("nan"),
+                },
+            ]
+
+            created = _maybe_plot_training_curve(history, plot_path)
+
+            self.assertTrue(created)
+            self.assertTrue(plot_path.exists())
+            self.assertGreater(plot_path.stat().st_size, 0)
+
+
+class TorchDqnPeriodicEvalConfigTest(unittest.TestCase):
+    def test_step_based_eval_disables_default_episode_eval_fallback(self) -> None:
+        env = SimpleNamespace(
+            observation_space=SimpleNamespace(shape=(4,)),
+            action_space=SimpleNamespace(n=5),
+            max_steps=1728,
+            duration_days_range=[2, 6],
+        )
+        train_calls: list[dict[str, object]] = []
+
+        class _FakeAgent:
+            def __init__(self, obs_dim: int, action_dim: int, config: dict[str, object], seed: int) -> None:
+                self.obs_dim = obs_dim
+                self.action_dim = action_dim
+                self.config = config
+                self.seed = seed
+
+            def train(self, **kwargs: object) -> list[dict[str, float]]:
+                train_calls.append(kwargs)
+                return [{"episode": 0.0, "reward": 1.0, "loss": 0.5}]
+
+            def save(self, path: Path) -> None:
+                Path(path).write_text("checkpoint", encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            rl_cfg = {
+                "episodes": 130,
+                "checkpoint_name": "best_model.pt",
+                "eval_interval_steps": 15000,
+                "eval_during_training_episodes": 10,
+                "evaluation_episodes": 12,
+            }
+            with mock.patch("evch.train.train_rl.SimpleDQNAgent", _FakeAgent):
+                _train_with_torch_dqn(
+                    env=env,
+                    rl_cfg=rl_cfg,
+                    seed=7,
+                    output_dir=output_dir,
+                    run=None,
+                    eval_env_factory=lambda eval_seed: env,
+                    eval_episode_seeds=[1, 2, 3],
+                )
+
+        self.assertEqual(len(train_calls), 1)
+        self.assertEqual(train_calls[0]["eval_interval"], 0)
+        self.assertEqual(train_calls[0]["eval_interval_steps"], 15000)
+        self.assertEqual(train_calls[0]["eval_episodes"], 10)
 
 
 if __name__ == "__main__":

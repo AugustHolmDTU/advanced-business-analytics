@@ -104,18 +104,31 @@ def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> b
         with contextlib.redirect_stderr(io.StringIO()):
             import matplotlib.pyplot as plt
 
-        episodes = [entry["episode"] for entry in history]
-        rewards = [entry["reward"] for entry in history]
-        losses = [entry["loss"] for entry in history]
-        eval_points = [(entry["episode"], entry["eval_mean_reward"]) for entry in history if "eval_mean_reward" in entry]
-        eval_loss_points = [(entry["episode"], entry["eval_td_loss"]) for entry in history if "eval_td_loss" in entry]
+        def _metric_series(metric_name: str) -> tuple[list[float], list[float]]:
+            x_values: list[float] = []
+            y_values: list[float] = []
+            for entry in history:
+                raw_value = entry.get(metric_name)
+                if raw_value is None:
+                    continue
+                value = float(raw_value)
+                if not np.isfinite(value):
+                    continue
+                x_values.append(float(entry["episode"]))
+                y_values.append(value)
+            return x_values, y_values
+
+        episodes, rewards = _metric_series("reward")
+        _, losses = _metric_series("loss")
+        eval_episodes, eval_rewards = _metric_series("eval_mean_reward")
+        eval_loss_episodes, eval_losses = _metric_series("eval_td_loss")
 
         fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
         axes[0].plot(episodes, rewards, color="#1f77b4", linewidth=1.6, label="Train reward")
-        if eval_points:
+        if eval_rewards:
             axes[0].plot(
-                [point[0] for point in eval_points],
-                [point[1] for point in eval_points],
+                eval_episodes,
+                eval_rewards,
                 color="#d62728",
                 marker="o",
                 linewidth=1.8,
@@ -126,10 +139,10 @@ def _maybe_plot_training_curve(history: list[dict[str, float]], path: Path) -> b
         axes[0].legend()
 
         axes[1].plot(episodes, losses, color="#2ca02c", linewidth=1.6, label="Train TD loss")
-        if eval_loss_points:
+        if eval_losses:
             axes[1].plot(
-                [point[0] for point in eval_loss_points],
-                [point[1] for point in eval_loss_points],
+                eval_loss_episodes,
+                eval_losses,
                 color="#9467bd",
                 marker="o",
                 linewidth=1.8,
@@ -588,13 +601,19 @@ def _train_with_torch_dqn(
         config=rl_cfg,
         seed=seed,
     )
+    eval_interval_steps = int(rl_cfg.get("eval_interval_steps", 0))
+    if "eval_interval_episodes" in rl_cfg:
+        eval_interval_episodes = int(rl_cfg["eval_interval_episodes"])
+    else:
+        eval_interval_episodes = 0 if eval_interval_steps > 0 else max(1, int(rl_cfg["episodes"]) // 8)
     history = agent.train(
         env=env,
         episodes=int(rl_cfg["episodes"]),
         max_steps=train_max_steps,
         run=run,
         eval_env_factory=eval_env_factory,
-        eval_interval=int(rl_cfg.get("eval_interval_episodes", max(1, int(rl_cfg["episodes"]) // 8))),
+        eval_interval=eval_interval_episodes,
+        eval_interval_steps=eval_interval_steps,
         eval_episodes=int(rl_cfg.get("eval_during_training_episodes", max(1, int(rl_cfg.get("evaluation_episodes", 1))))),
         eval_seed=seed + 10_000,
         eval_episode_seeds=eval_episode_seeds,
