@@ -370,7 +370,12 @@ class SimpleDQLAgent:
                     next_eval_step += eval_interval_steps
             history.append(record)
             if run is not None:
-                run.log({f"rl/{key}": value for key, value in record.items()})
+                logged_record = {
+                    f"rl/{key}": value
+                    for key, value in record.items()
+                    if not isinstance(value, float) or np.isfinite(value)
+                }
+                run.log(logged_record)
         return history
 
     def save(self, path: str | Path) -> None:

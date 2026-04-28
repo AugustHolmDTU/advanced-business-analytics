@@ -279,6 +279,81 @@ class TrainingCurvePlotTest(unittest.TestCase):
             self.assertGreater(plot_path.stat().st_size, 0)
 
 
+class SimpleDqlRunLoggingTest(unittest.TestCase):
+    def test_run_logging_skips_nan_eval_metrics_on_non_eval_episodes(self) -> None:
+        from evch.rl.simple_dql import SimpleDQLAgent
+
+        class _TinyEnv:
+            def __init__(self) -> None:
+                self.observation_space = SimpleNamespace(shape=(4,))
+                self.action_space = SimpleNamespace(n=2)
+                self._step = 0
+
+            def reset(self, seed: int | None = None) -> tuple[np.ndarray, dict[str, float]]:
+                self._step = 0
+                return np.zeros(4, dtype=np.float32), {}
+
+            def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict[str, float]]:
+                self._step += 1
+                info = {
+                    "served_demand": 1.0,
+                    "unmet_demand": 0.0,
+                    "action_valid": True,
+                    "num_active_chargers": 0.0,
+                    "num_active_mobile_stations": 0.0,
+                    "utilization": 0.0,
+                    "idle_capacity": 0.0,
+                    "effective_capacity_total": 0.0,
+                    "unused_mobile_chargers": 0.0,
+                    "unused_mobile_stations_estimate": 0.0,
+                    "activated_mobile_stations": 0.0,
+                    "adjusted_mobile_stations": 0.0,
+                    "queue_length": 0.0,
+                    "queue_wait_mean_minutes": 0.0,
+                    "queue_wait_mean_minutes_station_ab": 0.0,
+                    "queue_wait_mean_minutes_station_bc": 0.0,
+                    "queue_wait_excess_minutes": 0.0,
+                    "queue_wait_target_breached": 0.0,
+                    "disruption_active": 0.0,
+                }
+                return np.zeros(4, dtype=np.float32), 1.0, True, False, info
+
+            def valid_action_mask(self) -> np.ndarray:
+                return np.asarray([True, True], dtype=bool)
+
+        run = _FakeRun()
+        agent = SimpleDQLAgent(
+            obs_dim=4,
+            action_dim=2,
+            config={
+                "gamma": 0.98,
+                "learning_rate": 0.0005,
+                "epsilon_start": 0.0,
+                "epsilon_end": 0.0,
+                "epsilon_decay_steps": 1,
+                "wandb_step_log_interval": 1000,
+            },
+            seed=0,
+        )
+
+        history = agent.train(
+            env=_TinyEnv(),
+            episodes=1,
+            max_steps=1,
+            run=run,
+            eval_env_factory=None,
+            eval_interval=0,
+            eval_interval_steps=0,
+            eval_episodes=1,
+        )
+
+        self.assertEqual(len(history), 1)
+        rl_logs = [metrics for metrics, _ in run.logs if any(key.startswith("rl/") for key in metrics)]
+        self.assertEqual(len(rl_logs), 1)
+        self.assertNotIn("rl/eval_mean_reward", rl_logs[0])
+        self.assertNotIn("rl/eval_td_loss", rl_logs[0])
+
+
 class TorchDqnPeriodicEvalConfigTest(unittest.TestCase):
     def test_step_based_eval_disables_default_episode_eval_fallback(self) -> None:
         env = SimpleNamespace(
