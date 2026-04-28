@@ -3,9 +3,9 @@
 ### -- specify queue --
 #BSUB -q hpc
 ### -- set the job Name --
-#BSUB -J evch_line_abc_train
+#BSUB -J evch_line_abc_reactive
 ### -- ask for number of cores (default: 1) --
-#BSUB -n 4
+#BSUB -n 2
 ### -- specify that the cores must be on the same host --
 #BSUB -R "span[hosts=1]"
 ### -- specify that we need 4GB of memory per core/slot --
@@ -13,7 +13,7 @@
 ### -- specify that we want the job to get killed if it exceeds 5 GB per core/slot --
 #BSUB -M 5GB
 ### -- set walltime limit: hh:mm --
-#BSUB -W 24:00
+#BSUB -W 02:00
 ### -- set the email address --
 ##BSUB -u your_email_address
 ### -- send notification at start --
@@ -21,8 +21,8 @@
 ### -- send notification at completion --
 ##BSUB -N
 ### -- Specify the output and error file. %J is the job-id --
-#BSUB -o logs/train_mobile_line_abc_%J.out
-#BSUB -e logs/train_mobile_line_abc_%J.err
+#BSUB -o logs/run_mobile_reactive_line_abc_%J.out
+#BSUB -e logs/run_mobile_reactive_line_abc_%J.err
 
 set -euo pipefail
 
@@ -41,11 +41,11 @@ export WANDB_PROJECT="${WANDB_PROJECT:-A-B-C}"
 export WANDB_ENTITY="${WANDB_ENTITY:-EV-charging}"
 mkdir -p "$MPLCONFIGDIR"
 
-python -m evch.train.train_rl \
+python -m evch.train.run_mobile_reactive_comparison \
   --config "$CONFIG_DIR/env/mobile_mcs_line_abc.yaml" \
   --config "$CONFIG_DIR/demand/base.yaml" \
   --config "$CONFIG_DIR/rl/dqn_mobile_simple.yaml" \
   --config "$CONFIG_DIR/logging/base.yaml" \
   --config "$CONFIG_DIR/logging/wandb_online.yaml" \
   --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml" \
-  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_train_only.yaml"
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_heldout_comparison.yaml"

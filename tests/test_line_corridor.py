@@ -4,12 +4,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
-from evch.baselines.policies import mobile_threshold_policy
+from evch.baselines.policies import mobile_reactive_policy, mobile_threshold_policy
 from evch.envs.factory import make_env
 from evch.envs.line_corridor_mobile_env import LineCorridorMobileStationEnv, MobileChargingStationUnit
 from evch.sim.line_corridor import ActiveSession, LineCorridorQueueSimulator, QueuedVehicle
+from evch.train.run_mobile_reactive_comparison import run_mobile_reactive_comparison
 from evch.train.run_mobile_noop_comparison import run_mobile_noop_comparison
 
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -260,6 +262,20 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
 
         self.assertGreaterEqual(action, 0)
         self.assertLess(action, env.action_space.n)
+
+    def test_mobile_reactive_policy_moves_toward_ab_under_ab_pressure(self) -> None:
+        env = LineCorridorMobileStationEnv(self.env_config, {}, seed=3)
+        obs, _ = env.reset(seed=4)
+        env.queue_lengths_by_station = np.asarray([12.0, 0.0], dtype=np.float32)
+        env.queue_wait_mean_by_station = np.asarray([25.0, 0.0], dtype=np.float32)
+        env.last_disruption_state = {
+            "disruption_active": 1,
+            "disruption_target": "station_ab",
+        }
+
+        action = mobile_reactive_policy(obs, env)
+
+        self.assertEqual(env.action_map[action], "toward_ab")
 
     def test_reward_queue_wait_penalty_uses_local_queue_burden(self) -> None:
         env_config = {
@@ -719,6 +735,73 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
             self.assertEqual(len(frame), 864)
             self.assertEqual(int(frame["disruption_active"].sum()), 0)
             self.assertTrue((frame["disruption_type"] == "none").all())
+
+    def test_reactive_comparison_logs_three_day_time_series(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = {
+                "seed": 21,
+                "experiment": {
+                    "name": "mobile_mcs_line_abc",
+                    "output_root": tmp_dir,
+                    "save_plots": False,
+                },
+                "logging": {"level": "INFO", "wandb": {"enabled": False}},
+                "demand": {},
+                "comparison_rollout": {
+                    "enabled": True,
+                    "num_days": 3,
+                    "seed": 123,
+                    "repeat_daily_disruptions": False,
+                    "scripted_events": [
+                        {
+                            "disruption_type": "capacity_drop",
+                            "target": "station_ab",
+                            "day_index": 0,
+                            "start_hour": 6.0,
+                            "duration_hours": 2.0,
+                            "severity": 4.0,
+                        },
+                        {
+                            "disruption_type": "demand_surge",
+                            "target": "od_bc",
+                            "day_index": 1,
+                            "start_hour": 10.0,
+                            "duration_hours": 2.0,
+                            "severity": 2.2,
+                        },
+                    ],
+                },
+                "environment": {
+                    "env_type": "line_corridor_mobile_mcs",
+                    "max_mobile_stations": 4,
+                    "mobile_station_chargers": 2,
+                    "mobile_station_capacity": 20.0,
+                    "reward_scale": 0.1,
+                    "reward": {
+                        "served_reward_weight": 1.0,
+                        "unmet_penalty": 2.0,
+                        "active_mobile_station_cost": 18.0,
+                        "activation_cost": 5.0,
+                        "adjustment_cost": 2.0,
+                        "idle_capacity_penalty": 0.1,
+                        "utilization_bonus": 1.0,
+                        "queue_length_penalty": 2.0,
+                        "queue_wait_penalty": 0.02,
+                    },
+                    "simulation": _base_line_config(),
+                },
+            }
+
+            result = run_mobile_reactive_comparison(config)
+
+            self.assertIsNotNone(result)
+            metrics_path = Path(tmp_dir) / "mobile_mcs_line_abc" / "mobile_reactive_comparison" / "comparison_timestep_metrics.csv"
+            self.assertTrue(metrics_path.exists())
+            frame = pd.read_csv(metrics_path)
+            self.assertEqual(len(frame), 864)
+            self.assertIn("num_active_mobile_stations_station_ab", frame.columns)
+            self.assertIn("num_active_mobile_stations_station_bc", frame.columns)
+            self.assertGreaterEqual(float(frame["num_active_mobile_stations"].max()), 0.0)
 
 
 if __name__ == "__main__":

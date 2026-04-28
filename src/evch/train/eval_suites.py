@@ -21,6 +21,7 @@ PolicyFn = Callable[[np.ndarray, Any, bool], int]
 POLICY_EXPORT_ALIASES = {
     "mobile_noop": "fixed",
     "fixed_only": "fixed",
+    "mobile_reactive": "reactive",
     "mobile_threshold": "threshold",
     "rl": "rl",
 }
