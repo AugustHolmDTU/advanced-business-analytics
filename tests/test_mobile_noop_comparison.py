@@ -129,7 +129,9 @@ class MobileNoopComparisonTest(unittest.TestCase):
             self.assertIsNotNone(result)
             output_dir = Path(tmp_dir) / "mobile_mcs_simple" / "mobile_noop_comparison"
             metrics_path = output_dir / "comparison_timestep_metrics.csv"
+            allocation_plot_path = output_dir / "comparison_mcs_allocation_by_station.png"
             self.assertTrue(metrics_path.exists())
+            self.assertTrue(allocation_plot_path.exists())
             frame = pd.read_csv(metrics_path)
             self.assertEqual(len(frame), 864)
             self.assertEqual(frame["num_active_mobile_stations"].max(), 0.0)
@@ -142,6 +144,7 @@ class MobileNoopComparisonTest(unittest.TestCase):
             self.assertTrue(any(column.startswith("started_") for column in frame.columns))
             self.assertTrue(any(column.startswith("completions_") for column in frame.columns))
             self.assertIn("disruption_target_code", frame.columns)
+            self.assertEqual(result["allocation_plot_path"], str(allocation_plot_path))
 
     def test_runs_seeded_test_id_noop_comparison(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -277,7 +280,9 @@ class MobileNoopComparisonTest(unittest.TestCase):
             self.assertIsNotNone(result)
             output_dir = Path(tmp_dir) / "mobile_mcs_line_abc" / "mobile_noop_comparison"
             metrics_path = output_dir / "comparison_timestep_metrics.csv"
+            allocation_plot_path = output_dir / "comparison_mcs_allocation_by_station.png"
             self.assertTrue(metrics_path.exists())
+            self.assertTrue(allocation_plot_path.exists())
             frame = pd.read_csv(metrics_path)
             self.assertIn(len(frame), {288 * days for days in range(5, 11)})
             self.assertEqual(result["summary"]["seed"], 20000)
@@ -291,6 +296,7 @@ class MobileNoopComparisonTest(unittest.TestCase):
             active_targets = set(frame.loc[frame["disruption_active"] == 1, "disruption_target"].dropna().astype(str).unique())
             self.assertTrue(active_targets.intersection({"od_ab", "od_ba"}))
             self.assertTrue(active_targets.intersection({"od_bc", "od_cb"}))
+            self.assertEqual(result["allocation_plot_path"], str(allocation_plot_path))
 
 
 if __name__ == "__main__":

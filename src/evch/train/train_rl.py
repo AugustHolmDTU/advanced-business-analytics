@@ -217,6 +217,55 @@ def _maybe_plot_station_demand_vs_mcs(metrics: pd.DataFrame, path: Path) -> bool
         return False
 
 
+def _maybe_plot_station_allocation_over_time(metrics: pd.DataFrame, path: Path) -> bool:
+    required_columns = {
+        "global_hour",
+        "num_active_mobile_stations_station_ab",
+        "num_active_mobile_stations_station_bc",
+    }
+    if not required_columns.issubset(metrics.columns):
+        return False
+
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            import matplotlib.pyplot as plt
+
+        from evch.train.run_simple_corridor_sim import _disruption_windows, _shade_disruptions
+
+        fig, axis = plt.subplots(1, 1, figsize=(12, 4.8))
+        _shade_disruptions([axis], _disruption_windows(metrics))
+
+        axis.step(
+            metrics["global_hour"],
+            metrics["num_active_mobile_stations_station_ab"],
+            where="post",
+            color="#d62728",
+            linewidth=2.0,
+            label="Allocated MCS at AB",
+        )
+        axis.step(
+            metrics["global_hour"],
+            metrics["num_active_mobile_stations_station_bc"],
+            where="post",
+            color="#ff7f0e",
+            linewidth=2.0,
+            label="Allocated MCS at BC",
+        )
+        axis.set_title("Mobile charging-station allocation by station over time")
+        axis.set_xlabel("Global hour")
+        axis.set_ylabel("Active MCS")
+        axis.legend(loc="upper right")
+        fig.tight_layout()
+        fig.savefig(path, dpi=180)
+        plt.close(fig)
+        return True
+    except Exception as exc:  # pragma: no cover - depends on local plotting stack
+        LOGGER.warning("Skipping station allocation plot because matplotlib is unavailable: %s", exc)
+        if path.exists():
+            path.unlink()
+        return False
+
+
 def _log_station_overlay_panels(run: Any, metrics: pd.DataFrame) -> None:
     if isinstance(run, DummyRun):
         return
@@ -266,6 +315,16 @@ def _log_station_overlay_panels(run: Any, metrics: pd.DataFrame) -> None:
                     ],
                     keys=["Expected demand bias (AB - BC)", "Allocated MCS bias (AB - BC)"],
                     title="Allocation bias vs expected demand bias",
+                    xname="Global hour",
+                ),
+                "sim_overlay/mcs_allocation_by_station": wandb.plot.line_series(
+                    xs=metrics["global_hour"].tolist(),
+                    ys=[
+                        metrics["num_active_mobile_stations_station_ab"].tolist(),
+                        metrics["num_active_mobile_stations_station_bc"].tolist(),
+                    ],
+                    keys=["Allocated MCS at AB", "Allocated MCS at BC"],
+                    title="Allocated MCS by station over time",
                     xname="Global hour",
                 ),
             }
@@ -780,6 +839,7 @@ def _build_mobile_comparison_rollout(
     plot_path = output_dir / "comparison_queue_dynamics.png"
     daily_plot_path = output_dir / "comparison_daily_patterns.png"
     station_plot_path = output_dir / "comparison_station_demand_vs_mcs.png"
+    allocation_plot_path = output_dir / "comparison_mcs_allocation_by_station.png"
     frame.to_csv(metrics_path, index=False)
     summary = {
         "num_days": int(getattr(env.simulator, "num_days", num_days or 0)),
@@ -830,6 +890,7 @@ def _build_mobile_comparison_rollout(
     _maybe_plot_queue_dynamics(frame, plot_path)
     _maybe_plot_daily_patterns(frame, daily_plot_path)
     _maybe_plot_station_demand_vs_mcs(frame, station_plot_path)
+    _maybe_plot_station_allocation_over_time(frame, allocation_plot_path)
 
     wandb_frame = frame.loc[:, [column for column in frame.columns if column in SIM_WANDB_COLUMNS]].copy()
     for column in wandb_frame.columns:
@@ -854,12 +915,20 @@ def _build_mobile_comparison_rollout(
         artifact_type="plot",
         aliases=["latest"],
     )
+    log_artifact(
+        run=run,
+        path=allocation_plot_path,
+        artifact_name=f"{config['experiment']['name']}-comparison-mcs-allocation-by-station",
+        artifact_type="plot",
+        aliases=["latest"],
+    )
     return {
         "metrics_path": str(metrics_path),
         "summary_path": str(summary_path),
         "plot_path": str(plot_path),
         "daily_plot_path": str(daily_plot_path),
         "station_plot_path": str(station_plot_path),
+        "allocation_plot_path": str(allocation_plot_path),
         "summary": summary,
     }
 
