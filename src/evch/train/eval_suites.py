@@ -19,6 +19,8 @@ LOGGER = logging.getLogger(__name__)
 PolicyFn = Callable[[np.ndarray, Any, bool], int]
 
 POLICY_EXPORT_ALIASES = {
+    "mobile_equal_split": "equal_split",
+    "mobile_fixed_five_each": "five_each",
     "mobile_noop": "fixed",
     "fixed_only": "fixed",
     "mobile_reactive": "reactive",

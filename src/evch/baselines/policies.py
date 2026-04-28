@@ -64,6 +64,15 @@ def _action_index_for_command(env: Any, command: str, default: int = 0) -> int:
         return int(default)
 
 
+def _action_toward_target_allocation(env: Any, target_ab: int, target_bc: int) -> int:
+    max_mobile_stations = int(getattr(env, "max_mobile_stations", max(target_ab + target_bc, 0)))
+    target_ab = max(0, min(int(target_ab), max_mobile_stations))
+    target_bc = max(0, min(int(target_bc), max_mobile_stations - target_ab))
+    if hasattr(env, "action_from_mobile_station_allocation"):
+        return int(env.action_from_mobile_station_allocation((target_ab, target_bc)))
+    return _action_index_for_command(env, "hold")
+
+
 def mobile_threshold_policy(obs: np.ndarray, env: Any, deterministic: bool = True) -> int:
     del obs, deterministic
     if (
@@ -122,21 +131,39 @@ def mobile_reactive_policy(obs: np.ndarray, env: Any, deterministic: bool = True
         else np.asarray(getattr(env, "current_mobile_stations_by_station", np.zeros(2, dtype=np.int32)), dtype=np.int32)
     )
     queue_bias = float(queue[0] - queue[1])
-    queue_threshold = 3.0
+    queue_threshold = 6.0
+    total_queue = float(queue.sum())
+    max_mobile_stations = int(getattr(env, "max_mobile_stations", int(committed.sum())))
 
     if queue_bias > queue_threshold:
         return _action_index_for_command(env, "toward_ab")
     if queue_bias < -queue_threshold:
         return _action_index_for_command(env, "toward_bc")
 
-    if float(queue.sum()) <= 1.0:
-        if int(committed[0]) > int(committed[1]) and int(committed[0]) > 0:
-            return _action_index_for_command(env, "recall_ab")
-        if int(committed[1]) > int(committed[0]) and int(committed[1]) > 0:
-            return _action_index_for_command(env, "recall_bc")
-        return _action_index_for_command(env, "hold")
+    if total_queue >= 12.0 and int(committed.sum()) < max_mobile_stations:
+        return _action_index_for_command(env, "toward_ab" if queue[0] >= queue[1] else "toward_bc")
 
     return _action_index_for_command(env, "hold")
+
+
+def mobile_equal_split_policy(obs: np.ndarray, env: Any, deterministic: bool = True) -> int:
+    del obs, deterministic
+    max_mobile_stations = int(getattr(env, "max_mobile_stations", 0))
+    target_ab = max_mobile_stations // 2
+    target_bc = max_mobile_stations - target_ab
+    return _action_toward_target_allocation(env, target_ab, target_bc)
+
+
+def mobile_fixed_five_each_policy(obs: np.ndarray, env: Any, deterministic: bool = True) -> int:
+    del obs, deterministic
+    max_mobile_stations = int(getattr(env, "max_mobile_stations", 0))
+    if max_mobile_stations >= 10:
+        target_ab = 5
+        target_bc = 5
+    else:
+        target_ab = max_mobile_stations // 2
+        target_bc = max_mobile_stations - target_ab
+    return _action_toward_target_allocation(env, target_ab, target_bc)
 
 
 def mobile_noop_policy(obs: np.ndarray, env: Any, deterministic: bool = True) -> int:
@@ -147,6 +174,8 @@ def mobile_noop_policy(obs: np.ndarray, env: Any, deterministic: bool = True) ->
 BASELINE_POLICIES: dict[str, PolicyFn | Callable[..., PolicyFn]] = {
     "greedy": greedy_highest_demand_policy,
     "coverage": coverage_policy,
+    "mobile_equal_split": mobile_equal_split_policy,
+    "mobile_fixed_five_each": mobile_fixed_five_each_policy,
     "mobile_reactive": mobile_reactive_policy,
     "mobile_threshold": mobile_threshold_policy,
     "mobile_noop": mobile_noop_policy,

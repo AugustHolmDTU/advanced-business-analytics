@@ -1,0 +1,38 @@
+#!/bin/sh
+### General options
+#BSUB -q hpc
+#BSUB -J evch_line_abc_five_each
+#BSUB -n 2
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=4GB]"
+#BSUB -M 5GB
+#BSUB -W 02:00
+#BSUB -o logs/run_mobile_fixed_five_each_line_abc_%J.out
+#BSUB -e logs/run_mobile_fixed_five_each_line_abc_%J.err
+
+set -euo pipefail
+
+PROJECT_ROOT="${PROJECT_ROOT:-${LS_SUBCWD:-$PWD}}"
+CONFIG_DIR="${CONFIG_DIR:-$PROJECT_ROOT/configs}"
+
+module load python3
+source "$PROJECT_ROOT/.venv/bin/activate"
+
+mkdir -p "$PROJECT_ROOT/logs"
+cd "$PROJECT_ROOT"
+
+export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
+export MPLCONFIGDIR="${MPLCONFIGDIR:-$PROJECT_ROOT/.cache/matplotlib}"
+export WANDB_PROJECT="${WANDB_PROJECT:-A-B-C}"
+export WANDB_ENTITY="${WANDB_ENTITY:-EV-charging}"
+mkdir -p "$MPLCONFIGDIR"
+
+python -m evch.train.run_mobile_baseline_comparison \
+  --policy-name mobile_fixed_five_each \
+  --config "$CONFIG_DIR/env/mobile_mcs_line_abc.yaml" \
+  --config "$CONFIG_DIR/demand/base.yaml" \
+  --config "$CONFIG_DIR/rl/dqn_mobile_simple.yaml" \
+  --config "$CONFIG_DIR/logging/base.yaml" \
+  --config "$CONFIG_DIR/logging/wandb_online.yaml" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_heldout_comparison.yaml"
