@@ -466,6 +466,7 @@ def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Pat
 
     sb3_cfg = rl_cfg["sb3"]
     device = resolve_torch_device(str(rl_cfg.get("device", "auto")))
+    hidden_dims = [int(dim) for dim in rl_cfg.get("hidden_dims", [128, 128])]
     model = DQN(
         "MlpPolicy",
         env,
@@ -473,9 +474,15 @@ def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Pat
         buffer_size=int(sb3_cfg["buffer_size"]),
         learning_starts=int(sb3_cfg["learning_starts"]),
         batch_size=int(sb3_cfg["batch_size"]),
+        train_freq=int(sb3_cfg.get("train_freq", 4)),
+        gradient_steps=int(sb3_cfg.get("gradient_steps", 1)),
         gamma=float(rl_cfg["gamma"]),
         tau=float(sb3_cfg["tau"]),
         target_update_interval=int(sb3_cfg["target_update_interval"]),
+        exploration_fraction=float(sb3_cfg.get("exploration_fraction", 0.4)),
+        exploration_initial_eps=float(sb3_cfg.get("exploration_initial_eps", rl_cfg.get("epsilon_start", 1.0))),
+        exploration_final_eps=float(sb3_cfg.get("exploration_final_eps", rl_cfg.get("epsilon_end", 0.05))),
+        policy_kwargs={"net_arch": hidden_dims},
         verbose=0,
         seed=seed,
         device=str(device),

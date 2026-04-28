@@ -13,7 +13,7 @@
 ### -- specify that we want the job to get killed if it exceeds 5 GB per core/slot --
 #BSUB -M 5GB
 ### -- set walltime limit: hh:mm --
-#BSUB -W 36:00
+#BSUB -W 48:00
 ### -- set the email address --
 ##BSUB -u your_email_address
 ### -- send notification at start --

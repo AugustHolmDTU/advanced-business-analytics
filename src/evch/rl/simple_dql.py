@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -49,11 +50,16 @@ class SimpleDQLAgent:
         self.epsilon_decay_steps = int(config["epsilon_decay_steps"])
         self.reward_clip = float(config.get("reward_clip", 0.0))
         self.max_grad_norm = float(config.get("max_grad_norm", 5.0))
+        self.batch_size = max(int(config.get("batch_size", 64)), 1)
+        self.replay_capacity = max(int(config.get("replay_capacity", 10000)), 1)
+        self.learning_starts = max(int(config.get("learning_starts", 1)), 1)
         self.train_frequency = max(int(config.get("train_frequency", 1)), 1)
+        self.gradient_steps = max(int(config.get("gradient_steps", 1)), 1)
         self.wandb_step_log_interval = int(config.get("wandb_step_log_interval", 1))
 
         self.q_network = QNetwork(obs_dim, action_dim, self.hidden_dims).to(self.device)
         self.optimizer = Adam(self.q_network.parameters(), lr=self.learning_rate)
+        self.replay_buffer: deque[Transition] = deque(maxlen=self.replay_capacity)
         self.total_steps = 0
 
     def _valid_action_mask(self, env: Any | None = None) -> np.ndarray | None:
@@ -114,8 +120,17 @@ class SimpleDQLAgent:
 
         return torch.nn.functional.smooth_l1_loss(q_values, target_q)
 
-    def _update_from_transition(self, transition: Transition) -> float:
-        loss = self._td_loss_tensor([transition])
+    def _sample_replay_batch(self) -> list[Transition]:
+        if not self.replay_buffer:
+            return []
+        if len(self.replay_buffer) <= self.batch_size:
+            return list(self.replay_buffer)
+        buffer_list = list(self.replay_buffer)
+        indices = self.rng.choice(len(buffer_list), size=self.batch_size, replace=False)
+        return [buffer_list[int(index)] for index in indices]
+
+    def _update_from_batch(self, batch: list[Transition]) -> float:
+        loss = self._td_loss_tensor(batch)
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=self.max_grad_norm)
@@ -208,6 +223,7 @@ class SimpleDQLAgent:
                     next_action_mask=next_action_mask.copy(),
                     done=bool(terminated or truncated),
                 )
+                self.replay_buffer.append(transition)
 
                 observation = next_observation
                 episode_reward += float(reward)
@@ -233,8 +249,15 @@ class SimpleDQLAgent:
                 disruption_trace.append(float(info.get("disruption_active", 0.0)))
                 self.total_steps += 1
 
-                if self.total_steps % self.train_frequency == 0:
-                    losses.append(self._update_from_transition(transition))
+                if self.total_steps >= self.learning_starts and self.total_steps % self.train_frequency == 0:
+                    step_losses: list[float] = []
+                    for _ in range(self.gradient_steps):
+                        batch = self._sample_replay_batch()
+                        if not batch:
+                            break
+                        step_losses.append(self._update_from_batch(batch))
+                    if step_losses:
+                        losses.append(float(np.mean(step_losses)))
 
                 if run is not None and self.total_steps % max(self.wandb_step_log_interval, 1) == 0:
                     run.log(
@@ -277,6 +300,7 @@ class SimpleDQLAgent:
                 "invalid_actions": invalid_actions,
                 "epsilon": self._epsilon(),
                 "loss": float(np.mean(losses)) if losses else 0.0,
+                "replay_buffer_size": float(len(self.replay_buffer)),
                 "mean_action": float(np.mean(action_trace)) if action_trace else 0.0,
                 "max_action": float(np.max(action_trace)) if action_trace else 0.0,
                 "mean_active_chargers": float(np.mean(active_chargers_trace)) if active_chargers_trace else 0.0,
