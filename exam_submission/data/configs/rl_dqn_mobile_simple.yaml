@@ -1,0 +1,38 @@
+rl:
+  backend: torch_dqn
+  checkpoint_name: best_model.pt
+  episodes: 130
+  max_steps_per_episode: 1728
+  gamma: 0.98
+  learning_rate: 0.0005
+  batch_size: 128
+  replay_capacity: 200000
+  learning_starts: 10000
+  target_update_interval: 200
+  train_frequency: 4
+  gradient_steps: 4
+  hidden_dims: [256, 256]
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay_steps: 125000
+  tau: 1.0
+  reward_clip: 25.0
+  heuristic_prior_strength: 0.0
+  heuristic_prior_mode: placement
+  wandb_step_log_interval: 12
+  evaluation_episodes: 12
+  eval_interval_steps: 15000
+  eval_during_training_episodes: 10
+  deterministic_eval: true
+  sb3:
+    total_timesteps: 200000
+    buffer_size: 200000
+    learning_starts: 10000
+    batch_size: 128
+    train_freq: 4
+    gradient_steps: 1
+    exploration_fraction: 0.5
+    exploration_initial_eps: 1.0
+    exploration_final_eps: 0.05
+    tau: 1.0
+    target_update_interval: 1000

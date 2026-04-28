@@ -1,0 +1,69 @@
+{
+  "selected_artifacts": [
+    {
+      "path": "data/configs/env_mobile_mcs_line_abc_current.yaml",
+      "type": "config",
+      "note": "Current active line-corridor environment config."
+    },
+    {
+      "path": "data/configs/experiment_mobile_mcs_line_abc_current.yaml",
+      "type": "config",
+      "note": "Current active line-corridor environment config."
+    },
+    {
+      "path": "data/configs/dqn_mobile_simple.yaml",
+      "type": "config",
+      "note": "Current torch DQN/simple learner config including evaluation cadence."
+    },
+    {
+      "path": "data/configs/dqn_mobile_sb3.yaml",
+      "type": "config",
+      "note": "Current SB3 DQN config; used for algorithm description only because no compatible checkpoint was found."
+    },
+    {
+      "path": "data/configs/mobile_mcs_line_abc.yaml",
+      "type": "config",
+      "note": "Experiment split config with validation, test_id, and stress suite definitions."
+    },
+    {
+      "path": "data/generated/heldout/mobile_noop_comparison_timestep_metrics.csv",
+      "type": "generated_eval",
+      "note": "Current held-out fixed/no-agent rollout on the active line corridor."
+    },
+    {
+      "path": "data/generated/heldout/mobile_threshold_comparison_timestep_metrics.csv",
+      "type": "generated_eval",
+      "note": "Current held-out threshold-baseline rollout on the active line corridor."
+    },
+    {
+      "path": "data/generated/heldout/mobile_reactive_comparison_timestep_metrics.csv",
+      "type": "generated_eval",
+      "note": "Current held-out reactive-baseline rollout on the active line corridor."
+    },
+    {
+      "path": "data/generated/evaluation_suites_small/test_id_summary.csv",
+      "type": "generated_eval",
+      "note": "Reduced multi-seed test_id baseline summary used for robustness tables."
+    },
+    {
+      "path": "data/generated/evaluation_suites_small/test_stress_summary.csv",
+      "type": "generated_eval",
+      "note": "Reduced stress-suite baseline summary used for disruption robustness discussion."
+    },
+    {
+      "path": "data/historical/reward_sweep_summary.csv",
+      "type": "historical",
+      "note": "Historical reward-sweep runs used only to illustrate reward-calibration tradeoffs."
+    },
+    {
+      "path": "data/historical/legacy_training_history_range_c24_q2p5.json",
+      "type": "historical",
+      "note": "Historical training history from an older absolute-allocation variant; not used for final quantitative claims."
+    }
+  ],
+  "missing_or_incompatible": [
+    "No current-compatible RL checkpoint was found for the active 27-feature / 5-action A-B-C environment.",
+    "No current-compatible RL history with eval_mean_reward and eval_td_loss was found in local artifacts.",
+    "Queue-wait target breach metrics are zero in the active line-corridor outputs because the current environment does not instrument a nonzero queue-wait target."
+  ]
+}

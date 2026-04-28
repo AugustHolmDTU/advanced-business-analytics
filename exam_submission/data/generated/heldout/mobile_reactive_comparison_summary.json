@@ -1,0 +1,23 @@
+{
+  "mean_ab_minus_bc_allocation_bias_on_station_ab_disruptions": 1.45,
+  "mean_active_mobile_stations": 8.975694444444445,
+  "mean_active_mobile_stations_disrupted": 8.147619047619047,
+  "mean_active_mobile_stations_normal": 9.117073170731707,
+  "mean_allocation_vs_demand_alignment": 0.61205888412147,
+  "mean_allocation_vs_demand_alignment_disrupted": 0.5983943040728111,
+  "mean_bc_minus_ab_allocation_bias_on_station_bc_disruptions": 4.802631578947368,
+  "mean_queue_length": 1.2881944444444444,
+  "mean_queue_wait_excess_minutes": 0.0,
+  "mean_queue_wait_minutes": 0.7117013220157888,
+  "mean_queue_wait_minutes_station_ab": 0.8047031977110439,
+  "mean_queue_wait_minutes_station_bc": 0.6186994467344549,
+  "mean_spatial_deficit_coverage": 0.2072537950092814,
+  "mean_spatial_deficit_coverage_disrupted": 0.22135071077851573,
+  "mean_utilization": 0.4722750486392114,
+  "num_days": 5,
+  "peak_queue_length": 28.0,
+  "peak_queue_wait_minutes": 26.51785659790039,
+  "queue_wait_target_breach_fraction": 0.0,
+  "queue_wait_target_minutes": 0.0,
+  "seed": 20000
+}
