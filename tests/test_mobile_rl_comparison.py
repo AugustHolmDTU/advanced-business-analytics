@@ -249,9 +249,9 @@ class MobileRlComparisonTest(unittest.TestCase):
             metrics_path = output_dir / "comparison_timestep_metrics.csv"
             self.assertTrue(metrics_path.exists())
             frame = pd.read_csv(metrics_path)
-            self.assertIn(len(frame), {1440, 2880})
+            self.assertIn(len(frame), {288 * days for days in range(5, 11)})
             self.assertEqual(result["summary"]["seed"], 20000)
-            self.assertIn(result["summary"]["num_days"], {5, 10})
+            self.assertIn(result["summary"]["num_days"], set(range(5, 11)))
             self.assertGreaterEqual(int(frame["disruption_active"].sum()), 2)
             self.assertIn("allocation_vs_demand_alignment", frame.columns)
             self.assertGreater(len(frame.loc[frame["disruption_active"] == 1, "day_index"].dropna().unique()), 1)

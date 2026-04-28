@@ -8,7 +8,7 @@ import pandas as pd
 
 from evch.baselines.policies import mobile_threshold_policy
 from evch.envs.factory import make_env
-from evch.envs.line_corridor_mobile_env import LineCorridorMobileStationEnv
+from evch.envs.line_corridor_mobile_env import LineCorridorMobileStationEnv, MobileChargingStationUnit
 from evch.sim.line_corridor import ActiveSession, LineCorridorQueueSimulator, QueuedVehicle
 from evch.train.run_mobile_noop_comparison import run_mobile_noop_comparison
 
@@ -146,12 +146,43 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         self.assertIsInstance(reward, float)
         self.assertFalse(terminated)
         self.assertFalse(truncated)
-        self.assertEqual(step_info["num_active_mobile_stations"], 3)
-        self.assertEqual(step_info["num_active_mobile_stations_station_ab"], 2)
-        self.assertEqual(step_info["num_active_mobile_stations_station_bc"], 1)
+        self.assertEqual(step_info["num_active_mobile_stations"], 0)
+        self.assertEqual(step_info["num_active_mobile_stations_station_ab"], 0)
+        self.assertEqual(step_info["num_active_mobile_stations_station_bc"], 0)
+        self.assertEqual(step_info["num_mobile_stations_in_transit_to_ab"], 2)
+        self.assertEqual(step_info["num_mobile_stations_in_transit_to_bc"], 1)
         self.assertIn("queue_length_station_ab", step_info)
         self.assertIn("queue_length_station_bc", step_info)
         self.assertIn("unused_mobile_stations_estimate_station_ab", step_info)
+
+    def test_observation_includes_target_affects_flags(self) -> None:
+        env_config = {
+            **self.env_config,
+            "simulation": {
+                **self.env_config["simulation"],
+                "disruption": {
+                    "enabled": True,
+                    "mode": "scripted",
+                    "scripted_events": [
+                        {
+                            "disruption_type": "demand_surge",
+                            "target": "od_bc",
+                            "day_index": 0,
+                            "start_hour": 0.0,
+                            "duration_hours": 1.0,
+                            "severity": 3.0,
+                        }
+                    ],
+                },
+            },
+        }
+        env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
+
+        obs, _ = env.reset(seed=4)
+
+        self.assertEqual(obs.shape, env.observation_space.shape)
+        self.assertEqual(obs[20], 0.0)
+        self.assertEqual(obs[21], 1.0)
 
     def test_reset_can_sample_one_to_three_day_episode_lengths(self) -> None:
         env_config = {
@@ -323,9 +354,22 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         }
         env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
         env.reset(seed=4)
-
+        env.mobile_station_units = [
+            MobileChargingStationUnit(state="station_ab"),
+            MobileChargingStationUnit(state="middle_available"),
+            MobileChargingStationUnit(state="middle_available"),
+            MobileChargingStationUnit(state="middle_available"),
+        ]
+        env._refresh_mobile_station_counts()
         _, reward_wrong, _, _, info_wrong = env.step(env.action_from_mobile_station_allocation((1, 0)))
         env.reset(seed=4)
+        env.mobile_station_units = [
+            MobileChargingStationUnit(state="station_bc"),
+            MobileChargingStationUnit(state="middle_available"),
+            MobileChargingStationUnit(state="middle_available"),
+            MobileChargingStationUnit(state="middle_available"),
+        ]
+        env._refresh_mobile_station_counts()
         _, reward_right, _, _, info_right = env.step(env.action_from_mobile_station_allocation((0, 1)))
 
         self.assertEqual(info_wrong["disruption_target"], "od_bc")
@@ -369,6 +413,13 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         }
         env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
         env.reset(seed=4)
+        env.mobile_station_units = [
+            MobileChargingStationUnit(state="station_bc"),
+            MobileChargingStationUnit(state="middle_available"),
+            MobileChargingStationUnit(state="middle_available"),
+            MobileChargingStationUnit(state="middle_available"),
+        ]
+        env._refresh_mobile_station_counts()
         env.queue_by_station = [
             deque(
                 [
@@ -381,6 +432,13 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
 
         _, reward_wrong, _, _, info_wrong = env.step(env.action_from_mobile_station_allocation((0, 1)))
         env.reset(seed=4)
+        env.mobile_station_units = [
+            MobileChargingStationUnit(state="station_ab"),
+            MobileChargingStationUnit(state="middle_available"),
+            MobileChargingStationUnit(state="middle_available"),
+            MobileChargingStationUnit(state="middle_available"),
+        ]
+        env._refresh_mobile_station_counts()
         env.queue_by_station = [
             deque(
                 [
