@@ -24,43 +24,28 @@ train_val_test:
       count: 500
     environment_overrides:
       simulation:
-        duration_days_range: [5, 10]
+        duration_days_range: [3, 5]
         disruption:
           day_disruption_count_weights:
-            1: 0.6
-            2: 0.4
+            0: 0.05
+            1: 0.55
+            2: 0.3
+            3: 0.1
           capacity_drop:
-            duration_hours: [2.0, 4.0]
+            duration_hours: [1.5, 3.0]
             start_hour_range: [6.0, 20.0]
-            target_num_plugs: [1, 4]
+            target_num_plugs: [2, 5]
           station_outage:
-            duration_hours: [1.5, 3.5]
+            duration_hours: [1.0, 2.5]
             start_hour_range: [6.0, 21.0]
           service_time_inflation:
+            duration_hours: [1.5, 3.0]
+            start_hour_range: [6.0, 20.0]
+            multiplier: [1.6, 2.0]
+          demand_surge:
             duration_hours: [2.0, 4.0]
             start_hour_range: [6.0, 20.0]
-            multiplier: [1.7, 2.3]
-          demand_surge:
-            duration_hours: [2.5, 4.5]
-            start_hour_range: [6.0, 20.0]
-            multiplier: [2.4, 3.0]
-          required_events:
-            - disruption_type: demand_surge
-              day_index_range: [0, 8]
-              duration_hours: [3.5, 5.0]
-              start_hour_range: [6.0, 18.0]
-              multiplier: [3.0, 3.6]
-              targets:
-                - od_ab
-                - od_ba
-            - disruption_type: demand_surge
-              day_index_range: [1, 9]
-              duration_hours: [3.5, 5.0]
-              start_hour_range: [6.0, 18.0]
-              multiplier: [3.0, 3.6]
-              targets:
-                - od_bc
-                - od_cb
+            multiplier: [2.0, 2.6]
   test_stress:
     enabled: true
     scenarios:

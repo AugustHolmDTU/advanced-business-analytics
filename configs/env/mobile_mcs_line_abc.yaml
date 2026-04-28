@@ -21,7 +21,7 @@ environment:
     spatial_deficit_alignment_bonus: 24.0
     spatial_deficit_direction_bonus: 12.0
   simulation:
-    duration_days_range: [1, 3]
+    duration_days_range: [2, 6]
     city_names: ["City A", "City B", "City C"]
     inter_city_distance_km: 100.0
     station_positions_km: [50.0, 150.0]
@@ -51,38 +51,39 @@ environment:
       enabled: true
       mode: random
       day_disruption_count_weights:
-        0: 0.2
-        1: 0.65
-        2: 0.15
+        0: 0.1
+        1: 0.45
+        2: 0.3
+        3: 0.15
       event_types:
         - capacity_drop
         - station_outage
         - service_time_inflation
         - demand_surge
       capacity_drop:
-        duration_hours: [1.0, 3.0]
+        duration_hours: [1.0, 3.5]
         start_hour_range: [6.0, 20.0]
-        target_num_plugs: [2, 6]
+        target_num_plugs: [1, 5]
         targets:
           - station_ab
           - station_bc
       station_outage:
-        duration_hours: [0.75, 2.0]
+        duration_hours: [1.0, 2.5]
         start_hour_range: [6.0, 21.0]
         targets:
           - station_ab
           - station_bc
       service_time_inflation:
-        duration_hours: [1.0, 3.0]
+        duration_hours: [1.0, 3.5]
         start_hour_range: [6.0, 20.0]
-        multiplier: [1.4, 1.9]
+        multiplier: [1.5, 2.1]
         targets:
           - station_ab
           - station_bc
       demand_surge:
-        duration_hours: [1.0, 4.0]
+        duration_hours: [1.5, 4.5]
         start_hour_range: [6.0, 20.0]
-        multiplier: [1.7, 2.4]
+        multiplier: [1.9, 2.9]
         targets:
           - od_ab
           - od_ba

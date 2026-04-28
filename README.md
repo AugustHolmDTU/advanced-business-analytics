@@ -35,18 +35,21 @@ W&B project used by this branch:
 
 The A-B-C benchmark now uses a seed-driven scenario split.
 
-- training: randomized 1-3 day episodes drawn from the environment generator
+- training: randomized 2-6 day episodes drawn from the environment generator, mixing milder and somewhat harder disruption realizations
 - validation: fixed held-out seeds from the same generator (`train_val_test.validation`)
-- main test: fixed held-out seeds from the same generator (`train_val_test.test_id`)
+- main test: fixed held-out seeds from the target deployment-style generator (`train_val_test.test_id`)
 - stress/OOD: separate fixed stress scenarios (`train_val_test.test_stress`)
 
-For the current line-ABC setup, the main held-out `test_id` split is heavier than training:
-- 5-10 day episodes
-- at least one disruption per day
-- some days with two disruptions
-- guaranteed large demand surge on the AB-side station at some point
-- guaranteed large demand surge on the BC-side station at some point
-- harsher disruption severities than training for demand surges, outages, capacity drops, and service inflation
+For the current line-ABC setup, the held-out `test_id` split is meant to be representative and unseen, not necessarily harder than training:
+- 3-5 day episodes
+- non-scripted random disruption combinations from the deployment-style generator
+- moderate chance of 1-3 disruptions per day
+- no guaranteed required event templates; novelty comes from unseen seeds and unseen combinations
+
+Training is deliberately broader than the deployment-style test split:
+- includes both somewhat easier and somewhat harder realizations than `test_id`
+- uses a wider 2-6 day horizon
+- allows 0-3 disruptions per day with broader severity ranges
 
 An unseen seed is treated as an unseen simulated day. The seed determines the stochastic demand realization, charging-stop decisions, service times, disruption count, disruption type, disruption target, disruption timing, and disruption severity. This makes held-out seeds a valid in-distribution generalization test for the simulator.
 
