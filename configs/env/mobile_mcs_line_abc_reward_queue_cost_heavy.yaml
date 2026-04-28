@@ -1,0 +1,7 @@
+environment:
+  reward:
+    unmet_penalty: 4.0
+    queue_length_penalty: 4.5
+    queue_wait_penalty: 0.05
+    local_queue_peak_penalty: 2.0
+    local_wait_peak_penalty: 0.25
