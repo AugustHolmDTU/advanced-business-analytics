@@ -129,9 +129,10 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
 
     def test_action_map_covers_two_station_allocations(self) -> None:
         env = LineCorridorMobileStationEnv(self.env_config, {}, seed=3)
-        self.assertEqual(env.action_space.n, 15)
+        self.assertEqual(env.action_space.n, 5)
         self.assertEqual(env.action_from_mobile_station_allocation((0, 0)), 0)
-        self.assertEqual(tuple(env.action_to_allocation(env.action_from_mobile_station_allocation((2, 1)))), (2, 1))
+        env.reset(seed=4)
+        self.assertEqual(tuple(env.action_to_allocation(env.action_from_mobile_station_allocation((1, 0)))), (1, 0))
 
     def test_step_reports_station_specific_mobile_counts(self) -> None:
         env = LineCorridorMobileStationEnv(self.env_config, {}, seed=3)
@@ -139,7 +140,7 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         self.assertEqual(obs.shape, env.observation_space.shape)
         self.assertEqual(info["num_active_mobile_stations"], 0)
 
-        action = env.action_from_mobile_station_allocation((2, 1))
+        action = env.action_from_mobile_station_allocation((1, 0))
         next_obs, reward, terminated, truncated, step_info = env.step(action)
 
         self.assertEqual(next_obs.shape, env.observation_space.shape)
@@ -149,8 +150,12 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         self.assertEqual(step_info["num_active_mobile_stations"], 0)
         self.assertEqual(step_info["num_active_mobile_stations_station_ab"], 0)
         self.assertEqual(step_info["num_active_mobile_stations_station_bc"], 0)
-        self.assertEqual(step_info["num_mobile_stations_in_transit_to_ab"], 2)
-        self.assertEqual(step_info["num_mobile_stations_in_transit_to_bc"], 1)
+        self.assertEqual(step_info["committed_mobile_stations_station_ab"], 1)
+        self.assertEqual(step_info["committed_mobile_stations_station_bc"], 0)
+        self.assertEqual(step_info["committed_mobile_stations_bias_ab_minus_bc"], 1)
+        self.assertEqual(step_info["num_mobile_stations_in_transit_to_ab"], 1)
+        self.assertEqual(step_info["num_mobile_stations_in_transit_to_bc"], 0)
+        self.assertEqual(step_info["num_mobile_stations_in_transit_to_middle"], 0)
         self.assertIn("queue_length_station_ab", step_info)
         self.assertIn("queue_length_station_bc", step_info)
         self.assertIn("unused_mobile_stations_estimate_station_ab", step_info)
@@ -181,8 +186,9 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         obs, _ = env.reset(seed=4)
 
         self.assertEqual(obs.shape, env.observation_space.shape)
-        self.assertEqual(obs[20], 0.0)
-        self.assertEqual(obs[21], 1.0)
+        self.assertEqual(obs[22], 0.0)
+        self.assertEqual(obs[23], 1.0)
+        self.assertEqual(obs[28], 0.0)
 
     def test_reset_can_sample_one_to_three_day_episode_lengths(self) -> None:
         env_config = {
@@ -315,6 +321,112 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         self.assertAlmostEqual(info["queue_wait_burden_minutes"], 20.0)
         self.assertAlmostEqual(info["reward_queue_wait_penalty_term"], 20.0)
         self.assertAlmostEqual(reward, -20.0)
+
+    def test_local_queue_peak_penalty_punishes_one_sided_queue_blowup(self) -> None:
+        env_config = {
+            **self.env_config,
+            "reward_scale": 1.0,
+            "reward": {
+                **self.env_config["reward"],
+                "served_reward_weight": 0.0,
+                "unmet_penalty": 0.0,
+                "active_mobile_station_cost": 0.0,
+                "activation_cost": 0.0,
+                "adjustment_cost": 0.0,
+                "idle_capacity_penalty": 0.0,
+                "utilization_bonus": 0.0,
+                "queue_length_penalty": 0.0,
+                "queue_wait_penalty": 0.0,
+                "local_queue_peak_penalty": 2.0,
+                "disruption_response_bonus": 0.0,
+            },
+            "simulation": {
+                **self.env_config["simulation"],
+                "charging_stop_probability": 0.0,
+                "num_plugs": [1, 1],
+                "disruption": {"enabled": False},
+            },
+        }
+        env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
+        env.reset(seed=4)
+        env.queue_by_station = [
+            deque(
+                [
+                    QueuedVehicle(arrival_step=-1, trip_key="od_ab", station_index=0, base_service_minutes=30.0),
+                    QueuedVehicle(arrival_step=-1, trip_key="od_ab", station_index=0, base_service_minutes=30.0),
+                    QueuedVehicle(arrival_step=-1, trip_key="od_ab", station_index=0, base_service_minutes=30.0),
+                ]
+            ),
+            deque(),
+        ]
+
+        _, reward, _, _, info = env.step(env.action_from_mobile_station_allocation((0, 0)))
+
+        self.assertAlmostEqual(info["queue_length_station_ab"], 2.0)
+        self.assertAlmostEqual(info["queue_length_station_bc"], 0.0)
+        self.assertAlmostEqual(info["reward_local_queue_peak_penalty_term"], 4.0)
+        self.assertAlmostEqual(reward, -4.0)
+
+    def test_local_wait_peak_penalty_punishes_worst_station_wait(self) -> None:
+        env_config = {
+            **self.env_config,
+            "reward_scale": 1.0,
+            "reward": {
+                **self.env_config["reward"],
+                "served_reward_weight": 0.0,
+                "unmet_penalty": 0.0,
+                "active_mobile_station_cost": 0.0,
+                "activation_cost": 0.0,
+                "adjustment_cost": 0.0,
+                "idle_capacity_penalty": 0.0,
+                "utilization_bonus": 0.0,
+                "queue_length_penalty": 0.0,
+                "queue_wait_penalty": 0.0,
+                "local_queue_peak_penalty": 0.0,
+                "local_wait_peak_penalty": 2.0,
+                "disruption_response_bonus": 0.0,
+            },
+            "simulation": {
+                **self.env_config["simulation"],
+                "charging_stop_probability": 0.0,
+                "num_plugs": [1, 1],
+                "disruption": {"enabled": False},
+            },
+        }
+        env = LineCorridorMobileStationEnv(env_config, {}, seed=3)
+        env.reset(seed=4)
+        env.active_sessions_by_station = [
+            [],
+            [
+                ActiveSession(
+                    arrival_step=0,
+                    start_step=0,
+                    end_step=100,
+                    trip_key="od_bc",
+                    station_index=1,
+                    service_minutes=30.0,
+                )
+            ],
+        ]
+        env.queue_by_station = [
+            deque(),
+            deque(
+                [
+                    QueuedVehicle(
+                        arrival_step=-4,
+                        trip_key="od_bc",
+                        station_index=1,
+                        base_service_minutes=30.0,
+                    )
+                ]
+            ),
+        ]
+
+        _, reward, _, _, info = env.step(env.action_from_mobile_station_allocation((0, 0)))
+
+        self.assertAlmostEqual(info["queue_wait_mean_minutes_station_bc"], 20.0)
+        self.assertAlmostEqual(info["reward_local_wait_peak_penalty_term"], 40.0)
+        self.assertAlmostEqual(reward, -40.0)
 
     def test_disruption_response_bonus_only_rewards_affected_station(self) -> None:
         env_config = {

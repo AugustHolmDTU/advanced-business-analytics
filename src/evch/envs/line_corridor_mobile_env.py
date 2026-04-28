@@ -55,6 +55,8 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.utilization_bonus = float(reward_cfg.get("utilization_bonus", 1.0))
         self.queue_length_penalty = float(reward_cfg.get("queue_length_penalty", 3.0))
         self.queue_wait_penalty = float(reward_cfg.get("queue_wait_penalty", 0.02))
+        self.local_queue_peak_penalty = float(reward_cfg.get("local_queue_peak_penalty", 0.0))
+        self.local_wait_peak_penalty = float(reward_cfg.get("local_wait_peak_penalty", 0.0))
         self.disruption_response_bonus = float(reward_cfg.get("disruption_response_bonus", 0.0))
         self.spatial_deficit_alignment_bonus = float(reward_cfg.get("spatial_deficit_alignment_bonus", 0.0))
         self.spatial_deficit_direction_bonus = float(reward_cfg.get("spatial_deficit_direction_bonus", 0.0))
@@ -84,7 +86,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.charge_full_steps = max(1, int(round(self.mcs_charge_full_minutes / self.planning_step_minutes)))
 
         self.action_map = self._build_action_map()
-        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(28,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(31,), dtype=np.float32)
         self.action_space = spaces.Discrete(len(self.action_map))
 
         self.rng = np.random.default_rng(self.base_seed)
@@ -136,12 +138,14 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         sim_cfg["duration_hours"] = float(duration_hours)
         return LineCorridorQueueSimulator(config=sim_cfg, seed=seed)
 
-    def _build_action_map(self) -> list[tuple[int, int]]:
-        allocations: list[tuple[int, int]] = []
-        for first in range(self.max_mobile_stations + 1):
-            for second in range(self.max_mobile_stations + 1 - first):
-                allocations.append((first, second))
-        return allocations
+    def _build_action_map(self) -> list[str]:
+        return [
+            "hold",
+            "toward_ab",
+            "toward_bc",
+            "recall_ab",
+            "recall_bc",
+        ]
 
     def _build_mobile_station_units(self) -> list[MobileChargingStationUnit]:
         return [MobileChargingStationUnit(state="middle_available", timer_steps=0) for _ in range(self.max_mobile_stations)]
@@ -165,6 +169,15 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "transit_to_bc": sum(unit.state == "transit_to_bc" for unit in self.mobile_station_units),
             "transit_to_middle": sum(unit.state == "transit_to_middle" for unit in self.mobile_station_units),
         }
+
+    def _committed_mobile_station_counts(self) -> np.ndarray:
+        return np.asarray(
+            [
+                sum(unit.state in {"station_ab", "transit_to_ab"} for unit in self.mobile_station_units),
+                sum(unit.state in {"station_bc", "transit_to_bc"} for unit in self.mobile_station_units),
+            ],
+            dtype=np.int32,
+        )
 
     def _advance_mobile_station_units(self) -> None:
         for unit in self.mobile_station_units:
@@ -214,6 +227,21 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
 
         committed_ab = sum(unit.state in {"station_ab", "transit_to_ab"} for unit in self.mobile_station_units)
         committed_bc = sum(unit.state in {"station_bc", "transit_to_bc"} for unit in self.mobile_station_units)
+        if committed_ab > desired_ab:
+            cancel_ab = committed_ab - desired_ab
+            transit_to_ab_units = [unit for unit in self.mobile_station_units if unit.state == "transit_to_ab"]
+            for unit in transit_to_ab_units[:cancel_ab]:
+                unit.state = "transit_to_middle"
+                unit.timer_steps = self.middle_travel_steps
+        if committed_bc > desired_bc:
+            cancel_bc = committed_bc - desired_bc
+            transit_to_bc_units = [unit for unit in self.mobile_station_units if unit.state == "transit_to_bc"]
+            for unit in transit_to_bc_units[:cancel_bc]:
+                unit.state = "transit_to_middle"
+                unit.timer_steps = self.middle_travel_steps
+
+        committed_ab = sum(unit.state in {"station_ab", "transit_to_ab"} for unit in self.mobile_station_units)
+        committed_bc = sum(unit.state in {"station_bc", "transit_to_bc"} for unit in self.mobile_station_units)
         middle_available = [unit for unit in self.mobile_station_units if unit.state == "middle_available"]
         need_ab = max(desired_ab - committed_ab, 0)
         need_bc = max(desired_bc - committed_bc, 0)
@@ -232,15 +260,45 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self._refresh_mobile_station_counts()
 
     def action_to_allocation(self, action: int) -> np.ndarray:
-        return np.asarray(self.action_map[int(action)], dtype=np.int32)
+        command = str(self.action_map[int(action)])
+        desired = self._committed_mobile_station_counts().copy()
+        state_counts = self._mobile_station_state_counts()
+        if command == "hold":
+            return desired
+        if command == "toward_ab":
+            if state_counts["middle_available"] > 0 and int(desired.sum()) < self.max_mobile_stations:
+                desired[0] += 1
+            elif desired[1] > 0:
+                desired[1] -= 1
+                desired[0] += 1
+            return desired
+        if command == "toward_bc":
+            if state_counts["middle_available"] > 0 and int(desired.sum()) < self.max_mobile_stations:
+                desired[1] += 1
+            elif desired[0] > 0:
+                desired[0] -= 1
+                desired[1] += 1
+            return desired
+        if command == "recall_ab":
+            desired[0] = max(int(desired[0]) - 1, 0)
+            return desired
+        if command == "recall_bc":
+            desired[1] = max(int(desired[1]) - 1, 0)
+            return desired
+        raise ValueError(f"Unknown action command: {command}")
 
     def action_from_mobile_station_allocation(self, allocation: list[int] | tuple[int, int] | np.ndarray) -> int:
         first, second = [int(value) for value in allocation]
-        key = (first, second)
-        try:
-            return self.action_map.index(key)
-        except ValueError as exc:
-            raise ValueError(f"Invalid mobile station allocation: {key}") from exc
+        if first < 0 or second < 0 or first + second > self.max_mobile_stations:
+            raise ValueError(f"Invalid mobile station allocation: {(first, second)}")
+        target = np.asarray([first, second], dtype=np.int32)
+        candidate_distances: list[tuple[int, int]] = []
+        for action_index in range(self.action_space.n):
+            candidate = self.action_to_allocation(action_index)
+            distance = int(np.abs(candidate - target).sum())
+            candidate_distances.append((distance, action_index))
+        candidate_distances.sort(key=lambda item: (item[0], item[1]))
+        return int(candidate_distances[0][1])
 
     def seed(self, seed: int | None = None) -> None:
         chosen_seed = self.base_seed if seed is None else int(seed)
@@ -318,10 +376,14 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "num_active_mobile_stations": 0,
             "num_active_mobile_stations_station_ab": 0,
             "num_active_mobile_stations_station_bc": 0,
+            "committed_mobile_stations_station_ab": 0,
+            "committed_mobile_stations_station_bc": 0,
+            "committed_mobile_stations_bias_ab_minus_bc": 0,
             "num_mobile_stations_middle_available": self.max_mobile_stations,
             "num_mobile_stations_middle_charging": 0,
             "num_mobile_stations_in_transit_to_ab": 0,
             "num_mobile_stations_in_transit_to_bc": 0,
+            "num_mobile_stations_in_transit_to_middle": 0,
         }
 
     def _normalized(self, value: float, scale: float) -> float:
@@ -371,12 +433,15 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             - total_service_capacity_by_station.astype(np.float32),
             0.0,
         )
+        expected_demand_bias = float(expected["station_expected_charging"][0] - expected["station_expected_charging"][1])
         local_deficit_bias = float(local_deficit_by_station[0] - local_deficit_by_station[1])
         time_fraction = float(self.step_index % self.horizon) / float(max(self.horizon - 1, 1))
         target_affects_ab, target_affects_bc = self._target_affects_station_flags(
             str(disruption_state.get("disruption_target", "none"))
         )
         mobile_state_counts = self._mobile_station_state_counts()
+        committed_mobile_station_counts = self._committed_mobile_station_counts()
+        committed_mobile_station_bias = float(committed_mobile_station_counts[0] - committed_mobile_station_counts[1])
         obs = np.asarray(
             [
                 self._normalized(self.queue_lengths_by_station[0], self.queue_normalizer),
@@ -393,6 +458,8 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
                 self._normalized(float(effective_total_plugs_by_station[1]), self.capacity_normalizer),
                 self._normalized(float(self.current_mobile_stations_by_station[0] * self.mobile_station_chargers), self.capacity_normalizer),
                 self._normalized(float(self.current_mobile_stations_by_station[1] * self.mobile_station_chargers), self.capacity_normalizer),
+                self._normalized(expected_demand_bias, self.arrival_normalizer),
+                self._normalized(committed_mobile_station_bias, self.mobile_count_normalizer),
                 self._normalized(float(local_deficit_by_station[0]), self.queue_normalizer + self.arrival_normalizer),
                 self._normalized(float(local_deficit_by_station[1]), self.queue_normalizer + self.arrival_normalizer),
                 self._normalized(local_deficit_bias, self.queue_normalizer + self.arrival_normalizer),
@@ -405,6 +472,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
                 self._normalized(float(mobile_state_counts["middle_charging"]), self.mobile_count_normalizer),
                 self._normalized(float(mobile_state_counts["transit_to_ab"]), self.mobile_count_normalizer),
                 self._normalized(float(mobile_state_counts["transit_to_bc"]), self.mobile_count_normalizer),
+                self._normalized(float(mobile_state_counts["transit_to_middle"]), self.mobile_count_normalizer),
                 np.sin(2.0 * np.pi * time_fraction),
                 np.cos(2.0 * np.pi * time_fraction),
             ],
@@ -517,6 +585,8 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         served_total = float(sum(len(sessions) for sessions in starts_now_by_station))
         unmet_total = float(queue_lengths.sum())
         idle_capacity = max(float(effective_num_plugs_by_station.sum() - active_plugs_by_station.sum()), 0.0)
+        local_queue_peak = float(queue_lengths.max())
+        local_wait_peak = float(queue_wait_means.max())
         activated = np.maximum(self.current_mobile_stations_by_station - previous_mobile_stations, 0)
         adjusted = np.abs(self.current_mobile_stations_by_station - previous_mobile_stations)
         mean_queue_wait = float(queue_wait_means.mean())
@@ -535,6 +605,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             pending_queue_lengths_before_service + np.asarray(expected["station_expected_charging"], dtype=np.float32) - base_service_capacity_by_station,
             0.0,
         )
+        expected_demand_bias = float(expected["station_expected_charging"][0] - expected["station_expected_charging"][1])
         total_local_deficit_without_mcs = float(local_deficit_without_mcs_by_station.sum())
         spatial_deficit_coverage = 0.0
         if total_local_deficit_without_mcs > 0.0:
@@ -559,11 +630,15 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             disruption_response_bonus_term = self.disruption_response_bonus * float(has_response_on_affected_station)
         spatial_deficit_alignment_bonus_term = self.spatial_deficit_alignment_bonus * spatial_deficit_coverage
         spatial_deficit_direction_bonus_term = self.spatial_deficit_direction_bonus * spatial_deficit_direction_alignment
+        local_queue_peak_penalty_term = self.local_queue_peak_penalty * local_queue_peak
+        local_wait_peak_penalty_term = self.local_wait_peak_penalty * local_wait_peak
         reward = (
             self.served_reward_weight * served_total
             - self.unmet_penalty * unmet_total
             - self.queue_length_penalty * unmet_total
             - self.queue_wait_penalty * queue_wait_burden
+            - local_queue_peak_penalty_term
+            - local_wait_peak_penalty_term
             - self.active_mobile_station_cost * float(self.current_mobile_stations_by_station.sum())
             - self.activation_cost * float(activated.sum())
             - self.adjustment_cost * float(adjusted.sum())
@@ -584,6 +659,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.last_effective_num_plugs_by_station = effective_num_plugs_by_station
         self.last_disruption_state = dict(disruption_state)
         mobile_state_counts = self._mobile_station_state_counts()
+        committed_mobile_station_counts = self._committed_mobile_station_counts()
         target_affects_ab, target_affects_bc = self._target_affects_station_flags(str(disruption_state.get("disruption_target", "none")))
 
         info = {
@@ -596,6 +672,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "queue_length": float(queue_lengths.sum()),
             "queue_wait_mean_minutes": mean_queue_wait,
             "queue_wait_burden_minutes": queue_wait_burden,
+            "expected_demand_bias_ab_minus_bc": float(expected_demand_bias),
             "local_deficit_without_mcs_station_ab": float(local_deficit_without_mcs_by_station[0]),
             "local_deficit_without_mcs_station_bc": float(local_deficit_without_mcs_by_station[1]),
             "local_deficit_without_mcs_total": float(total_local_deficit_without_mcs),
@@ -612,6 +689,10 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "num_mobile_stations_middle_charging": int(mobile_state_counts["middle_charging"]),
             "num_mobile_stations_in_transit_to_ab": int(mobile_state_counts["transit_to_ab"]),
             "num_mobile_stations_in_transit_to_bc": int(mobile_state_counts["transit_to_bc"]),
+            "num_mobile_stations_in_transit_to_middle": int(mobile_state_counts["transit_to_middle"]),
+            "committed_mobile_stations_station_ab": int(committed_mobile_station_counts[0]),
+            "committed_mobile_stations_station_bc": int(committed_mobile_station_counts[1]),
+            "committed_mobile_stations_bias_ab_minus_bc": int(committed_mobile_station_counts[0] - committed_mobile_station_counts[1]),
             "num_active_chargers": int(effective_num_plugs_by_station.sum()),
             "active_plugs": int(active_plugs_by_station.sum()),
             "base_capacity_total": float(np.asarray(disruption_state["effective_num_plugs_by_station"]).sum()),
@@ -632,6 +713,8 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             "adjusted_mobile_stations": int(adjusted.sum()),
             "idle_capacity": idle_capacity,
             "reward_queue_wait_penalty_term": float(self.queue_wait_penalty * queue_wait_burden),
+            "reward_local_queue_peak_penalty_term": float(local_queue_peak_penalty_term),
+            "reward_local_wait_peak_penalty_term": float(local_wait_peak_penalty_term),
             "reward_disruption_response_bonus_term": float(disruption_response_bonus_term),
             "reward_spatial_deficit_alignment_bonus_term": float(spatial_deficit_alignment_bonus_term),
             "reward_spatial_deficit_direction_bonus_term": float(spatial_deficit_direction_bonus_term),

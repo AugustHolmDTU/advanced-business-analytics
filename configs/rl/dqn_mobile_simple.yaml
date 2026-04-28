@@ -2,7 +2,7 @@ rl:
   backend: torch_dqn
   checkpoint_name: best_model.pt
   episodes: 300
-  max_steps_per_episode: 288
+  max_steps_per_episode: 1728
   gamma: 0.98
   learning_rate: 0.0005
   batch_size: 128

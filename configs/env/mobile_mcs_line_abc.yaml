@@ -18,6 +18,8 @@ environment:
     utilization_bonus: 1.0
     queue_length_penalty: 2.5
     queue_wait_penalty: 0.02
+    local_queue_peak_penalty: 1.0
+    local_wait_peak_penalty: 0.1
     spatial_deficit_alignment_bonus: 24.0
     spatial_deficit_direction_bonus: 12.0
   simulation:

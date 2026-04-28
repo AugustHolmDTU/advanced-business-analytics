@@ -42,6 +42,14 @@ SIM_WANDB_COLUMNS = {
     "num_active_mobile_stations",
     "num_active_mobile_stations_station_ab",
     "num_active_mobile_stations_station_bc",
+    "committed_mobile_stations_station_ab",
+    "committed_mobile_stations_station_bc",
+    "committed_mobile_stations_bias_ab_minus_bc",
+    "num_mobile_stations_middle_available",
+    "num_mobile_stations_middle_charging",
+    "num_mobile_stations_in_transit_to_ab",
+    "num_mobile_stations_in_transit_to_bc",
+    "num_mobile_stations_in_transit_to_middle",
     "unused_mobile_chargers",
     "unused_mobile_stations_estimate",
     "unused_mobile_stations_estimate_station_ab",
@@ -74,6 +82,8 @@ SIM_WANDB_COLUMNS = {
     "disruption_type_code",
     "disruption_target",
     "disruption_target_code",
+    "reward_local_queue_peak_penalty_term",
+    "reward_local_wait_peak_penalty_term",
     "reward",
 }
 SIM_WANDB_COLUMNS.update(LineCorridorQueueSimulator.target_indicator_columns())
@@ -566,6 +576,12 @@ def _train_with_torch_dqn(
     eval_env_factory: Callable[[int], Any] | None = None,
     eval_episode_seeds: list[int] | None = None,
 ) -> tuple[str, str, list[dict[str, float]]]:
+    configured_max_steps = int(rl_cfg.get("max_steps_per_episode", 0))
+    env_max_steps = int(getattr(env, "max_steps", 0))
+    if getattr(env, "duration_days_range", None) is not None and env_max_steps > 0:
+        train_max_steps = max(configured_max_steps, env_max_steps)
+    else:
+        train_max_steps = configured_max_steps
     agent = SimpleDQNAgent(
         obs_dim=int(env.observation_space.shape[0]),
         action_dim=int(env.action_space.n),
@@ -575,7 +591,7 @@ def _train_with_torch_dqn(
     history = agent.train(
         env=env,
         episodes=int(rl_cfg["episodes"]),
-        max_steps=int(rl_cfg["max_steps_per_episode"]),
+        max_steps=train_max_steps,
         run=run,
         eval_env_factory=eval_env_factory,
         eval_interval=int(rl_cfg.get("eval_interval_episodes", max(1, int(rl_cfg["episodes"]) // 8))),
@@ -750,6 +766,14 @@ def _build_mobile_comparison_rollout(
                 "num_active_mobile_stations": float(info.get("num_active_mobile_stations", 0.0)),
                 "num_active_mobile_stations_station_ab": float(info.get("num_active_mobile_stations_station_ab", 0.0)),
                 "num_active_mobile_stations_station_bc": float(info.get("num_active_mobile_stations_station_bc", 0.0)),
+                "committed_mobile_stations_station_ab": float(info.get("committed_mobile_stations_station_ab", 0.0)),
+                "committed_mobile_stations_station_bc": float(info.get("committed_mobile_stations_station_bc", 0.0)),
+                "committed_mobile_stations_bias_ab_minus_bc": float(info.get("committed_mobile_stations_bias_ab_minus_bc", 0.0)),
+                "num_mobile_stations_middle_available": float(info.get("num_mobile_stations_middle_available", 0.0)),
+                "num_mobile_stations_middle_charging": float(info.get("num_mobile_stations_middle_charging", 0.0)),
+                "num_mobile_stations_in_transit_to_ab": float(info.get("num_mobile_stations_in_transit_to_ab", 0.0)),
+                "num_mobile_stations_in_transit_to_bc": float(info.get("num_mobile_stations_in_transit_to_bc", 0.0)),
+                "num_mobile_stations_in_transit_to_middle": float(info.get("num_mobile_stations_in_transit_to_middle", 0.0)),
                 "queue_length_station_ab": float(info.get("queue_length_station_ab", 0.0)),
                 "queue_length_station_bc": float(info.get("queue_length_station_bc", 0.0)),
                 "queue_wait_mean_minutes_station_ab": float(info.get("queue_wait_mean_minutes_station_ab", 0.0)),
@@ -768,6 +792,8 @@ def _build_mobile_comparison_rollout(
                 "expected_passing_od_cb": float(info.get("expected_passing_od_cb", 0.0)),
                 "expected_passing_od_ac": float(info.get("expected_passing_od_ac", 0.0)),
                 "expected_passing_od_ca": float(info.get("expected_passing_od_ca", 0.0)),
+                "reward_local_queue_peak_penalty_term": float(info.get("reward_local_queue_peak_penalty_term", 0.0)),
+                "reward_local_wait_peak_penalty_term": float(info.get("reward_local_wait_peak_penalty_term", 0.0)),
                 "reward": float(reward),
             }
         )
