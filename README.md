@@ -2,320 +2,261 @@
 
 Research codebase for a DTU course project on resilient EV charging operations under disruption.
 
-The main benchmark is a synthetic A-B-C corridor:
-- cities A -> B -> C
-- 100 km between neighboring cities
-- one fixed charging station between A-B
-- one fixed charging station between B-C
-- mobile charging stations (MCS) allocated between the two fixed stations
+## Active Benchmark
 
-## Current Branch State
+The main benchmark is a synthetic `A-B-C` line corridor:
+- `100 km` between neighboring cities
+- one fixed charging station between `A-B`
+- one fixed charging station between `B-C`
+- up to `10` mobile charging stations (`2` plugs each)
+- `6` OD flows:
+  - `od_ab`, `od_ba`, `od_bc`, `od_cb`, `od_ac`, `od_ca`
 
-This branch uses a simple online DQL agent for the corridor benchmark:
-- file: `src/evch/rl/simple_dql.py`
-- architecture: plain MLP mapping observation -> Q-values
-- exploration: epsilon-greedy
-- update rule: 1-step TD, online update on each transition
-- intentionally removed from this agent: replay buffer, target network, dueling head, heuristic priors
+The active research question is not only whether RL improves reward. It is whether the controller reallocates MCS to the correct side of the corridor under localized stress.
 
-`src/evch/rl/simple_dqn.py` is kept as a compatibility shim that imports this new implementation.
+## Current Environment Design
+
+The main environment is [line_corridor_mobile_env.py](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/src/evch/envs/line_corridor_mobile_env.py).
+
+Important current mechanics:
+- MCS do not teleport
+- travel from middle to a station takes `30` minutes
+- relocation from `AB` to `BC` or back takes `60` minutes
+- returning to middle triggers charging before redeployment
+- MCS state includes:
+  - `middle_available`
+  - `middle_charging`
+  - `transit_to_ab`
+  - `transit_to_bc`
+  - `transit_to_middle`
+  - `station_ab`
+  - `station_bc`
+
+The line-ABC control problem now uses a small directional action space:
+- `hold`
+- `toward_ab`
+- `toward_bc`
+- `recall_ab`
+- `recall_bc`
+
+The observation is station-aware and includes:
+- station queue length and mean wait
+- realized arrivals and starts by station
+- expected charging demand by station
+- expected demand bias `AB - BC`
+- active mobile capacity by station
+- committed MCS bias including in-transit units
+- local deficit by station and deficit bias
+- disruption activity, type, remaining time
+- `target_affects_ab` / `target_affects_bc`
+- MCS logistics counts including `transit_to_middle`
+- time-of-day sin/cos
+
+## Reward Design
+
+The current line-ABC reward in [mobile_mcs_line_abc.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/env/mobile_mcs_line_abc.yaml) combines:
+- served demand reward
+- unmet-demand and total queue penalties
+- queue-wait burden penalty
+- local peak queue penalty
+- local peak wait penalty
+- active / activation / adjustment MCS costs
+- idle-capacity penalty
+- utilization bonus
+- spatial deficit coverage bonus
+- spatial deficit direction bonus
+
+This is meant to punish one-sided station failures more directly than a pure system-average objective.
 
 ## Main Configs
 
-- environment: `configs/env/mobile_mcs_line_abc.yaml`
-- experiment setup: `configs/experiment/mobile_mcs_line_abc.yaml`
-- default corridor RL config: `configs/rl/dqn_mobile_simple.yaml`
-- stronger SB3 DQN override: `configs/rl/dqn_mobile_sb3.yaml`
-- W&B online logging config: `configs/logging/wandb_online.yaml`
+- environment: [configs/env/mobile_mcs_line_abc.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/env/mobile_mcs_line_abc.yaml)
+- experiment split: [configs/experiment/mobile_mcs_line_abc.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/experiment/mobile_mcs_line_abc.yaml)
+- held-out comparison override: [configs/experiment/mobile_mcs_line_abc_heldout_comparison.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/experiment/mobile_mcs_line_abc_heldout_comparison.yaml)
+- simple learner config: [configs/rl/dqn_mobile_simple.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/rl/dqn_mobile_simple.yaml)
+- SB3 config: [configs/rl/dqn_mobile_sb3.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/rl/dqn_mobile_sb3.yaml)
 
-W&B project used by this branch:
-- `A-B-C`
+## Train / Validation / Test Split
 
-## Train / Validation / Test Design
+The active split is seed-driven:
+- training:
+  - randomized `2-6` day episodes
+  - `0-3` disruptions per day
+  - broader severity ranges than deployment-style evaluation
+- validation:
+  - fixed held-out seeds from the same generator
+- `test_id`:
+  - fixed unseen seeds from the deployment-style generator
+  - `3-5` day episodes
+  - random combinations, not a fixed script
+  - guaranteed at least one AB-side demand surge and one BC-side demand surge
+- `test_stress`:
+  - separate explicit edge-case scenarios
 
-The A-B-C benchmark now uses a seed-driven scenario split.
+Interpretation:
+- `validation` checks learning on unseen but same-distribution episodes
+- `test_id` is the main unseen deployment-style benchmark
+- `test_stress` is for robustness, not the primary in-distribution result
 
-- training: randomized 2-6 day episodes drawn from the environment generator, mixing milder and somewhat harder disruption realizations
-- validation: fixed held-out seeds from the same generator (`train_val_test.validation`)
-- main test: fixed held-out seeds from the target deployment-style generator (`train_val_test.test_id`)
-- stress/OOD: separate fixed stress scenarios (`train_val_test.test_stress`)
+## Current RL Paths
 
-For the current line-ABC setup, the held-out `test_id` split is meant to be representative and unseen, not necessarily harder than training:
-- 3-5 day episodes
-- non-scripted random disruption combinations from the deployment-style generator
-- moderate chance of 1-3 disruptions per day
-- no guaranteed required event templates; novelty comes from unseen seeds and unseen combinations
+Two RL paths exist:
 
-Training is deliberately broader than the deployment-style test split:
-- includes both somewhat easier and somewhat harder realizations than `test_id`
-- uses a wider 2-6 day horizon
-- allows 0-3 disruptions per day with broader severity ranges
+### `torch_dqn`
 
-An unseen seed is treated as an unseen simulated day. The seed determines the stochastic demand realization, charging-stop decisions, service times, disruption count, disruption type, disruption target, disruption timing, and disruption severity. This makes held-out seeds a valid in-distribution generalization test for the simulator.
+Implemented in [simple_dql.py](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/src/evch/rl/simple_dql.py).
 
-The primary claim is therefore:
+Current status:
+- replay buffer
+- minibatch updates
+- delayed learning start
+- multiple gradient steps
+- full-horizon multi-day training support
+- no target network
 
-`The policy generalizes to unseen simulated days drawn from the same randomized scenario distribution.`
+This is a baseline learner, not the strongest path.
 
-Stress scenarios are reported separately and should be interpreted as robustness tests, not the main in-distribution test.
+### `sb3_dqn`
+
+Configured through [dqn_mobile_sb3.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/rl/dqn_mobile_sb3.yaml).
+
+This is the main serious RL path because it has a proper DQN implementation with target-network stabilization.
+
+## Current Training Budgets
+
+At the time of writing:
+- simple learner:
+  - `episodes: 300`
+  - `max_steps_per_episode: 1728`
+- SB3 learner:
+  - `total_timesteps: 250000`
+
+If these change, treat the config files as authoritative.
 
 ## Local Commands
 
-If your default interpreter is missing project dependencies, run with the known working environment interpreter on Windows:
-
-```powershell
-$env:PYTHONPATH='src'
-& "C:\Users\augus\miniconda3\envs\vae\python.exe" -m evch.train.train_rl ...
-```
-
-### Train
+### Train Simple
 
 ```bash
-PYTHONPATH=src python -m evch.train.train_rl \
+PYTHONPATH=src python3 -m evch.train.train_rl \
   --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
   --config configs/rl/dqn_mobile_simple.yaml \
   --config configs/logging/base.yaml \
-  --config configs/logging/wandb_online.yaml \
-  --config configs/experiment/mobile_mcs_line_abc.yaml
+  --config configs/experiment/mobile_mcs_line_abc.yaml \
+  --config configs/experiment/mobile_mcs_line_abc_train_only.yaml
 ```
 
-This is the current simple online DQL path, even though the compatibility config name still says `dqn_mobile_simple`.
-
-### Train Stronger SB3 DQN
+### Train SB3
 
 ```bash
-PYTHONPATH=src python -m evch.train.train_rl \
+PYTHONPATH=src python3 -m evch.train.train_rl \
   --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
   --config configs/rl/dqn_mobile_simple.yaml \
   --config configs/rl/dqn_mobile_sb3.yaml \
   --config configs/logging/base.yaml \
-  --config configs/logging/wandb_online.yaml \
   --config configs/experiment/mobile_mcs_line_abc.yaml \
-  --config configs/experiment/mobile_mcs_line_abc_sb3.yaml
+  --config configs/experiment/mobile_mcs_line_abc_sb3.yaml \
+  --config configs/experiment/mobile_mcs_line_abc_train_only.yaml
 ```
 
-The SB3 DQN variant uses the same randomized train/validation/test scenario split as the simple learner and is
-configured to the same order of magnitude of training exposure. The SB3 training budget is set to `69,120`
-timesteps, matching the simple learner's expected average exposure from `120` episodes of random `1-3` day runs.
+### Run A Single Held-Out Comparison Rollout
 
-### Evaluate Paired Held-Out Seeds and Stress Scenarios
+Simple checkpoint:
 
 ```bash
-PYTHONPATH=src python -m evch.train.evaluate_policies \
+PYTHONPATH=src python3 -m evch.train.run_mobile_rl_comparison \
   --config configs/env/mobile_mcs_line_abc.yaml \
   --config configs/demand/base.yaml \
   --config configs/rl/dqn_mobile_simple.yaml \
   --config configs/logging/base.yaml \
-  --config configs/logging/wandb_online.yaml \
+  --config configs/experiment/mobile_mcs_line_abc.yaml \
+  --config configs/experiment/mobile_mcs_line_abc_heldout_comparison.yaml \
+  --agent-checkpoint outputs/mobile_mcs_line_abc/rl/best_model.pt
+```
+
+SB3 checkpoint:
+
+```bash
+PYTHONPATH=src python3 -m evch.train.run_mobile_rl_comparison \
+  --config configs/env/mobile_mcs_line_abc.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/rl/dqn_mobile_simple.yaml \
+  --config configs/rl/dqn_mobile_sb3.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/experiment/mobile_mcs_line_abc.yaml \
+  --config configs/experiment/mobile_mcs_line_abc_sb3.yaml \
+  --config configs/experiment/mobile_mcs_line_abc_heldout_comparison.yaml \
+  --agent-checkpoint outputs/mobile_mcs_line_abc_sb3/rl/best_model.zip
+```
+
+Noop baseline:
+
+```bash
+PYTHONPATH=src python3 -m evch.train.run_mobile_noop_comparison \
+  --config configs/env/mobile_mcs_line_abc.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/rl/dqn_mobile_simple.yaml \
+  --config configs/logging/base.yaml \
+  --config configs/experiment/mobile_mcs_line_abc.yaml \
+  --config configs/experiment/mobile_mcs_line_abc_heldout_comparison.yaml
+```
+
+### Evaluate Full Validation / Test / Stress Suites
+
+```bash
+PYTHONPATH=src python3 -m evch.train.evaluate_policies \
+  --config configs/env/mobile_mcs_line_abc.yaml \
+  --config configs/demand/base.yaml \
+  --config configs/rl/dqn_mobile_simple.yaml \
+  --config configs/logging/base.yaml \
   --config configs/experiment/mobile_mcs_line_abc.yaml \
   --agent-checkpoint outputs/mobile_mcs_line_abc/rl/best_model.pt
 ```
 
-This evaluates all configured policies on the exact same validation seeds, main test seeds, and stress scenarios:
-- `mobile_noop` (exported as `fixed`)
-- `mobile_threshold` (exported as `threshold`)
-- RL policy (`rl`)
+## HPC Commands
 
-### Legacy Scripted Rollout Diagnostics
+Training:
 
-The old one-off scripted rollout helpers still exist:
-- `evch.train.run_mobile_noop_comparison`
-- `evch.train.run_mobile_rl_comparison`
+```bash
+bsub < bsub/train_mobile_line_abc.bsub
+bsub < bsub/train_mobile_line_abc_sb3.bsub
+```
 
-These are useful for manual diagnostics, but they are not the main experiment any more.
+Held-out comparison runs:
 
-For line-ABC, the `bsub/run_mobile_rl_line_abc.bsub` and `bsub/run_mobile_noop_line_abc.bsub` jobs use
-`configs/experiment/mobile_mcs_line_abc_heldout_comparison.yaml`, which picks one fixed seed from the held-out
-`test_id` split and logs the full `sim/*` time series. This keeps the W&B overlays comparable while still using an
-unseen scenario from the main test distribution.
+```bash
+bsub < bsub/run_mobile_rl_line_abc.bsub
+bsub < bsub/run_mobile_rl_line_abc_sb3.bsub
+bsub < bsub/run_mobile_noop_line_abc.bsub
+```
 
-## W&B Logs: What They Mean
+## What To Inspect
 
-The project logs are grouped into namespaces.
-
-### 1) Training Episode Logs (`rl/*`)
-
-Logged once per episode during training, including:
-- reward and loss (`rl/reward`, `rl/loss`)
-- exploration (`rl/epsilon`)
-- demand served vs unmet (`rl/served_demand`, `rl/unmet_demand`)
-- queue and utilization aggregates
-- periodic validation metrics (`rl/eval_mean_reward`, `rl/eval_td_loss`, etc.)
-
-For the overlapping fields, both the simple learner and SB3 DQN now use the same `rl/*` names and the same
-episode-level semantics, so these curves can be compared directly. SB3-specific internals are also kept under
-`sb3/*`.
-
-Use these to evaluate learning progress and generalization on validation episodes.
-
-### 2) Training Step Logs (`rl_step/*`)
-
-Logged every `wandb_step_log_interval` simulation steps:
-- action and reward
-- served and unmet demand
-- station-specific MCS allocation (`..._station_ab`, `..._station_bc`)
-- station-specific queue and wait
-- utilization and unused mobile capacity
-- disruption indicators (`rl_step/disruption_active`, `rl_step/disruption_type_code`)
-
-These `rl_step/*` diagnostics are now emitted by both the simple learner and the SB3 DQN path.
-
-Use these to diagnose behavior at fine timescale, especially around disruptions.
-
-### 3) Validation / Test / Stress Summaries
-
-The main experiment logs split-specific summaries:
-- `validation/*`
-- `test_id/*`
-- `test_stress/*`
-- `paired_test/*`
-
-`validation/*` and `test_id/*` report per-policy operational summaries on fixed held-out seeds.
-
-`paired_test/*` reports paired RL improvements against the fixed and threshold baselines on the exact same test seeds, including:
-- queue reduction
-- wait reduction
-- breach-rate reduction
-- reward difference
-- extra MCS usage
-
-### 4) Legacy Comparison Rollout Time-Series (`sim/*`)
-
-If you run the legacy scripted rollout helpers, they still log `sim/*`, including:
-- queue and wait metrics (global and station-specific)
-- active plugs, effective plugs, utilization
-- active/unused mobile station estimates
-- expected station arrivals and OD flow signals
-- disruption state (`sim/disruption_active`, `sim/disruption_type_code`, `sim/disruption_target`)
-
-These series are logged against `sim/global_hour` for consistent timeline plots.
-
-### 5) Legacy Comparison Summary Metrics (`sim_summary/*`)
-
-Aggregated from the rollout and stored in both W&B and JSON summary:
-- mean/peak queue and wait
-- queue target breach rate and excess wait
-- mean utilization
-- mean MCS activation in normal vs disrupted periods
-- alignment summary metrics (described below)
-
-### 6) Legacy Overlay Panels (`sim_overlay/*`)
-
-Custom line panels designed for decision-quality inspection:
-- `sim_overlay/station_ab_demand_vs_mcs`
-- `sim_overlay/station_bc_demand_vs_mcs`
-- `sim_overlay/allocation_bias_vs_expected_bias`
-
-These directly show if allocation follows expected demand and disruption location.
-
-## Derived Alignment Metrics (Important)
-
-These are computed during comparison rollout logging.
-
-Let:
-- `E_ab`, `E_bc`: expected station arrivals at AB and BC
-- `M_ab`, `M_bc`: active mobile stations at AB and BC
-
-Then:
-- `expected_demand_share_ab = E_ab / (E_ab + E_bc)` (fallback 0.5 when denominator is 0)
-- `expected_demand_share_bc = E_bc / (E_ab + E_bc)` (fallback 0.5)
-- `allocation_share_ab = M_ab / (M_ab + M_bc)` (fallback 0.5)
-- `allocation_share_bc = M_bc / (M_ab + M_bc)` (fallback 0.5)
-
-Alignment score:
-- `allocation_demand_gap_ab = |allocation_share_ab - expected_demand_share_ab|`
-- `allocation_demand_gap_bc = |allocation_share_bc - expected_demand_share_bc|`
-- `allocation_vs_demand_alignment = 1 - 0.5 * (allocation_demand_gap_ab + allocation_demand_gap_bc)`
-
-Interpretation:
-- 1.0 = perfect share alignment
-- lower values = allocation diverges from expected demand split
-
-Directional bias metrics:
-- `allocation_bias_ab_minus_bc = M_ab - M_bc`
-- `expected_demand_bias_ab_minus_bc = E_ab - E_bc`
-
-Disruption-conditioned alignment diagnostics:
-- `alignment_on_station_ab_disruption`: equals `allocation_bias_ab_minus_bc` during active station_ab disruptions, otherwise NaN
-- `alignment_on_station_bc_disruption`: equals `-(allocation_bias_ab_minus_bc)` during active station_bc disruptions, otherwise NaN
-
-Positive values on these two disruption-conditioned metrics indicate movement in the intuitively correct direction.
-
-## Produced Artifacts
-
-Paired evaluation exports:
-- `validation_summary.csv`
-- `validation_manifest.csv`
-- `test_id_summary.csv`
-- `paired_test_results.csv`
-- `test_stress_summary.csv`
-- `scenario_manifest.csv`
-- `suite_outputs.json`
-
-Legacy comparison runs export:
+The most important held-out rollout artifacts are:
 - `comparison_timestep_metrics.csv`
 - `comparison_rollout_summary.json`
 - `comparison_queue_dynamics.png`
 - `comparison_daily_patterns.png`
 - `comparison_station_demand_vs_mcs.png`
+- `comparison_mcs_allocation_by_station.png`
 
-Training exports include:
-- `outputs/<experiment>/rl/best_model.pt`
-- `outputs/<experiment>/rl/training_summary.json`
-- `outputs/<experiment>/rl/history.json` (for torch_dql backend)
+For spatial awareness, the highest-signal columns and plots are:
+- `disruption_target`
+- `expected_demand_bias_ab_minus_bc`
+- `allocation_bias_ab_minus_bc`
+- `committed_mobile_stations_bias_ab_minus_bc`
+- `queue_wait_mean_minutes_station_ab`
+- `queue_wait_mean_minutes_station_bc`
+- `comparison_mcs_allocation_by_station.png`
+- `comparison_station_demand_vs_mcs.png`
+- W&B `sim_overlay/allocation_bias_vs_expected_bias`
+- W&B `sim_overlay/mcs_allocation_by_station`
 
-## HPC Commands
+## Practical Notes
 
-Train only and save the checkpoint/history:
-
-```bash
-bsub < bsub/train_mobile_line_abc.bsub
-```
-
-This job now stops after fitting and checkpointing. It does not run the held-out seed bank, stress suite, or
-held-out comparison rollout.
-
-Re-run the paired held-out seed evaluation and stress suite for an existing checkpoint:
-
-```bash
-bsub < bsub/eval_mobile_rl.bsub
-```
-
-Train the stronger SB3 DQN variant:
-
-```bash
-bsub < bsub/train_mobile_line_abc_sb3.bsub
-```
-
-This SB3 job is also train-only and exits after saving the checkpoint/history.
-
-Run the paired held-out seed evaluation for the SB3 DQN checkpoint:
-
-```bash
-bsub < bsub/eval_mobile_rl_sb3.bsub
-```
-
-Run old-style `sim/*` overlays on one held-out seed for the SB3 DQN variant:
-
-```bash
-bsub < bsub/run_mobile_rl_line_abc_sb3.bsub
-bsub < bsub/run_mobile_noop_line_abc_sb3.bsub
-```
-
-## Baselines
-
-Primary baselines for A-B-C:
-- `mobile_noop`
-- `mobile_threshold`
-- trained RL (simple DQL)
-
-`mobile_noop` is the do-nothing baseline.
-`mobile_threshold` is the simple rule-based baseline.
-
-## Tests
-
-```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
-```
+- old checkpoints are not guaranteed to load after observation or action-space changes
+- the simple learner is useful as a baseline, but SB3 should be treated as the main RL candidate
+- the held-out comparison jobs use one fixed unseen `test_id` seed so RL and baselines see the same scenario
+- the full suite evaluation is the correct place to report validation, `test_id`, and stress results

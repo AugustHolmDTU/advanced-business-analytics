@@ -86,7 +86,7 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
         self.charge_full_steps = max(1, int(round(self.mcs_charge_full_minutes / self.planning_step_minutes)))
 
         self.action_map = self._build_action_map()
-        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(31,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(27,), dtype=np.float32)
         self.action_space = spaces.Discrete(len(self.action_map))
 
         self.rng = np.random.default_rng(self.base_seed)
@@ -433,7 +433,6 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
             - total_service_capacity_by_station.astype(np.float32),
             0.0,
         )
-        expected_demand_bias = float(expected["station_expected_charging"][0] - expected["station_expected_charging"][1])
         local_deficit_bias = float(local_deficit_by_station[0] - local_deficit_by_station[1])
         time_fraction = float(self.step_index % self.horizon) / float(max(self.horizon - 1, 1))
         target_affects_ab, target_affects_bc = self._target_affects_station_flags(
@@ -452,20 +451,16 @@ class LineCorridorMobileStationEnv(gym.Env):  # type: ignore[misc]
                 self._normalized(self.last_arrivals_by_station[1], self.arrival_normalizer),
                 self._normalized(self.last_starts_by_station[0], self.arrival_normalizer),
                 self._normalized(self.last_starts_by_station[1], self.arrival_normalizer),
-                self._normalized(float(expected["station_expected_charging"][0]), self.arrival_normalizer),
-                self._normalized(float(expected["station_expected_charging"][1]), self.arrival_normalizer),
                 self._normalized(float(effective_total_plugs_by_station[0]), self.capacity_normalizer),
                 self._normalized(float(effective_total_plugs_by_station[1]), self.capacity_normalizer),
                 self._normalized(float(self.current_mobile_stations_by_station[0] * self.mobile_station_chargers), self.capacity_normalizer),
                 self._normalized(float(self.current_mobile_stations_by_station[1] * self.mobile_station_chargers), self.capacity_normalizer),
-                self._normalized(expected_demand_bias, self.arrival_normalizer),
                 self._normalized(committed_mobile_station_bias, self.mobile_count_normalizer),
                 self._normalized(float(local_deficit_by_station[0]), self.queue_normalizer + self.arrival_normalizer),
                 self._normalized(float(local_deficit_by_station[1]), self.queue_normalizer + self.arrival_normalizer),
                 self._normalized(local_deficit_bias, self.queue_normalizer + self.arrival_normalizer),
                 float(disruption_state["disruption_active"]),
                 float(disruption_state["disruption_type_code"]) / 4.0,
-                self._normalized(float(disruption_state["disruption_remaining_minutes"]), 24.0 * 60.0),
                 target_affects_ab,
                 target_affects_bc,
                 self._normalized(float(mobile_state_counts["middle_available"]), self.mobile_count_normalizer),

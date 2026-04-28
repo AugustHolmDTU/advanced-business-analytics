@@ -1,9 +1,0 @@
-suite_name,seed,scenario_id,num_days,disruption_count,disruption_types,disruption_targets,start_times,durations,severities
-validation,10000,validation_10000,1,1,station_outage,station_ab,0@9.24,1.50,0.00
-validation,10001,validation_10001,2,2,capacity_drop|demand_surge,station_bc|od_ab,0@11.09|1@15.16,1.67|4.00,3.21|2.25
-validation,10002,validation_10002,3,4,capacity_drop|capacity_drop|demand_surge|demand_surge,station_ab|station_ab|od_ca|od_ba,0@6.11|1@16.99|1@19.49|2@9.46,2.08|1.75|2.92|1.83,4.59|4.76|2.31|2.14
-validation,10003,validation_10003,1,1,station_outage,station_bc,0@9.69,2.00,0.00
-validation,10004,validation_10004,2,2,capacity_drop|capacity_drop,station_ab|station_ab,0@11.08|1@12.72,1.92|2.08,3.21|5.17
-validation,10005,validation_10005,2,2,station_outage|service_time_inflation,station_ab|station_ab,0@17.02|1@18.01,2.00|2.25,0.00|1.67
-validation,10006,validation_10006,2,1,station_outage,station_ab,1@12.80,1.67,0.00
-validation,10007,validation_10007,1,1,service_time_inflation,station_ab,0@17.13,1.75,1.61

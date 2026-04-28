@@ -1,186 +1,164 @@
 # Project Context
 
-This file is the lightweight orientation note for coding agents working in this repository.
-
-It should answer:
-- what kind of project this is,
-- what the repository is currently being used for,
-- what constraints matter,
-- what is still open and should not be treated as fixed.
-
-It should be updated as the project evolves.
+This is the lightweight orientation note for coding agents working in this repository.
 
 ## Project Theme
 
-This is a DTU Advanced Business Analytics course project on resilience-oriented EV charging operations.
+This is a DTU Advanced Business Analytics course project on resilient EV charging operations under uncertainty and disruption.
 
-The current project framing is:
-- simulate corridor charging demand under disruptions,
-- add mobile charging support as an operational intervention,
-- compare simple baselines and RL policies,
-- evaluate whether policies respond correctly to localized disruptions rather than only improving aggregate reward.
-
-The main benchmark is no longer the original toy urban placement setting. The active direction is now a corridor control problem with explicit station-level stress and mobile support allocation.
+The active framing is:
+- simulate corridor EV charging demand under disruptions
+- allocate mobile charging stations as an operational intervention
+- compare heuristics and RL policies
+- evaluate whether policies react at the correct station, not only whether they improve aggregate reward
 
 ## What This Repo Is For
 
-This repository is a research sandbox, not a production platform.
+This repository is a research sandbox. It is used to:
+- build synthetic charging-system simulations
+- train and compare RL and heuristic policies
+- run reproducible local and HPC experiment batches
+- log diagnostics in Weights & Biases
+- iterate quickly on modeling assumptions
 
-It is used to:
-- build synthetic charging-system simulations,
-- train and compare RL and heuristic policies,
-- run reproducible experiment batches locally and on DTU HPC,
-- log comparisons in Weights & Biases,
-- iterate quickly on modeling assumptions.
+Keep the code modular and config-driven.
 
-The code should stay modular and config-driven so the team can change the benchmark without rebuilding the whole stack.
+## Current Main Benchmark
 
-## Current Direction
-
-The main active setup is a line corridor with three cities:
-- `A -> B -> C`,
-- `100 km` between neighboring cities,
-- one charging station halfway between `A-B`,
-- one charging station halfway between `B-C`.
-
-This setup currently includes:
-- `6` OD flows:
-  - `od_ab`, `od_ba`, `od_bc`, `od_cb`, `od_ac`, `od_ca`
-- `12` base plugs at each fixed station
+The active main benchmark is the synthetic `A-B-C` line corridor:
+- `100 km` between neighboring cities
+- one fixed station between `A-B`
+- one fixed station between `B-C`
+- `6` OD flows
 - up to `10` mobile charging stations total
-- `2` plugs per mobile charging station
-- a total possible corridor capacity of `44` plugs when all MCS are deployed
-- scripted 3-day comparison rollouts with fixed disruption windows
-- station-specific logging so it is visible whether the controller sends MCS to the correct station
+- `2` plugs per MCS
 
-The current research question is not just "does RL improve reward?" It is also:
-- does the controller react at the correct location,
-- does it allocate MCS to `AB` versus `BC` in a way that matches the disruption,
-- and does it beat meaningful simple baselines.
+The main environment is [line_corridor_mobile_env.py](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/src/evch/envs/line_corridor_mobile_env.py).
 
-## Current Repo Capabilities
+## Current Control Problem
 
-The repository currently contains working components for:
-- synthetic demand generation,
-- two-city and three-city corridor queue simulation,
-- Gym-compatible RL environments,
-- corridor-specific disruption schedules,
-- uncertainty-aware supervised models,
-- RL training and evaluation,
-- fixed 3-day comparison rollouts,
-- W&B logging and artifact export,
-- DTU-style `bsub` job scripts,
-- tests for the line-corridor setup and comparison runners.
+The controller does not choose a full absolute station allocation every step any more.
 
-The most relevant current pieces for the active benchmark are:
-- `src/evch/sim/line_corridor.py`
-- `src/evch/envs/line_corridor_mobile_env.py`
-- `configs/env/mobile_mcs_line_abc.yaml`
-- `configs/experiment/mobile_mcs_line_abc.yaml`
-- `bsub/run_mobile_noop_line_abc.bsub`
-- `bsub/train_mobile_line_abc.bsub`
-- `bsub/run_mobile_rl_line_abc.bsub`
-- `bsub/sweep_mobile_line_abc.bsub`
+The active action space is directional and small:
+- `hold`
+- `toward_ab`
+- `toward_bc`
+- `recall_ab`
+- `recall_bc`
 
-## What Is Important
+This is intentional. The benchmark is about spatial reallocation under lag, not about learning a large combinatorial action table.
 
-When making decisions in this repo, prioritize:
-- resilience framing over generic optimization,
-- station-level interpretability over abstract aggregate gains,
-- reproducibility over convenience,
-- config-driven experimentation over hard-coded assumptions,
-- small explainable experiments over large opaque ones.
+## Current MCS Logistics Assumptions
 
-The project should remain easy to explain in a course setting.
+The line benchmark currently models simple deployment frictions:
+- middle to station travel: `30` minutes
+- station to station relocation: `60` minutes
+- return to middle triggers recharge time
+
+The MCS state machine includes:
+- `middle_available`
+- `middle_charging`
+- `transit_to_ab`
+- `transit_to_bc`
+- `transit_to_middle`
+- `station_ab`
+- `station_bc`
+
+The policy observation includes active and committed spatial information, including:
+- expected demand bias `AB - BC`
+- committed MCS bias `AB - BC`
+- `target_affects_ab` / `target_affects_bc`
+- `transit_to_middle`
+
+## Current Evaluation Philosophy
+
+The active split is:
+- training: broader randomized `2-6` day episodes
+- validation: held-out same-distribution seeds
+- `test_id`: unseen deployment-style `3-5` day seeds
+- `test_stress`: separate robustness scenarios
+
+The main `test_id` story is:
+- unseen
+- representative
+- not necessarily harder than training
+
+Stress scenarios are reported separately.
+
+## Current Reward Philosophy
+
+The benchmark no longer optimizes only aggregate queue pressure.
+
+Important current reward ingredients include:
+- total unmet demand and queue penalties
+- queue-wait burden penalty
+- local peak queue penalty
+- local peak wait penalty
+- MCS activation / adjustment / active-use costs
+- spatial deficit coverage and direction bonuses
+
+This means one-sided station blowups are meant to be costly even if the system-wide average looks acceptable.
+
+## Current RL Status
+
+There are two RL paths:
+
+### `torch_dqn`
+
+Implemented in [simple_dql.py](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/src/evch/rl/simple_dql.py).
+
+Current status:
+- replay buffer
+- minibatches
+- delayed learning start
+- multiple gradient steps
+- still no target network
+
+Treat this as a baseline learner.
+
+### `sb3_dqn`
+
+Configured through [dqn_mobile_sb3.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/rl/dqn_mobile_sb3.yaml).
+
+This is the main serious RL candidate.
 
 ## What Is Fixed Right Now
 
-These should currently be treated as fixed unless explicitly changed:
-- the benchmark is synthetic rather than a direct replay of one real place,
-- the active main benchmark is corridor-based,
-- the current main corridor benchmark is the `A-B-C` line corridor,
-- there are exactly `2` fixed stations in that benchmark,
-- the control problem is allocation of mobile charging stations across those `2` stations,
-- the main comparison window is a fixed `3`-day scripted rollout,
-- W&B logging should expose both aggregate performance and station-specific behavior.
+These should be treated as fixed unless explicitly changed:
+- the active main benchmark is the synthetic `A-B-C` line corridor
+- there are exactly `2` fixed stations in that benchmark
+- MCS allocation is a station-level operational control problem
+- the primary generalization benchmark is seed-driven `test_id`
+- station-level interpretability is a first-class requirement
+- held-out comparison rollouts should remain directly comparable between RL and baselines
 
-## What Is Not Fixed
+## What Is Still Open
 
-These should still be treated as open design choices:
-- the exact disruption set and severity,
-- the reward weights,
-- whether RL is ultimately better than heuristics,
-- whether the final story should emphasize learning or heuristic robustness,
-- whether OD-to-station assignment should stay simple or become more behaviorally realistic,
-- whether the three-city line corridor is the final benchmark or an intermediate step.
+These are still open design choices:
+- exact disruption severity mix
+- exact reward weights
+- whether SB3 DQN is sufficient or another RL algorithm is needed
+- how strong the best heuristic baseline should become
+- how behaviorally realistic OD-to-station charging choice should be
+- whether the final project story emphasizes RL or robust heuristics
 
-Do not hard-code assumptions that make these difficult to change later.
-
-## Scope Boundaries
-
-This project is intentionally not trying to build:
-- a full transport simulator,
-- a power-grid simulator,
-- a city-scale digital twin,
-- a multi-agent control system,
-- a production optimization service.
-
-A smaller, sharper benchmark is preferable.
+Do not hard-code assumptions that make these hard to revisit.
 
 ## What Good Progress Looks Like
 
-Good progress in this repo usually means:
-- the benchmark becomes easier to interpret,
-- the logged outputs make policy behavior clearer,
-- the disruption-response story becomes more convincing,
-- baseline comparisons become stronger,
-- the implementation becomes easier for the team to reuse.
-
-For the current `A-B-C` work, especially valuable progress includes:
-- clearer station-level diagnostics,
-- stronger non-RL baselines,
-- better evidence that the agent allocates MCS to the correct station,
-- cleaner W&B comparisons over the same fixed 3-day scenario.
-
-## Guidance For Coding Agents
-
-When working in this repository:
-- understand the active benchmark before extending it,
-- preserve comparability between noop, heuristic, and RL runs,
-- keep changes modular and config-driven,
-- avoid mixing unrelated benchmark ideas together,
-- expose assumptions in config and logging,
-- prefer simple station-level explanations over black-box complexity.
-
-If a task is ambiguous, prefer the solution that makes comparison easier.
-
-Also note:
-- the fixed 3-day comparison rollout is important and should remain stable unless intentionally changed,
-- station-specific outputs are first-class, not optional,
-- if RL underperforms a simple heuristic, that is a valid project result.
-
-## Current Findings
-
-The current implementation supports:
-- noop comparison runs,
-- trained RL comparison runs,
-- 24-run reward sweeps for the `A-B-C` setup,
-- station-specific MCS allocation tracking,
-- station-specific queue and wait tracking,
-- custom W&B overlays for station demand versus allocated MCS.
-
-The key behavioral question is now visible in the outputs:
-- when a disruption affects `station_bc`, does the controller allocate MCS to `BC`,
-- and when a disruption affects `station_ab` or `od_ab`, does it allocate to `AB`.
-
-That interpretability requirement is central to the current benchmark.
+Good progress usually means:
+- clearer spatial diagnostics
+- stronger same-scenario comparisons between RL and baselines
+- better evidence that the controller sends MCS to the correct side
+- cleaner and more reproducible train / validation / test workflows
+- more interpretable logs and artifacts
 
 ## Practical Reading Order
 
-For fast orientation, start with:
+Start with:
 - [README.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/README.md)
-- [IMPLEMENTATION_NOTES.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/IMPLEMENTATION_NOTES.md)
 - [context.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/context.md)
+- [IMPLEMENTATION_NOTES.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/IMPLEMENTATION_NOTES.md)
 - [RL_CHANGELOG.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/RL_CHANGELOG.md)
 
 Then inspect:
@@ -191,15 +169,3 @@ Then inspect:
 - `configs/env/`
 - `configs/experiment/`
 - `bsub/`
-
-## How To Update This File
-
-Update this file when:
-- the main benchmark changes,
-- the corridor structure changes,
-- the control problem changes,
-- the disruption philosophy changes,
-- the comparison workflow changes,
-- or the main evaluation story changes.
-
-Keep it high-level.

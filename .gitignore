@@ -6,7 +6,12 @@ __pycache__/
 *.pyo
 *.pyd
 .DS_Store
-# outputs/
+outputs/
+tmp/
+*.aux
+*.log
+*.out
+*.ipynb_checkpoints
 logs/
 .cache/
 wandb/

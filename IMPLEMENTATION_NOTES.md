@@ -1,101 +1,101 @@
 # Implementation Notes
 
-## Implemented
+## Current Main Path
 
-- Synthetic queue simulators for:
-  - a simple corridor setup
-  - a three-city `A-B-C` line corridor
-- `A-B-C` RL environment with:
-  - two fixed stations
-  - six OD flows
-  - discrete allocation of mobile charging stations across the two stations
-- Fixed 3-day comparison rollouts for:
-  - noop
-  - trained RL
-- DTU HPC `bsub` runners for:
-  - noop comparison
-  - RL training
-  - trained RL comparison
-  - 24-run reward sweep
-  - no-disruption sanity run
-- W&B logging for:
-  - training metrics
-  - comparison rollout metrics
-  - station-specific queue and wait
-  - station-specific MCS allocation
-  - station demand versus MCS overlays
-- Uncertainty-aware supervised models:
-  - Gaussian NLL regression
-  - quantile regression
-- Test coverage for the line-corridor simulator, env, noop comparison, and RL comparison.
+The active main benchmark is the synthetic `A-B-C` line corridor with:
+- two fixed charging stations
+- six OD flows
+- targeted disruptions
+- mobile charging stations reallocated between `AB` and `BC`
 
-## Current Active Benchmark
+The most relevant current files are:
+- [src/evch/sim/line_corridor.py](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/src/evch/sim/line_corridor.py)
+- [src/evch/envs/line_corridor_mobile_env.py](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/src/evch/envs/line_corridor_mobile_env.py)
+- [src/evch/train/train_rl.py](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/src/evch/train/train_rl.py)
 
-The main benchmark is now:
-- `A -> B -> C`
-- `100 km` between neighboring cities
-- one fixed charging station between `A-B`
-- one fixed charging station between `B-C`
+## Current Environment Design
 
-Current default capacity:
-- `12` base plugs at `AB`
-- `12` base plugs at `BC`
-- up to `10` mobile charging stations total
-- `2` plugs per mobile charging station
+The line mobile env currently has:
+- directional delta-style actions
+- travel lag
+- return-to-middle state
+- recharge delay
+- station-aware observations
+- local and spatial reward terms
 
-The active question is whether the policy allocates MCS to the correct station during localized disruptions.
+Observation-side signals now include:
+- per-station queue and wait
+- expected station arrivals
+- expected demand bias
+- active MCS counts
+- committed MCS bias
+- target-affects flags
+- `transit_to_middle`
 
-## Current Logging Design
+## Current Reward Design
 
-The current comparison outputs intentionally expose station-level behavior.
+The line benchmark currently uses:
+- total unmet-demand penalty
+- total queue penalty
+- queue-wait burden penalty
+- local peak queue penalty
+- local peak wait penalty
+- MCS activation / adjustment / active-use costs
+- utilization bonus
+- spatial deficit alignment bonus
+- spatial deficit direction bonus
 
-Important rollout metrics include:
-- `queue_length_station_ab`
-- `queue_length_station_bc`
-- `queue_wait_mean_minutes_station_ab`
-- `queue_wait_mean_minutes_station_bc`
-- `num_active_mobile_stations_station_ab`
-- `num_active_mobile_stations_station_bc`
-- `expected_station_arrivals_ab`
-- `expected_station_arrivals_bc`
-- `disruption_target`
+The intent is to combine system-level efficiency with local station resilience.
 
-Current comparison artifacts include:
+## Current Evaluation Design
+
+There are two important evaluation modes:
+
+### Full seeded suite evaluation
+
+This is the main evaluation story:
+- validation
+- `test_id`
+- `test_stress`
+
+### Single held-out comparison rollout
+
+This is a diagnostic mode:
+- one fixed unseen `test_id` seed
+- full time-series export
+- direct visual comparison across RL and baselines
+
+## Important Produced Artifacts
+
+Held-out comparison runs currently export:
 - `comparison_timestep_metrics.csv`
 - `comparison_rollout_summary.json`
 - `comparison_queue_dynamics.png`
 - `comparison_daily_patterns.png`
 - `comparison_station_demand_vs_mcs.png`
+- `comparison_mcs_allocation_by_station.png`
 
-## Simplifying Assumptions
+These are the main artifacts for diagnosing spatial awareness.
 
-- Geography is synthetic and linear.
-- There are exactly two fixed charging stations in the active `A-B-C` benchmark.
-- Long trips `A<->C` are currently split across the two stations with a simple rule rather than a behavioral charging-choice model.
-- MCS deployment is modeled as station-level allocation, not explicit parking layout or power-grid constraints.
-- The benchmark focuses on operational disruption response, not full infrastructure design.
+## Current RL Paths
 
-## Current Disruption Style
+### Simple learner
 
-The line-corridor benchmark currently supports:
-- `capacity_drop`
-- `station_outage`
-- `demand_surge`
-- `service_time_inflation`
+Implemented in [simple_dql.py](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/src/evch/rl/simple_dql.py).
 
-Disruptions are targeted, for example:
-- `station_ab`
-- `station_bc`
-- `od_ab`
-- `od_bc`
-- `eastbound`
-- `westbound`
+Current properties:
+- replay
+- minibatches
+- delayed learning start
+- full-horizon episode support
+- no target network
 
-The main comparison rollout is fixed and scripted so noop and RL are directly comparable.
+### SB3 DQN
 
-## Recommended Next Extensions
+Configured in [configs/rl/dqn_mobile_sb3.yaml](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/configs/rl/dqn_mobile_sb3.yaml).
 
-- Add stronger station-aware heuristic baselines.
-- Make OD-to-station charging choice more behaviorally realistic.
-- Tighten reward tuning around localized disruption response.
-- Expand comparison exports that directly score alignment between disruption target and MCS placement.
+This is the preferred RL path for stronger results.
+
+## Practical Constraint
+
+When the observation size or action space changes, older checkpoints are not expected to remain compatible. Retraining is the normal outcome after environment changes in this branch.

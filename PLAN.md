@@ -1,5 +1,8 @@
 # Plan File: Mobile Stations + Disruption-Aware DQN Roadmap
 
+This file is historical roadmap context. It does not describe the exact current repo state any more.
+For current benchmark behavior, configs, and commands, use [README.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/README.md) and [context.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/context.md).
+
 ## Summary
 Build the next phase on the new car-level queue simulator, not the older zone-based RL corridor env. The implementation should proceed in four steps: add visible disruptions to the simulator, add one mobile station with simple discrete movement, benchmark rule-based heuristics, then wrap the simulator as a DQN-friendly RL environment.
 

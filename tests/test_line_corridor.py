@@ -186,9 +186,9 @@ class LineCorridorMobileStationEnvTest(unittest.TestCase):
         obs, _ = env.reset(seed=4)
 
         self.assertEqual(obs.shape, env.observation_space.shape)
-        self.assertEqual(obs[22], 0.0)
-        self.assertEqual(obs[23], 1.0)
-        self.assertEqual(obs[28], 0.0)
+        self.assertEqual(obs[18], 0.0)
+        self.assertEqual(obs[19], 1.0)
+        self.assertEqual(obs[24], 0.0)
 
     def test_reset_can_sample_one_to_three_day_episode_lengths(self) -> None:
         env_config = {

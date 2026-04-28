@@ -2,96 +2,99 @@
 
 ## Current Active Setup
 
-The active RL benchmark is no longer the original toy placement environment.
+The active RL benchmark is the synthetic `A-B-C` line corridor with two fixed stations and mobile charging stations allocated across `AB` and `BC`.
 
-The current focus is:
-- `A-B-C` line corridor
-- two fixed charging stations
-- mobile charging stations allocated across `AB` and `BC`
-- fixed 3-day scripted comparison rollouts
-- DTU HPC execution through `bsub`
+The important current criterion is spatial behavior:
+- does the controller send capacity to the correct side
+- does it do so with realistic travel / recharge lag
+- does it reduce local station pain rather than only aggregate averages
 
-## Key Changes
+## Important Current RL Changes
 
-### 1. Added a dedicated `A-B-C` line-corridor simulator
+### 1. Station-aware line-corridor simulator
 
-This introduced:
-- `6` OD flows:
-  - `od_ab`, `od_ba`, `od_bc`, `od_cb`, `od_ac`, `od_ca`
+The current line benchmark introduced:
+- `6` OD flows
 - two fixed stations
-- station-targeted disruptions
+- targeted disruptions
 - station-specific queue and wait tracking
 
 Reason:
-- the previous single-corridor setup could not show whether a controller reacted at the correct location.
+- the old single-station or aggregate setups could not answer whether control was spatially correct.
 
-### 2. Added a two-station mobile-allocation RL environment
+### 2. MCS logistics are no longer instantaneous
 
-The control problem changed from:
-- one station with action `0..10`
-
-to:
-- allocate up to `10` total MCS across `AB` and `BC`
-
-Reason:
-- the new benchmark should test location-aware allocation, not only total deployment level.
-
-### 3. Standardized fixed 3-day comparison rollouts
-
-The comparison workflow now uses:
-- the same scripted 3-day scenario
-- noop comparison
-- trained RL comparison
+The active line env now includes:
+- travel from middle to station
+- station-to-station relocation lag
+- return-to-middle state
+- recharge delay before reuse
 
 Reason:
-- this makes runs directly comparable in W&B and in exported CSV files.
+- instant allocation encouraged unrealistic jitter and weakened the spatial interpretation.
 
-### 4. Added station-specific diagnostics
+### 3. Directional delta action space
 
-The comparison outputs now include:
-- station-specific queue length
-- station-specific queue wait
-- station-specific active MCS
-- station-specific expected charging demand
-- disruption target
-
-Reason:
-- the main project question is whether the controller sends MCS to the correct station.
-
-### 5. Added demand-versus-MCS visual checks
-
-The current comparison workflow now produces:
-- `comparison_station_demand_vs_mcs.png`
-- W&B overlays:
-  - `sim_overlay/station_ab_demand_vs_mcs`
-  - `sim_overlay/station_bc_demand_vs_mcs`
+The line env now uses:
+- `hold`
+- `toward_ab`
+- `toward_bc`
+- `recall_ab`
+- `recall_bc`
 
 Reason:
-- the team needs a direct visual check of whether allocation matches station demand.
+- a small directional action space is easier to learn and better aligned with the real control decision than a full combinatorial allocation table.
 
-### 6. Added DTU HPC scripts for the new workflow
+### 4. Stronger spatial observation
 
-Main scripts:
-- `bsub/run_mobile_noop_line_abc.bsub`
-- `bsub/train_mobile_line_abc.bsub`
-- `bsub/run_mobile_rl_line_abc.bsub`
-- `bsub/sweep_mobile_line_abc.bsub`
-- `bsub/run_mobile_noop_line_abc_no_disruptions.bsub`
+The current observation includes:
+- `target_affects_ab`
+- `target_affects_bc`
+- `expected_demand_bias_ab_minus_bc`
+- `committed_mobile_stations_bias_ab_minus_bc`
+- `transit_to_middle`
 
 Reason:
-- the `A-B-C` benchmark is now the main runnable experiment path.
+- the policy should not have to infer all spatial intent only from delayed queue damage.
+
+### 5. Stronger local reward signal
+
+The reward now includes:
+- aggregate queue and wait terms
+- local peak queue penalty
+- local peak wait penalty
+- spatial deficit coverage and direction bonuses
+
+Reason:
+- otherwise a policy can improve averages while still leaving one station badly underserved.
+
+### 6. Training split is seed-driven
+
+The current evaluation story is:
+- broader randomized training distribution
+- held-out same-distribution validation
+- unseen deployment-style `test_id`
+- separate `test_stress`
+
+Reason:
+- the main claim is unseen generalization, not just performance on one scripted diagnostic day.
+
+### 7. Comparison rollouts remain important, but they are diagnostics
+
+The single held-out comparison rollouts still exist and are useful because they export:
+- full `sim/*` time series
+- station demand vs MCS overlays
+- direct allocation-by-station plots
+
+But they are diagnostic artifacts, not the full evaluation story.
 
 ## Current Interpretation
 
-The important success criterion is now:
-- not just whether reward improves,
-- but whether the controller allocates MCS to `AB` when `AB` is stressed and to `BC` when `BC` is stressed.
+The main RL question is now:
+- can the controller handle lagged reallocation under disruption
+- can it move MCS in the correct direction
+- can it avoid one-sided queue and wait blowups
 
-That interpretability requirement is part of the benchmark itself.
+SB3 DQN is the main serious RL path.
 
-## Open RL Questions
-
-- Does trained RL beat `noop` consistently?
-- Does it beat the current threshold baseline?
-- Does it allocate MCS to the correct station during targeted disruptions?
-- Is a stronger station-aware heuristic a better benchmark than the current simple one?
+The custom `torch_dqn` path is now a stronger baseline than before, but still lacks a target network and should not be treated as the strongest method in the repo.
