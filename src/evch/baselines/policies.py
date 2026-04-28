@@ -111,58 +111,30 @@ def mobile_reactive_policy(obs: np.ndarray, env: Any, deterministic: bool = True
     del deterministic
     if not (
         hasattr(env, "queue_lengths_by_station")
-        and hasattr(env, "queue_wait_mean_by_station")
-        and hasattr(env, "current_service_capacity_per_step_by_station")
-        and hasattr(env, "expected_vehicle_arrivals_by_station")
         and hasattr(env, "action_map")
     ):
         return mobile_threshold_policy(obs, env, deterministic=True)
 
     queue = np.asarray(env.queue_lengths_by_station, dtype=np.float32)
-    waits = np.asarray(env.queue_wait_mean_by_station, dtype=np.float32)
-    expected = np.asarray(env.expected_vehicle_arrivals_by_station(), dtype=np.float32)
-    total_capacity = np.asarray(env.current_service_capacity_per_step_by_station(), dtype=np.float32)
-    local_deficit = np.maximum(queue + expected - total_capacity, 0.0)
-    pressure = local_deficit + 0.35 * queue + 0.02 * waits
-
-    disruption_state = dict(getattr(env, "last_disruption_state", {}))
-    if float(disruption_state.get("disruption_active", 0.0)) > 0.0 and hasattr(env, "_target_affects_station_flags"):
-        target = str(disruption_state.get("disruption_target", "none"))
-        target_bonus = np.asarray(env._target_affects_station_flags(target), dtype=np.float32)
-        pressure = pressure + 0.75 * target_bonus
-
     committed = (
         np.asarray(env._committed_mobile_station_counts(), dtype=np.int32)
         if hasattr(env, "_committed_mobile_station_counts")
         else np.asarray(getattr(env, "current_mobile_stations_by_station", np.zeros(2, dtype=np.int32)), dtype=np.int32)
     )
-    total_committed = int(committed.sum())
-    max_mobile_stations = int(getattr(env, "max_mobile_stations", total_committed))
-    pressure_bias = float(pressure[0] - pressure[1])
-    bias_threshold = 1.0
-    low_pressure_threshold = 0.5
+    queue_bias = float(queue[0] - queue[1])
+    queue_threshold = 3.0
 
-    if pressure_bias > bias_threshold:
+    if queue_bias > queue_threshold:
         return _action_index_for_command(env, "toward_ab")
-    if pressure_bias < -bias_threshold:
+    if queue_bias < -queue_threshold:
         return _action_index_for_command(env, "toward_bc")
 
-    if float(pressure.sum()) < low_pressure_threshold:
+    if float(queue.sum()) <= 1.0:
         if int(committed[0]) > int(committed[1]) and int(committed[0]) > 0:
             return _action_index_for_command(env, "recall_ab")
         if int(committed[1]) > int(committed[0]) and int(committed[1]) > 0:
             return _action_index_for_command(env, "recall_bc")
         return _action_index_for_command(env, "hold")
-
-    if total_committed < max_mobile_stations:
-        preferred_side = int(np.argmax(pressure))
-        if pressure[preferred_side] > 0.0:
-            return _action_index_for_command(env, "toward_ab" if preferred_side == 0 else "toward_bc")
-
-    if int(np.argmax(pressure)) == 0 and int(committed[1]) > 0 and pressure[0] > pressure[1]:
-        return _action_index_for_command(env, "toward_ab")
-    if int(np.argmax(pressure)) == 1 and int(committed[0]) > 0 and pressure[1] > pressure[0]:
-        return _action_index_for_command(env, "toward_bc")
 
     return _action_index_for_command(env, "hold")
 
