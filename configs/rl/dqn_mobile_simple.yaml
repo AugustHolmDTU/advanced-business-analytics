@@ -1,8 +1,8 @@
 rl:
   backend: torch_dqn
   checkpoint_name: best_model.pt
-  episodes: 120
-  max_steps_per_episode: 864
+  episodes: 80
+  max_steps_per_episode: 288
   gamma: 0.98
   learning_rate: 0.0005
   batch_size: 64
@@ -20,7 +20,7 @@ rl:
   heuristic_prior_strength: 0.0
   heuristic_prior_mode: placement
   wandb_step_log_interval: 12
-  evaluation_episodes: 12
+  evaluation_episodes: 8
   eval_interval_episodes: 15
   eval_during_training_episodes: 6
   deterministic_eval: true

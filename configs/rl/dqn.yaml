@@ -1,7 +1,7 @@
 rl:
   backend: torch_dqn
   checkpoint_name: best_model.pt
-  episodes: 120
+  episodes: 60
   max_steps_per_episode: 24
   gamma: 0.98
   learning_rate: 0.0005
@@ -17,10 +17,10 @@ rl:
   epsilon_decay_steps: 3000
   tau: 1.0
   reward_clip: 10.0
-  evaluation_episodes: 12
+  evaluation_episodes: 8
   deterministic_eval: true
   sb3:
-    total_timesteps: 10000
+    total_timesteps: 3000
     buffer_size: 10000
     learning_starts: 500
     batch_size: 64
