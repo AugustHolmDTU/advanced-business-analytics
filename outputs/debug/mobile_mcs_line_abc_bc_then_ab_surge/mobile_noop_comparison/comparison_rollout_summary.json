@@ -1,0 +1,23 @@
+{
+  "mean_ab_minus_bc_allocation_bias_on_station_ab_disruptions": NaN,
+  "mean_active_mobile_stations": 0.0,
+  "mean_active_mobile_stations_disrupted": 0.0,
+  "mean_active_mobile_stations_normal": 0.0,
+  "mean_allocation_vs_demand_alignment": 0.0,
+  "mean_allocation_vs_demand_alignment_disrupted": 0.0,
+  "mean_bc_minus_ab_allocation_bias_on_station_bc_disruptions": NaN,
+  "mean_queue_length": 178.24652777777777,
+  "mean_queue_wait_excess_minutes": 0.0,
+  "mean_queue_wait_minutes": 86.0398088167939,
+  "mean_queue_wait_minutes_station_ab": 80.52526561212208,
+  "mean_queue_wait_minutes_station_bc": 91.55435229817198,
+  "mean_spatial_deficit_coverage": 0.0,
+  "mean_spatial_deficit_coverage_disrupted": 0.0,
+  "mean_utilization": 0.8549623835004039,
+  "num_days": 2,
+  "peak_queue_length": 471.0,
+  "peak_queue_wait_minutes": 230.4233856201172,
+  "queue_wait_target_breach_fraction": 0.0,
+  "queue_wait_target_minutes": 0.0,
+  "seed": 4242
+}

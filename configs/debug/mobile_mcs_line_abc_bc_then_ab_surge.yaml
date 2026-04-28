@@ -1,0 +1,22 @@
+experiment:
+  name: mobile_mcs_line_abc_bc_then_ab_surge
+  output_root: outputs/debug
+  save_plots: true
+
+comparison_rollout:
+  enabled: true
+  seed: 4242
+  num_days: 2
+  scripted_events:
+    - disruption_type: demand_surge
+      target: od_bc
+      day_index: 0
+      start_hour: 6.0
+      duration_hours: 12.0
+      severity: 5.0
+    - disruption_type: demand_surge
+      target: od_ab
+      day_index: 1
+      start_hour: 6.0
+      duration_hours: 12.0
+      severity: 5.0
