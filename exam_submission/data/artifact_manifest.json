@@ -11,17 +11,17 @@
       "note": "Current active line-corridor environment config."
     },
     {
-      "path": "data/configs/dqn_mobile_simple.yaml",
+      "path": "data/configs/rl_dqn_mobile_simple.yaml",
       "type": "config",
       "note": "Current torch DQN/simple learner config including evaluation cadence."
     },
     {
-      "path": "data/configs/dqn_mobile_sb3.yaml",
+      "path": "data/configs/rl_dqn_mobile_sb3.yaml",
       "type": "config",
       "note": "Current SB3 DQN config; used for algorithm description only because no compatible checkpoint was found."
     },
     {
-      "path": "data/configs/mobile_mcs_line_abc.yaml",
+      "path": "data/configs/experiment_mobile_mcs_line_abc_heldout_comparison.yaml",
       "type": "config",
       "note": "Experiment split config with validation, test_id, and stress suite definitions."
     },
@@ -63,7 +63,6 @@
   ],
   "missing_or_incompatible": [
     "No current-compatible RL checkpoint was found for the active 27-feature / 5-action A-B-C environment.",
-    "No current-compatible RL history with eval_mean_reward and eval_td_loss was found in local artifacts.",
     "Queue-wait target breach metrics are zero in the active line-corridor outputs because the current environment does not instrument a nonzero queue-wait target."
   ]
 }

@@ -1,0 +1,1629 @@
+\documentclass[11pt]{article}
+
+    \usepackage[breakable]{tcolorbox}
+    \usepackage{parskip} % Stop auto-indenting (to mimic markdown behaviour)
+    
+
+    % Basic figure setup, for now with no caption control since it's done
+    % automatically by Pandoc (which extracts ![](path) syntax from Markdown).
+    \usepackage{graphicx}
+    % Maintain compatibility with old templates. Remove in nbconvert 6.0
+    \let\Oldincludegraphics\includegraphics
+    % Ensure that by default, figures have no caption (until we provide a
+    % proper Figure object with a Caption API and a way to capture that
+    % in the conversion process - todo).
+    \usepackage{caption}
+    \DeclareCaptionFormat{nocaption}{}
+    \captionsetup{format=nocaption,aboveskip=0pt,belowskip=0pt}
+
+    \usepackage{float}
+    \floatplacement{figure}{H} % forces figures to be placed at the correct location
+    \usepackage{xcolor} % Allow colors to be defined
+    \usepackage{enumerate} % Needed for markdown enumerations to work
+    \usepackage{geometry} % Used to adjust the document margins
+    \usepackage{amsmath} % Equations
+    \usepackage{amssymb} % Equations
+    \usepackage{textcomp} % defines textquotesingle
+    % Hack from http://tex.stackexchange.com/a/47451/13684:
+    \AtBeginDocument{%
+        \def\PYZsq{\textquotesingle}% Upright quotes in Pygmentized code
+    }
+    \usepackage{upquote} % Upright quotes for verbatim code
+    \usepackage{eurosym} % defines \euro
+
+    \usepackage{iftex}
+    \ifPDFTeX
+        \usepackage[T1]{fontenc}
+        \IfFileExists{alphabeta.sty}{
+              \usepackage{alphabeta}
+          }{
+              \usepackage[mathletters]{ucs}
+              \usepackage[utf8x]{inputenc}
+          }
+    \else
+        \usepackage{fontspec}
+        \usepackage{unicode-math}
+    \fi
+
+    \usepackage{fancyvrb} % verbatim replacement that allows latex
+    \usepackage{grffile} % extends the file name processing of package graphics
+                         % to support a larger range
+    \makeatletter % fix for old versions of grffile with XeLaTeX
+    \@ifpackagelater{grffile}{2019/11/01}
+    {
+      % Do nothing on new versions
+    }
+    {
+      \def\Gread@@xetex#1{%
+        \IfFileExists{"\Gin@base".bb}%
+        {\Gread@eps{\Gin@base.bb}}%
+        {\Gread@@xetex@aux#1}%
+      }
+    }
+    \makeatother
+    \usepackage[Export]{adjustbox} % Used to constrain images to a maximum size
+    \adjustboxset{max size={0.9\linewidth}{0.9\paperheight}}
+
+    % The hyperref package gives us a pdf with properly built
+    % internal navigation ('pdf bookmarks' for the table of contents,
+    % internal cross-reference links, web links for URLs, etc.)
+    \usepackage{hyperref}
+    % The default LaTeX title has an obnoxious amount of whitespace. By default,
+    % titling removes some of it. It also provides customization options.
+    \usepackage{titling}
+    \usepackage{longtable} % longtable support required by pandoc >1.10
+    \usepackage{booktabs}  % table support for pandoc > 1.12.2
+    \usepackage{array}     % table support for pandoc >= 2.11.3
+    \usepackage{calc}      % table minipage width calculation for pandoc >= 2.11.1
+    \usepackage[inline]{enumitem} % IRkernel/repr support (it uses the enumerate* environment)
+    \usepackage[normalem]{ulem} % ulem is needed to support strikethroughs (\sout)
+                                % normalem makes italics be italics, not underlines
+    \usepackage{soul}      % strikethrough (\st) support for pandoc >= 3.0.0
+    \usepackage{mathrsfs}
+    
+
+    
+    % Colors for the hyperref package
+    \definecolor{urlcolor}{rgb}{0,.145,.698}
+    \definecolor{linkcolor}{rgb}{.71,0.21,0.01}
+    \definecolor{citecolor}{rgb}{.12,.54,.11}
+
+    % ANSI colors
+    \definecolor{ansi-black}{HTML}{3E424D}
+    \definecolor{ansi-black-intense}{HTML}{282C36}
+    \definecolor{ansi-red}{HTML}{E75C58}
+    \definecolor{ansi-red-intense}{HTML}{B22B31}
+    \definecolor{ansi-green}{HTML}{00A250}
+    \definecolor{ansi-green-intense}{HTML}{007427}
+    \definecolor{ansi-yellow}{HTML}{DDB62B}
+    \definecolor{ansi-yellow-intense}{HTML}{B27D12}
+    \definecolor{ansi-blue}{HTML}{208FFB}
+    \definecolor{ansi-blue-intense}{HTML}{0065CA}
+    \definecolor{ansi-magenta}{HTML}{D160C4}
+    \definecolor{ansi-magenta-intense}{HTML}{A03196}
+    \definecolor{ansi-cyan}{HTML}{60C6C8}
+    \definecolor{ansi-cyan-intense}{HTML}{258F8F}
+    \definecolor{ansi-white}{HTML}{C5C1B4}
+    \definecolor{ansi-white-intense}{HTML}{A1A6B2}
+    \definecolor{ansi-default-inverse-fg}{HTML}{FFFFFF}
+    \definecolor{ansi-default-inverse-bg}{HTML}{000000}
+
+    % common color for the border for error outputs.
+    \definecolor{outerrorbackground}{HTML}{FFDFDF}
+
+    % commands and environments needed by pandoc snippets
+    % extracted from the output of `pandoc -s`
+    \providecommand{\tightlist}{%
+      \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+    % Add ',fontsize=\small' for more characters per line
+    \newenvironment{Shaded}{}{}
+    \newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+    \newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+    \newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+    \newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+    \newcommand{\RegionMarkerTok}[1]{{#1}}
+    \newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\NormalTok}[1]{{#1}}
+
+    % Additional commands for more recent versions of Pandoc
+    \newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{{#1}}}
+    \newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{{#1}}}
+    \newcommand{\ImportTok}[1]{{#1}}
+    \newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{{#1}}}}
+    \newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{{#1}}}
+    \newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{{#1}}}
+    \newcommand{\BuiltInTok}[1]{{#1}}
+    \newcommand{\ExtensionTok}[1]{{#1}}
+    \newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{{#1}}}
+    \newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{{#1}}}
+    \newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+
+
+    % Define a nice break command that doesn't care if a line doesn't already
+    % exist.
+    \def\br{\hspace*{\fill} \\* }
+    % Math Jax compatibility definitions
+    \def\gt{>}
+    \def\lt{<}
+    \let\Oldtex\TeX
+    \let\Oldlatex\LaTeX
+    \renewcommand{\TeX}{\textrm{\Oldtex}}
+    \renewcommand{\LaTeX}{\textrm{\Oldlatex}}
+    % Document parameters
+    % Document title
+    \title{exam\_storyline}
+    
+    
+    
+    
+    
+    
+    
+% Pygments definitions
+\makeatletter
+\def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
+    \let\PY@ul=\relax \let\PY@tc=\relax%
+    \let\PY@bc=\relax \let\PY@ff=\relax}
+\def\PY@tok#1{\csname PY@tok@#1\endcsname}
+\def\PY@toks#1+{\ifx\relax#1\empty\else%
+    \PY@tok{#1}\expandafter\PY@toks\fi}
+\def\PY@do#1{\PY@bc{\PY@tc{\PY@ul{%
+    \PY@it{\PY@bf{\PY@ff{#1}}}}}}}
+\def\PY#1#2{\PY@reset\PY@toks#1+\relax+\PY@do{#2}}
+
+\@namedef{PY@tok@w}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.73,0.73}{##1}}}
+\@namedef{PY@tok@c}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cp}{\def\PY@tc##1{\textcolor[rgb]{0.61,0.40,0.00}{##1}}}
+\@namedef{PY@tok@k}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kp}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kt}{\def\PY@tc##1{\textcolor[rgb]{0.69,0.00,0.25}{##1}}}
+\@namedef{PY@tok@o}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@ow}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\@namedef{PY@tok@nb}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@nf}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@nc}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@nn}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@ne}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.80,0.25,0.22}{##1}}}
+\@namedef{PY@tok@nv}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@no}{\def\PY@tc##1{\textcolor[rgb]{0.53,0.00,0.00}{##1}}}
+\@namedef{PY@tok@nl}{\def\PY@tc##1{\textcolor[rgb]{0.46,0.46,0.00}{##1}}}
+\@namedef{PY@tok@ni}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.44,0.44,0.44}{##1}}}
+\@namedef{PY@tok@na}{\def\PY@tc##1{\textcolor[rgb]{0.41,0.47,0.13}{##1}}}
+\@namedef{PY@tok@nt}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@nd}{\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\@namedef{PY@tok@s}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sd}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@si}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.64,0.35,0.47}{##1}}}
+\@namedef{PY@tok@se}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.36,0.12}{##1}}}
+\@namedef{PY@tok@sr}{\def\PY@tc##1{\textcolor[rgb]{0.64,0.35,0.47}{##1}}}
+\@namedef{PY@tok@ss}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@sx}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@m}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@gh}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\@namedef{PY@tok@gu}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.50,0.00,0.50}{##1}}}
+\@namedef{PY@tok@gd}{\def\PY@tc##1{\textcolor[rgb]{0.63,0.00,0.00}{##1}}}
+\@namedef{PY@tok@gi}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.52,0.00}{##1}}}
+\@namedef{PY@tok@gr}{\def\PY@tc##1{\textcolor[rgb]{0.89,0.00,0.00}{##1}}}
+\@namedef{PY@tok@ge}{\let\PY@it=\textit}
+\@namedef{PY@tok@gs}{\let\PY@bf=\textbf}
+\@namedef{PY@tok@ges}{\let\PY@bf=\textbf\let\PY@it=\textit}
+\@namedef{PY@tok@gp}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\@namedef{PY@tok@go}{\def\PY@tc##1{\textcolor[rgb]{0.44,0.44,0.44}{##1}}}
+\@namedef{PY@tok@gt}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.27,0.87}{##1}}}
+\@namedef{PY@tok@err}{\def\PY@bc##1{{\setlength{\fboxsep}{\string -\fboxrule}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}}
+\@namedef{PY@tok@kc}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kd}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kn}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@kr}{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@bp}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\@namedef{PY@tok@fm}{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\@namedef{PY@tok@vc}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vg}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vi}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@vm}{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\@namedef{PY@tok@sa}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sb}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sc}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@dl}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@s2}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@sh}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@s1}{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\@namedef{PY@tok@mb}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mf}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mh}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mi}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@il}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@mo}{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\@namedef{PY@tok@ch}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cm}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cpf}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@c1}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+\@namedef{PY@tok@cs}{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.24,0.48,0.48}{##1}}}
+
+\def\PYZbs{\char`\\}
+\def\PYZus{\char`\_}
+\def\PYZob{\char`\{}
+\def\PYZcb{\char`\}}
+\def\PYZca{\char`\^}
+\def\PYZam{\char`\&}
+\def\PYZlt{\char`\<}
+\def\PYZgt{\char`\>}
+\def\PYZsh{\char`\#}
+\def\PYZpc{\char`\%}
+\def\PYZdl{\char`\$}
+\def\PYZhy{\char`\-}
+\def\PYZsq{\char`\'}
+\def\PYZdq{\char`\"}
+\def\PYZti{\char`\~}
+% for compatibility with earlier versions
+\def\PYZat{@}
+\def\PYZlb{[}
+\def\PYZrb{]}
+\makeatother
+
+
+    % For linebreaks inside Verbatim environment from package fancyvrb.
+    \makeatletter
+        \newbox\Wrappedcontinuationbox
+        \newbox\Wrappedvisiblespacebox
+        \newcommand*\Wrappedvisiblespace {\textcolor{red}{\textvisiblespace}}
+        \newcommand*\Wrappedcontinuationsymbol {\textcolor{red}{\llap{\tiny$\m@th\hookrightarrow$}}}
+        \newcommand*\Wrappedcontinuationindent {3ex }
+        \newcommand*\Wrappedafterbreak {\kern\Wrappedcontinuationindent\copy\Wrappedcontinuationbox}
+        % Take advantage of the already applied Pygments mark-up to insert
+        % potential linebreaks for TeX processing.
+        %        {, <, #, %, $, ' and ": go to next line.
+        %        _, }, ^, &, >, - and ~: stay at end of broken line.
+        % Use of \textquotesingle for straight quote.
+        \newcommand*\Wrappedbreaksatspecials {%
+            \def\PYGZus{\discretionary{\char`\_}{\Wrappedafterbreak}{\char`\_}}%
+            \def\PYGZob{\discretionary{}{\Wrappedafterbreak\char`\{}{\char`\{}}%
+            \def\PYGZcb{\discretionary{\char`\}}{\Wrappedafterbreak}{\char`\}}}%
+            \def\PYGZca{\discretionary{\char`\^}{\Wrappedafterbreak}{\char`\^}}%
+            \def\PYGZam{\discretionary{\char`\&}{\Wrappedafterbreak}{\char`\&}}%
+            \def\PYGZlt{\discretionary{}{\Wrappedafterbreak\char`\<}{\char`\<}}%
+            \def\PYGZgt{\discretionary{\char`\>}{\Wrappedafterbreak}{\char`\>}}%
+            \def\PYGZsh{\discretionary{}{\Wrappedafterbreak\char`\#}{\char`\#}}%
+            \def\PYGZpc{\discretionary{}{\Wrappedafterbreak\char`\%}{\char`\%}}%
+            \def\PYGZdl{\discretionary{}{\Wrappedafterbreak\char`\$}{\char`\$}}%
+            \def\PYGZhy{\discretionary{\char`\-}{\Wrappedafterbreak}{\char`\-}}%
+            \def\PYGZsq{\discretionary{}{\Wrappedafterbreak\textquotesingle}{\textquotesingle}}%
+            \def\PYGZdq{\discretionary{}{\Wrappedafterbreak\char`\"}{\char`\"}}%
+            \def\PYGZti{\discretionary{\char`\~}{\Wrappedafterbreak}{\char`\~}}%
+        }
+        % Some characters . , ; ? ! / are not pygmentized.
+        % This macro makes them "active" and they will insert potential linebreaks
+        \newcommand*\Wrappedbreaksatpunct {%
+            \lccode`\~`\.\lowercase{\def~}{\discretionary{\hbox{\char`\.}}{\Wrappedafterbreak}{\hbox{\char`\.}}}%
+            \lccode`\~`\,\lowercase{\def~}{\discretionary{\hbox{\char`\,}}{\Wrappedafterbreak}{\hbox{\char`\,}}}%
+            \lccode`\~`\;\lowercase{\def~}{\discretionary{\hbox{\char`\;}}{\Wrappedafterbreak}{\hbox{\char`\;}}}%
+            \lccode`\~`\:\lowercase{\def~}{\discretionary{\hbox{\char`\:}}{\Wrappedafterbreak}{\hbox{\char`\:}}}%
+            \lccode`\~`\?\lowercase{\def~}{\discretionary{\hbox{\char`\?}}{\Wrappedafterbreak}{\hbox{\char`\?}}}%
+            \lccode`\~`\!\lowercase{\def~}{\discretionary{\hbox{\char`\!}}{\Wrappedafterbreak}{\hbox{\char`\!}}}%
+            \lccode`\~`\/\lowercase{\def~}{\discretionary{\hbox{\char`\/}}{\Wrappedafterbreak}{\hbox{\char`\/}}}%
+            \catcode`\.\active
+            \catcode`\,\active
+            \catcode`\;\active
+            \catcode`\:\active
+            \catcode`\?\active
+            \catcode`\!\active
+            \catcode`\/\active
+            \lccode`\~`\~
+        }
+    \makeatother
+
+    \let\OriginalVerbatim=\Verbatim
+    \makeatletter
+    \renewcommand{\Verbatim}[1][1]{%
+        %\parskip\z@skip
+        \sbox\Wrappedcontinuationbox {\Wrappedcontinuationsymbol}%
+        \sbox\Wrappedvisiblespacebox {\FV@SetupFont\Wrappedvisiblespace}%
+        \def\FancyVerbFormatLine ##1{\hsize\linewidth
+            \vtop{\raggedright\hyphenpenalty\z@\exhyphenpenalty\z@
+                \doublehyphendemerits\z@\finalhyphendemerits\z@
+                \strut ##1\strut}%
+        }%
+        % If the linebreak is at a space, the latter will be displayed as visible
+        % space at end of first line, and a continuation symbol starts next line.
+        % Stretch/shrink are however usually zero for typewriter font.
+        \def\FV@Space {%
+            \nobreak\hskip\z@ plus\fontdimen3\font minus\fontdimen4\font
+            \discretionary{\copy\Wrappedvisiblespacebox}{\Wrappedafterbreak}
+            {\kern\fontdimen2\font}%
+        }%
+
+        % Allow breaks at special characters using \PYG... macros.
+        \Wrappedbreaksatspecials
+        % Breaks at punctuation characters . , ; ? ! and / need catcode=\active
+        \OriginalVerbatim[#1,codes*=\Wrappedbreaksatpunct]%
+    }
+    \makeatother
+
+    % Exact colors from NB
+    \definecolor{incolor}{HTML}{303F9F}
+    \definecolor{outcolor}{HTML}{D84315}
+    \definecolor{cellborder}{HTML}{CFCFCF}
+    \definecolor{cellbackground}{HTML}{F7F7F7}
+
+    % prompt
+    \makeatletter
+    \newcommand{\boxspacing}{\kern\kvtcb@left@rule\kern\kvtcb@boxsep}
+    \makeatother
+    \newcommand{\prompt}[4]{
+        {\ttfamily\llap{{\color{#2}[#3]:\hspace{3pt}#4}}\vspace{-\baselineskip}}
+    }
+    
+
+    
+    % Prevent overflowing lines due to hard-to-break entities
+    \sloppy
+    % Setup hyperref package
+    \hypersetup{
+      breaklinks=true,  % so long urls are correctly broken across lines
+      colorlinks=true,
+      urlcolor=urlcolor,
+      linkcolor=linkcolor,
+      citecolor=citecolor,
+      }
+    % Slightly bigger margins than the latex defaults
+    
+    \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+    
+    
+
+\begin{document}
+    
+    \maketitle
+    
+    
+
+    
+    \section{Resilient EV Charging Under
+Disruption}\label{resilient-ev-charging-under-disruption}
+
+\subsection{Technical report notebook for DTU 42578 Advanced Business
+Analytics}\label{technical-report-notebook-for-dtu-42578-advanced-business-analytics}
+
+\subsubsection{Executive overview}\label{executive-overview}
+
+This notebook is the main technical report for the final project. The
+project studies resilience in EV charging operations under disruptions
+on a synthetic A-B-C corridor with two fixed charging stations and
+relocatable mobile charging stations (MCS).
+
+The practical question is whether adaptive control of mobile charging
+support can reduce queueing pain when charging demand becomes uneven,
+capacity drops locally, or service times inflate.
+
+\textbf{Research question}
+
+Can a reinforcement learning policy improve resilience in an EV charging
+corridor by dynamically reallocating mobile charging stations to reduce
+queue length and waiting time under disruptions?
+
+The intended comparison is between: - a fixed / no-agent baseline, - a
+threshold-style rule baseline, - and an RL-controlled mobile-charging
+policy.
+
+The current local artifact set supports the full simulator and current
+baseline evaluations directly. It does \textbf{not} contain a
+current-compatible RL checkpoint for the active 27-feature, 5-action
+A-B-C environment, so the quantitative result sections below focus on
+the strongest reproducible current evidence and treat older RL artifacts
+only as historical context.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Simulation goals and design philosophy
+\item
+  Simulation environment
+\item
+  Problem formulation
+\item
+  RL agent and method
+\item
+  Hyperparameters
+\item
+  State space
+\item
+  Action space
+\item
+  Reward function
+\item
+  Reward calibration and alternative business priorities
+\item
+  Training, validation, and test setup
+\item
+  Training and evaluation learning curves
+\item
+  Simulation rollout comparison
+\item
+  Summary metrics table
+\item
+  Reduced multi-seed evaluation and stress scenarios
+\item
+  Spatial awareness
+\item
+  Missing pieces, failures, and limitations
+\item
+  Conclusion
+\end{enumerate}
+
+    \subsection{1. Simulation goals and design
+philosophy}\label{simulation-goals-and-design-philosophy}
+
+The simulator is not intended to be a perfect real-world digital twin.
+Its purpose is to create a controlled but operationally meaningful
+testbed for resilience questions:
+
+\begin{itemize}
+\tightlist
+\item
+  demand varies over the day instead of staying flat,
+\item
+  morning and evening peaks create predictable congestion pressure,
+\item
+  charging stations have finite plugs and stochastic service times,
+\item
+  disruption events locally damage effective service capacity,
+\item
+  mobile charging stations can be reallocated, but not instantaneously,
+\item
+  performance is judged using queueing and waiting-time outcomes under
+  disruption.
+\end{itemize}
+
+That design choice matters for the project story. Resilience is about
+whether the system continues to serve vehicles when local conditions
+deteriorate, not only about average utilization on a normal day.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_3_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The first panel shows the daily charging-demand shape that the corridor
+is exposed to. The pattern is interpretable rather than arbitrary: a
+morning peak, an afternoon/evening peak, and a smaller midday bump. The
+second panel shows the underlying OD flow components that create this
+station-level charging demand.
+
+This matters because resilience claims are more credible when
+disruptions are layered on top of a demand process with clear structure.
+
+    \subsection{2. Simulation environment}\label{simulation-environment}
+
+The active benchmark is a synthetic line corridor with three cities and
+two fixed charging stations:
+
+\begin{itemize}
+\tightlist
+\item
+  City A to City B: 100 km,
+\item
+  City B to City C: 100 km,
+\item
+  one fixed station between A and B (\texttt{station\_ab}),
+\item
+  one fixed station between B and C (\texttt{station\_bc}).
+\end{itemize}
+
+Episodes proceed in 5-minute decision steps. Vehicles arrive
+stochastically, may choose to charge, join a station queue if necessary,
+and start service when a plug becomes free. Mobile charging stations
+(MCS) provide extra chargers, but they create a real control problem
+because they cannot support both sides of the corridor simultaneously.
+
+Operationally important frictions in the current environment are:
+
+\begin{itemize}
+\tightlist
+\item
+  depot-to-station travel time,
+\item
+  station-to-station relocation lag,
+\item
+  return-to-middle behavior,
+\item
+  recharge delay before an MCS can be reused.
+\end{itemize}
+
+Those frictions make the problem spatial and delayed. The controller is
+not just ``adding capacity''; it is committing scarce mobile support
+under travel and recharge constraints.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Setting
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Value
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Cities & A-B-C synthetic corridor \\
+Inter-city distance & 100.0 km \\
+Fixed stations & 2 (one between A-B and one between B-C) \\
+Fixed plugs & 12 at AB, 12 at BC \\
+Mobile stations & Up to 10 units \\
+Chargers per MCS & 2 \\
+Decision step & 5 minutes \\
+Episode duration & 2-6 days during training \\
+Mean service time & 30.0 minutes \\
+Morning peak & 8.0:00 \\
+Evening peak & 17.0:00 \\
+Disruption mode & random \\
+Supported disruption types & capacity\_drop, station\_outage,
+service\_time\_inflation, demand\_surge \\
+\end{longtable}
+
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_6_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The middle depot is crucial for interpretation. MCS units do not
+teleport. They move from the middle depot to AB or BC, can be recalled,
+and return for recharge. This is exactly why spatial awareness is
+meaningful in this project: the controller must decide \emph{where}
+support is worth committing before queues become severe.
+
+    \subsection{3. Problem formulation}\label{problem-formulation}
+
+The control problem is to decide how mobile charging support should be
+used to reduce local service pressure under normal demand variation and
+under disruptions.
+
+Why is this difficult?
+
+\begin{itemize}
+\tightlist
+\item
+  fixed capacity is static while demand and disruptions are
+  time-varying,
+\item
+  the pressure may be local to AB or BC rather than system-wide,
+\item
+  MCS deployment is delayed by movement and recharge,
+\item
+  aggressively using MCS can improve service but also incurs operational
+  cost.
+\end{itemize}
+
+In this project, \textbf{spatial awareness} means that a good controller
+should send more support toward the side of the corridor with higher
+local pressure, such as larger queue buildup, higher waiting times,
+lower effective local capacity, or a disruption directly affecting that
+side.
+
+    \subsection{4. RL agent and method}\label{rl-agent-and-method}
+
+The repository contains two RL paths:
+
+\begin{itemize}
+\tightlist
+\item
+  a custom \texttt{torch\_dqn} / simple DQL learner, useful as a
+  lightweight baseline learner,
+\item
+  an \texttt{sb3\_dqn} path, intended as the stronger final RL
+  candidate.
+\end{itemize}
+
+Conceptually the RL loop is standard and practical:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  observe the current corridor state,
+\item
+  choose an action for MCS commitment,
+\item
+  receive a scalar reward tied to service quality and operating cost,
+\item
+  improve the action-value function from rollout experience,
+\item
+  evaluate the learned policy in held-out simulated scenarios.
+\end{enumerate}
+
+The important point for this report is not RL theory for its own sake,
+but whether the learned controller can improve resilience under
+disruption without over-using mobile capacity.
+
+\subsubsection{Artifact status for the active
+benchmark}\label{artifact-status-for-the-active-benchmark}
+
+The current local checkout does not contain a compatible RL checkpoint
+for the active A-B-C benchmark after the move to the 27-dimensional
+observation and 5-action directional control space. That means the
+notebook can document the RL formulation precisely, but the reproducible
+\textbf{current} quantitative results below are baseline-only.
+
+    \subsection{5. Hyperparameters}\label{hyperparameters}
+
+The project is config-driven. The tables below summarize the current
+environment and RL settings that define the active benchmark.
+
+    \begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Hyperparameter & Value \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Preferred final algorithm path & SB3 DQN \\
+Available simple learner path & torch\_dqn \\
+Simple learner episodes & 130 \\
+Simple learner gamma & 0.98 \\
+Simple learner learning rate & 0.0005 \\
+Simple learner batch size & 128 \\
+Replay capacity & 200000 \\
+Learning starts & 10000 \\
+Train frequency & 4 \\
+Gradient steps & 4 \\
+Target update interval & 200 \\
+Hidden dimensions & {[}256, 256{]} \\
+Exploration start & 1.0 \\
+Exploration end & 0.05 \\
+Exploration decay steps & 125000 \\
+Periodic evaluation cadence & Every 15000 training steps \\
+Periodic evaluation episodes & 10 \\
+Final evaluation episodes & 12 \\
+SB3 total timesteps & 250000 \\
+SB3 buffer size & 200000 \\
+SB3 exploration fraction & 0.5 \\
+\end{longtable}
+
+    
+    Two points matter for interpretation:
+
+\begin{itemize}
+\tightlist
+\item
+  the simple learner includes periodic held-out evaluation during
+  training in principle,
+\item
+  the SB3 path is treated in the repository notes as the preferred
+  serious RL route.
+\end{itemize}
+
+That said, the absence of a current-compatible checkpoint means those
+settings are best interpreted as the intended final training setup
+rather than a fully reproducible final RL result in this checkout.
+
+    \subsection{6. State space}\label{state-space}
+
+The active observation is a 27-dimensional vector. It is deliberately
+station-aware and logistics-aware rather than purely aggregate.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Group
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Index
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Feature
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Meaning
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Queue state & 1 & queue\_length\_ab & Current queue length at station
+AB. \\
+Queue state & 2 & queue\_length\_bc & Current queue length at station
+BC. \\
+Queue state & 3 & mean\_queue\_wait\_ab & Mean current waiting time in
+the AB queue. \\
+Queue state & 4 & mean\_queue\_wait\_bc & Mean current waiting time in
+the BC queue. \\
+Recent flow & 5 & last\_arrivals\_ab & Vehicles that arrived to AB in
+the last step. \\
+Recent flow & 6 & last\_arrivals\_bc & Vehicles that arrived to BC in
+the last step. \\
+Recent flow & 7 & last\_starts\_ab & Charging sessions started at AB in
+the last step. \\
+Recent flow & 8 & last\_starts\_bc & Charging sessions started at BC in
+the last step. \\
+Capacity & 9 & effective\_plugs\_ab & Effective plugs at AB after
+disruption and MCS effects. \\
+Capacity & 10 & effective\_plugs\_bc & Effective plugs at BC after
+disruption and MCS effects. \\
+Capacity & 11 & active\_mobile\_capacity\_ab & Currently active
+mobile-station capacity at AB. \\
+Capacity & 12 & active\_mobile\_capacity\_bc & Currently active
+mobile-station capacity at BC. \\
+Spatial & 13 & committed\_mcs\_bias\_ab\_minus\_bc & Committed MCS bias
+toward AB versus BC. \\
+Spatial & 14 & local\_deficit\_ab & Local deficit estimate at AB. \\
+Spatial & 15 & local\_deficit\_bc & Local deficit estimate at BC. \\
+Spatial & 16 & local\_deficit\_bias\_ab\_minus\_bc & Local deficit bias
+toward AB versus BC. \\
+Disruption & 17 & disruption\_active & Whether a disruption is currently
+active. \\
+Disruption & 18 & disruption\_type\_code & Encoded disruption type. \\
+Disruption & 19 & target\_affects\_ab & Whether the disruption affects
+AB. \\
+Disruption & 20 & target\_affects\_bc & Whether the disruption affects
+BC. \\
+MCS logistics & 21 & middle\_available & Mobile stations available at
+the middle depot. \\
+MCS logistics & 22 & middle\_charging & Mobile stations currently
+recharging at the middle depot. \\
+MCS logistics & 23 & transit\_to\_ab & Mobile stations moving toward
+AB. \\
+MCS logistics & 24 & transit\_to\_bc & Mobile stations moving toward
+BC. \\
+MCS logistics & 25 & transit\_to\_middle & Mobile stations returning to
+the middle depot. \\
+Time & 26 & sin\_time\_of\_day & Sine encoding of time of day. \\
+Time & 27 & cos\_time\_of\_day & Cosine encoding of time of day. \\
+\end{longtable}
+
+    
+    \subsubsection{What the model does not
+know}\label{what-the-model-does-not-know}
+
+    \begin{itemize}
+\tightlist
+\item
+  No exact future arrivals or exact future queue realizations.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No oracle action labels or optimal allocation target.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No foreknowledge of future random disruptions before they begin.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No exact per-MCS battery state-of-charge representation.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No direct remaining-disruption-time feature in the current
+  observation.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No explicit demand forecast beyond current local state and disruption
+  indicators.
+\end{itemize}
+
+    
+    This is important for honesty. The agent is not given an oracle forecast
+of future arrivals, an exact best action label, or full future
+disruption knowledge. It must infer useful reallocations from local
+queue/capacity conditions and the currently visible disruption state.
+
+    \subsection{7. Action space}\label{action-space}
+
+The current action space is intentionally small and directional. That is
+a better match for the operational question than a large
+absolute-allocation table.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Action
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+hold & Keep the committed mobile-station allocation unchanged. \\
+toward\_ab & Move one unit of commitment toward AB, either from depot or
+from BC. \\
+toward\_bc & Move one unit of commitment toward BC, either from depot or
+from AB. \\
+recall\_ab & Recall one committed unit away from AB toward the middle
+depot. \\
+recall\_bc & Recall one committed unit away from BC toward the middle
+depot. \\
+\end{longtable}
+
+    
+    This design makes the control policy easier to interpret:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{hold} means do nothing,
+\item
+  \texttt{toward\_ab} and \texttt{toward\_bc} express directional
+  support decisions,
+\item
+  \texttt{recall\_ab} and \texttt{recall\_bc} reduce commitment on one
+  side.
+\end{itemize}
+
+Compared with a large absolute allocation space, this is more learnable,
+more interpretable, and more consistent with movement/recharge
+logistics.
+
+    \subsection{8. Reward function}\label{reward-function}
+
+The reward is not just a generic RL score. It encodes an explicit
+operations tradeoff between service quality and the cost of using mobile
+support.
+
+\subsubsection{Positive terms}\label{positive-terms}
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Term
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Weight
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+served\_reward\_weight & 1.0 & Rewards charging sessions that start
+service. \\
+utilization\_bonus & 1.0 & Rewards productive use of available charging
+capacity. \\
+spatial\_deficit\_alignment\_bonus & 24.0 & Rewards mobile capacity that
+covers estimated local deficits. \\
+spatial\_deficit\_direction\_bonus & 12.0 & Rewards sending MCS in the
+correct corridor direction. \\
+\end{longtable}
+
+    
+    \subsubsection{Negative terms}\label{negative-terms}
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Term
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Weight
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+unmet\_penalty & 2.5 & Penalizes vehicles left in queue after the
+step. \\
+queue\_length\_penalty & 2.5 & Adds extra pressure against persistent
+queue accumulation. \\
+queue\_wait\_penalty & 0.02 & Penalizes queue-wait burden, not just
+queue count. \\
+local\_queue\_peak\_penalty & 1.0 & Penalizes the worst station queue in
+the step. \\
+local\_wait\_peak\_penalty & 0.1 & Penalizes the worst station waiting
+time in the step. \\
+active\_mobile\_station\_cost & 18.0 & Charges for keeping MCS active in
+the field. \\
+activation\_cost & 2.0 & Charges for newly activating MCS. \\
+adjustment\_cost & 0.5 & Charges for reallocating MCS commitment. \\
+idle\_capacity\_penalty & 0.1 & Penalizes carrying unused capacity. \\
+\end{longtable}
+
+    
+    The intuition is straightforward:
+
+\begin{itemize}
+\tightlist
+\item
+  serve vehicles,
+\item
+  keep queues and waits low,
+\item
+  prevent one station from blowing up while the average still looks
+  acceptable,
+\item
+  reward spatially useful MCS placement,
+\item
+  but charge for deploying and adjusting MCS so the controller cannot
+  treat mobile support as free.
+\end{itemize}
+
+This also means \textbf{reward and operational performance are related
+but not identical}. A policy can reduce queues strongly and still have a
+worse reward if it uses too much expensive mobile support.
+
+    \subsection{9. Reward calibration and alternative business
+priorities}\label{reward-calibration-and-alternative-business-priorities}
+
+The reward structure can be tuned to reflect different operating
+priorities. That is a strength of the framework, not a flaw, as long as
+the choice is made explicit.
+
+Examples of business priorities that would justify different weights
+are:
+
+\begin{itemize}
+\tightlist
+\item
+  minimizing queue length at almost any cost,
+\item
+  enforcing a service-level target with limited MCS usage,
+\item
+  penalizing active MCS-hours heavily because mobile support is
+  expensive,
+\item
+  prioritizing fairness across stations rather than only aggregate
+  averages.
+\end{itemize}
+
+The repository itself contains evidence that this was treated as a
+design knob: there are separate reward-focused configs in the repo, and
+the local historical sweep below shows that changing queue and cost
+weights materially changes the operating point.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_27_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+run
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+active\_mcs\_cost
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+queue\_penalty
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+episodes
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+final\_reward
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+final\_mean\_queue\_length
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+final\_mean\_queue\_wait\_minutes
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+final\_mean\_active\_mobile\_stations
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+final\_unmet\_demand
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+final\_served\_demand
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+range\_c18\_q2p5 & 18.0 & 2.5 & 100 & -102.93 & 0.62 & 1.57 & 2.08 &
+15.0 & 250.0 \\
+range\_c24\_q2p5 & 24.0 & 2.5 & 100 & -146.77 & 0.12 & 0.5 & 2.17 & 3.0
+& 232.0 \\
+range\_c30\_q3 & 30.0 & 3.0 & 100 & -232.35 & 2.25 & 5.58 & 2.46 & 54.0
+& 237.0 \\
+range\_c30\_q4 & 30.0 & 4.0 & 100 & -199.99 & 2.0 & 6.74 & 1.79 & 48.0 &
+252.0 \\
+range\_c36\_q3 & 36.0 & 3.0 & 100 & -309.23 & 3.12 & 7.12 & 2.5 & 75.0 &
+257.0 \\
+range\_c42\_q3p5 & 42.0 & 3.5 & 100 & -305.46 & 5.42 & 10.31 & 1.79 &
+130.0 & 258.0 \\
+\end{longtable}
+
+    
+    The sweep does not by itself prove which reward is ``correct''. Instead,
+it shows the key modeling fact: the policy objective can be calibrated
+to fit different cost assumptions. Higher mobile-station cost generally
+pushes the controller toward less deployment and worse queue outcomes,
+while lower cost permits more active support.
+
+This is exactly why the final exam discussion should separate:
+
+\begin{itemize}
+\tightlist
+\item
+  operational metrics such as queue and waiting time,
+\item
+  the chosen reward calibration,
+\item
+  and the business meaning of MCS cost.
+\end{itemize}
+
+    \subsection{10. Training, validation, and test
+setup}\label{training-validation-and-test-setup}
+
+The intended experimental design is seed-driven rather than based on one
+hand-picked scenario.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Split
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Training & Randomized 2-6 day episodes from seeds 0-9999 \\
+Validation & Held-out same-distribution seeds starting at 10000 \\
+Test ID & Unseen deployment-style seeds starting at 20000 with 3-5 day
+overrides \\
+Test stress & Named scripted disruption scenarios \\
+Held-out rollout & One fixed unseen test\_id seed for direct time-series
+comparison \\
+\end{longtable}
+
+    
+    The project notes emphasize a clear separation between:
+
+\begin{itemize}
+\tightlist
+\item
+  randomized training episodes,
+\item
+  held-out same-distribution validation,
+\item
+  unseen \texttt{test\_id} seeds meant to mimic deployment-style
+  evaluation,
+\item
+  and separate stress scenarios for robustness.
+\end{itemize}
+
+This is a good evaluation philosophy even when there is no
+hyperparameter search or early stopping, because it distinguishes
+training exposure from final held-out behavior.
+
+    \subsection{11. Training and evaluation learning
+curves}\label{training-and-evaluation-learning-curves}
+
+This section uses the \textbf{training-time history artifact only}. The
+preferred self-contained source is:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{exam\_submission/data/generated/training/history\_current.json}
+\end{itemize}
+
+If that copied file is not present, the notebook falls back to:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{outputs/mobile\_mcs\_line\_abc/rl/history.json}
+\end{itemize}
+
+Only if neither exists does it use the historical fallback artifact.
+
+This means the train/eval curve section does \textbf{not} require the
+large final evaluation-suite outputs. It only needs the training
+\texttt{history.json} produced by the training job.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_33_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Value
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Training history source &
+exam\_submission/data/generated/training/history\_current.json & The
+notebook is using the copied submission artifact. \\
+Current compatible RL training history & Yes & This is the correct
+artifact for train/eval learning curves in the active benchmark. \\
+Training-time evaluation reward curve & Yes & Evaluation reward comes
+from periodic held-out evaluation during training. \\
+Training-time evaluation TD-loss curve & Yes & Evaluation TD loss comes
+from periodic held-out evaluation during training. \\
+Large final evaluation suite required for this plot & No & The full
+validation/test/stress suite is not needed for this section. \\
+\end{longtable}
+
+    
+    The practical implication is that the notebook can document the
+\emph{evaluation design} rigorously, but it cannot make a defensible
+final RL-learning claim for the active environment without retraining or
+recovering a compatible checkpoint/history pair.
+
+    \subsection{12. Simulation rollout
+comparison}\label{simulation-rollout-comparison}
+
+The strongest reproducible current comparison is a fixed unseen 5-day
+\texttt{test\_id} rollout using the active line-corridor implementation.
+
+Because the RL artifact is missing, this section compares three
+baselines that \emph{are} available and current:
+
+\begin{itemize}
+\tightlist
+\item
+  fixed / no-agent (\texttt{mobile\_noop}),
+\item
+  threshold baseline,
+\item
+  reactive baseline.
+\end{itemize}
+
+This still answers an important resilience question: does adaptive
+mobile support materially reduce queueing pain under disruptions, and
+how costly is a more aggressive control rule?
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_36_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The difference is immediate. Leaving all mobile support unused creates
+large queue accumulation and long waiting times over the held-out
+horizon. Both adaptive baselines help substantially.
+
+The reactive rule is the strongest queue-reduction baseline in the
+current held-out rollout, but it keeps many MCS active for most of the
+episode. The threshold rule is more frugal: it achieves a large
+reduction in queueing while using much less mobile support.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_38_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The station-level view makes the resilience story clearer. Congestion is
+local, not only aggregate. The adaptive rules keep AB and BC from
+diverging as severely as the fixed baseline, which is exactly the kind
+of local resilience behavior the project was designed to test.
+
+    \subsection{13. Summary metrics table}\label{summary-metrics-table}
+
+The table below aggregates the current held-out rollout results and
+computes improvement relative to the fixed/no-agent baseline.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Policy
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean queue length
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Peak queue length
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean wait (min)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Peak wait (min)
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Fixed / no-agent & 16.6 & 97.0 & 12.37 & 78.14 \\
+Threshold & 2.65 & 24.0 & 1.28 & 22.69 \\
+Reactive & 1.29 & 28.0 & 0.71 & 26.52 \\
+\end{longtable}
+
+    
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Policy
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean active MCS
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+MCS-hours
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Reward (sum)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Queue improvement vs fixed (\%)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Wait improvement vs fixed (\%)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Reward diff vs fixed
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Fixed / no-agent & 0.0 & 0.0 & -15969.37 & 0.0 & 0.0 & 0.0 \\
+Threshold & 0.95 & 113.5 & -4202.84 & 84.06 & 89.62 & 11766.53 \\
+Reactive & 8.98 & 1077.08 & -24060.17 & 92.24 & 94.25 & -8090.8 \\
+\end{longtable}
+
+    
+    Two insights stand out.
+
+First, adaptive mobile support clearly improves resilience relative to
+the fixed baseline. Second, the \emph{best queue reduction} and the
+\emph{best reward} are not the same thing. The reactive baseline is
+operationally strongest on queue and wait metrics, but the threshold
+baseline is more cost-efficient because it uses far fewer mobile-station
+hours.
+
+    \subsection{14. Reduced multi-seed evaluation and stress
+scenarios}\label{reduced-multi-seed-evaluation-and-stress-scenarios}
+
+To avoid relying only on one illustrative rollout, a reduced current
+baseline-only suite was generated over multiple unseen \texttt{test\_id}
+seeds plus four stress scenarios.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Policy
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+mean\_queue\_length
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+mean\_queue\_wait\_minutes
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+peak\_queue\_length
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+peak\_queue\_wait\_minutes
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Fixed / no-agent & 17.74 & 13.43 & 89.22 & 71.91 \\
+Reactive & 2.21 & 1.08 & 35.28 & 22.36 \\
+Threshold & 3.65 & 1.82 & 41.83 & 25.59 \\
+\end{longtable}
+
+    
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Policy
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+served\_demand
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+unmet\_demand
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+mean\_active\_mobile\_stations
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+mcs\_hours
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+reward
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Fixed / no-agent & 2959.33 & 19366.39 & 0.0 & 0.0 & -13156.33 \\
+Reactive & 2962.44 & 2374.33 & 7.98 & 739.55 & -17240.75 \\
+Threshold & 2961.22 & 3987.33 & 1.09 & 99.5 & -4155.96 \\
+\end{longtable}
+
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_45_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The reduced multi-seed evidence tells the same story as the single
+held-out rollout:
+
+\begin{itemize}
+\tightlist
+\item
+  fixed capacity alone is fragile under severe local disruptions,
+\item
+  threshold control is a strong cost-sensitive adaptive baseline,
+\item
+  the reactive rule often reduces queues even further, but with much
+  heavier MCS usage and substantially worse reward once deployment cost
+  is counted.
+\end{itemize}
+
+This is one of the clearest project insights: a resilience intervention
+can look excellent on queue metrics and still be economically
+unattractive under a cost-sensitive reward.
+
+    \subsection{15. Spatial awareness}\label{spatial-awareness}
+
+A spatially aware controller should increase support toward AB when AB
+has higher local service pressure and toward BC when BC is more
+stressed.
+
+The current active artifacts allow this to be checked directly because
+the rollout exports station-level queues, local deficit estimates, and
+allocation bias.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_48_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    For the threshold baseline, the relationship between local deficit bias
+and allocation bias is clearly positive. That is not perfect one-to-one
+tracking, but it is directionally meaningful and consistent with the
+intended spatial logic of the corridor.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_50_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Policy
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Corr(local deficit bias, allocation bias)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Corr(expected demand bias, allocation bias)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Corr(committed bias, allocation bias)
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Fixed / no-agent & nan & nan & nan \\
+Threshold & 0.288 & 0.374 & 0.762 \\
+Reactive & -0.175 & 0.086 & 0.962 \\
+\end{longtable}
+
+    
+    The spatial-awareness evidence is mixed in an informative way.
+
+\begin{itemize}
+\tightlist
+\item
+  The threshold baseline shows the clearest positive alignment with
+  local service pressure.
+\item
+  The reactive baseline is aggressive and very active, but its
+  deficit-to-allocation correlation is weaker because it tends to flood
+  capacity into the system and keep it active for long periods.
+\item
+  The fixed baseline has no spatial response by construction.
+\end{itemize}
+
+So the project should not claim ``perfect spatial awareness''. A
+stronger statement would be: \textbf{the current simulator and metrics
+can reveal spatial behavior clearly, and the threshold rule shows the
+cleanest interpretable directional response among the available current
+policies.}
+
+    \subsection{16. Missing pieces, failures, and
+limitations}\label{missing-pieces-failures-and-limitations}
+
+Several limitations are important for an examiner to see explicitly.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{No current-compatible RL artifact is available locally.} The
+  active benchmark can be described precisely, but a final
+  RL-vs-baseline quantitative claim is not reproducible from this
+  checkout without retraining or recovering the missing
+  checkpoint/history.
+\item
+  \textbf{Current queue-breach metrics are not instrumented as
+  service-level targets in the active line corridor.} The exported
+  breach columns are therefore zero and should not be over-interpreted.
+\item
+  \textbf{The simulator is stylized.} It is realistic enough to study
+  operational tradeoffs, but it is still a synthetic environment rather
+  than a calibrated production deployment model.
+\item
+  \textbf{Reward sensitivity is real.} The reward sweep and the baseline
+  comparisons both show that cost weights change the preferred policy
+  substantially.
+\item
+  \textbf{Spatial response is meaningful but imperfect.} A controller
+  can reduce total queues without cleanly matching local deficit
+  patterns at every step because demand symmetry, travel lag, recharge
+  delay, and cost all matter.
+\item
+  \textbf{Baselines matter.} The reactive baseline is so strong on queue
+  reduction that any future RL claim should be benchmarked against it,
+  not only against the no-agent baseline.
+\end{enumerate}
+
+    \subsection{17. Conclusion}\label{conclusion}
+
+The project successfully builds a coherent resilience testbed for EV
+charging operations under disruption. The simulator captures local
+queueing pressure, daily demand structure, multiple disruption types,
+and mobile-support logistics in a form that is interpretable and
+reproducible.
+
+On the \textbf{current reproducible artifacts}, adaptive mobile support
+clearly improves resilience relative to fixed-only operation. The
+threshold baseline delivers a strong cost-sensitive tradeoff, while the
+reactive baseline delivers the strongest queue reduction at a much
+higher mobile-support cost. That distinction is valuable because it
+shows why reward design and business priorities matter.
+
+For the original RL research question, the honest answer from this
+checkout is partial: the RL formulation is well specified, but a
+current-compatible RL checkpoint is missing, so the notebook cannot make
+a final defensible claim that the active RL agent outperforms current
+baselines. The next concrete step would be to train or recover an SB3
+DQN policy for the active 27-feature, 5-action environment and evaluate
+it against the threshold and reactive baselines already documented here.
+
+    \subsection{Appendix: Artifact status}\label{appendix-artifact-status}
+
+The table below documents exactly which artifacts were selected for this
+notebook and which important current RL artifacts were missing.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+path
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+exists
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+note
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+data/configs/env\_mobile\_mcs\_line\_abc\_current.yaml & config & True &
+Current active line-corridor environment config. \\
+data/configs/experiment\_mobile\_mcs\_line\_abc\_current.yaml & config &
+True & Current active line-corridor environment config. \\
+data/configs/rl\_dqn\_mobile\_simple.yaml & config & True & Current
+torch DQN/simple learner config including evaluation cadence. \\
+data/configs/rl\_dqn\_mobile\_sb3.yaml & config & True & Current SB3 DQN
+config; used for algorithm description only because no compatible
+checkpoint was found. \\
+data/configs/experiment\_mobile\_mcs\_line\_abc\_heldout\_comparison.yaml
+& config & True & Experiment split config with validation, test\_id, and
+stress suite definitions. \\
+data/generated/heldout/mobile\_noop\_comparison\_timestep\_metrics.csv &
+generated\_eval & True & Current held-out fixed/no-agent rollout on the
+active line corridor. \\
+data/generated/heldout/mobile\_threshold\_comparison\_timestep\_metrics.csv
+& generated\_eval & True & Current held-out threshold-baseline rollout
+on the active line corridor. \\
+data/generated/heldout/mobile\_reactive\_comparison\_timestep\_metrics.csv
+& generated\_eval & True & Current held-out reactive-baseline rollout on
+the active line corridor. \\
+data/generated/evaluation\_suites\_small/test\_id\_summary.csv &
+generated\_eval & True & Reduced multi-seed test\_id baseline summary
+used for robustness tables. \\
+data/generated/evaluation\_suites\_small/test\_stress\_summary.csv &
+generated\_eval & True & Reduced stress-suite baseline summary used for
+disruption robustness discussion. \\
+data/historical/reward\_sweep\_summary.csv & historical & True &
+Historical reward-sweep runs used only to illustrate reward-calibration
+tradeoffs. \\
+data/historical/legacy\_training\_history\_range\_c24\_q2p5.json &
+historical & True & Historical training history from an older
+absolute-allocation variant; not used for final quantitative claims. \\
+\end{longtable}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No current-compatible RL checkpoint was found for the active
+  27-feature / 5-action A-B-C environment.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  Queue-wait target breach metrics are zero in the active line-corridor
+  outputs because the current environment does not instrument a nonzero
+  queue-wait target.
+\end{itemize}
+
+    
+
+    % Add a bibliography block to the postdoc
+    
+    
+    
+\end{document}
