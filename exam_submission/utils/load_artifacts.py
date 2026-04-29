@@ -78,11 +78,20 @@ def current_training_history_path() -> Path:
     return repo_root() / "outputs" / "mobile_mcs_line_abc" / "rl" / "history.json"
 
 
+def copied_training_history_path() -> Path:
+    return data_root() / "generated" / "training" / "history_current.json"
+
+
 def load_training_history() -> tuple[list[dict[str, Any]], str]:
+    copied_path = copied_training_history_path()
+    if copied_path.exists():
+        payload = load_json(copied_path)
+        return list(payload.get("history", [])), "submission_copy"
+
     current_path = current_training_history_path()
     if current_path.exists():
         payload = load_json(current_path)
-        return list(payload.get("history", [])), "current"
+        return list(payload.get("history", [])), "current_outputs"
 
     payload = load_json(data_root() / "historical" / "legacy_training_history_range_c24_q2p5.json")
     return list(payload.get("history", [])), "historical"

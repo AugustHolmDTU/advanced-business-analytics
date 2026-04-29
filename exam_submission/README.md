@@ -36,6 +36,7 @@ Current active benchmark/config artifacts:
 
 Current generated evaluation artifacts copied for the notebook:
 
+- `data/generated/training/history_current.json`
 - `data/generated/heldout/mobile_noop_comparison_timestep_metrics.csv`
 - `data/generated/heldout/mobile_noop_comparison_summary.json`
 - `data/generated/heldout/mobile_threshold_comparison_timestep_metrics.csv`
@@ -55,6 +56,7 @@ Historical artifacts used only for careful context, not final claims about the a
 ## Important Assumptions And Caveats
 
 - No current-compatible RL checkpoint was found locally for the active `27`-feature, `5`-action A-B-C corridor environment.
+- The train/eval curve section prefers `data/generated/training/history_current.json`, which should be copied from the training job's `history.json`.
 - Because of that, the notebook does **not** make a clean final RL-vs-baseline quantitative claim for the active implementation.
 - The notebook uses current baseline rollouts and current reduced baseline evaluation summaries as the main quantitative evidence.
 - Older local RL artifacts are treated as historical only because they come from a superseded absolute-allocation action space.

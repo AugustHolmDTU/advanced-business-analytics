@@ -260,7 +260,9 @@ def plot_training_history(history: list[dict[str, Any]], source: str = "historic
         )
     axes[1, 1].set_title("Evaluation TD loss")
 
-    if source == "current":
+    if source == "submission_copy":
+        title = "Current training-time RL diagnostics from exam_submission/data/generated/training/history_current.json"
+    elif source == "current_outputs":
         title = "Current training-time RL diagnostics from outputs/mobile_mcs_line_abc/rl/history.json"
     else:
         title = "Historical RL diagnostics from a superseded absolute-allocation variant"
