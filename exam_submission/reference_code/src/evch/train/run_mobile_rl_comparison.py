@@ -28,7 +28,7 @@ def run_mobile_rl_comparison(config: dict[str, Any], checkpoint_path: str) -> di
     )
     run.log({"comparison/policy_name": "rl"})
 
-    backend = "sb3_dqn" if checkpoint_path.endswith(".zip") else "torch_dqn"
+    backend = "rl_agent" if checkpoint_path.endswith(".zip") else "torch_dqn"
     policy = _make_rl_policy(backend=backend, checkpoint_path=checkpoint_path)
     result = _build_mobile_comparison_rollout(
         config=config,

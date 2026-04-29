@@ -75,9 +75,9 @@ Current active benchmark/config artifacts:
 
 - `data/configs/env_mobile_mcs_line_abc_current.yaml`
 - `data/configs/rl_dqn_mobile_simple.yaml`
-- `data/configs/rl_dqn_mobile_sb3.yaml`
 - `data/configs/experiment_mobile_mcs_line_abc_current.yaml`
 - `data/configs/experiment_mobile_mcs_line_abc_heldout_comparison.yaml`
+- `data/configs/rl_agent_current.yaml` if present locally
 
 Current generated artifacts:
 
@@ -107,7 +107,7 @@ Included categories:
 
 - `src/evch/train/`: training, evaluation, and comparison entry points
 - `src/evch/envs/`: active line-corridor environment and factories
-- `src/evch/rl/`: simple DQN implementation and evaluation helpers
+- `src/evch/rl/`: RL agent implementation and evaluation helpers
 - `src/evch/sim/`: line-corridor simulator logic
 - `src/evch/utils/`: logging, I/O, seeding, and runtime helpers
 - `src/evch/config/`: YAML config loader
@@ -121,7 +121,7 @@ The optional demo cell in section 7 uses these copied configs together with the 
 
 - No current-compatible final RL checkpoint was found locally for the active `27`-feature, `5`-action line-corridor environment.
 - Because of that, the notebook does not claim a final reproducible RL-vs-baseline held-out rollout result for the active benchmark.
-- The train/eval learning-curve section uses `data/generated/training/history_current.json`, copied from the latest simple-DQN training run.
+- The train/eval learning-curve section uses `data/generated/training/history_current.json`, copied from the latest RL-agent training run.
 - The main rollout comparison therefore emphasizes the strongest current comparable policy evidence available locally: fixed-only versus threshold control.
 - The reactive baseline is kept only as secondary appendix material.
 - Queue-wait target breach metrics remain zero in the active line-corridor outputs because the current artifacts do not expose a non-zero queue-wait target threshold.

@@ -118,14 +118,14 @@ def environment_table(env_cfg: dict[str, Any]) -> pd.DataFrame:
 
 def rl_table(configs: dict[str, dict[str, Any]]) -> pd.DataFrame:
     simple = configs["rl_simple"]["rl"]
-    sb3 = configs["rl_sb3"]["rl"]
+    agent = configs.get("rl_agent", {}).get("rl", {})
     rows = [
-        ("Preferred final algorithm path", "SB3 DQN"),
-        ("Available simple learner path", simple["backend"]),
-        ("Simple learner episodes", simple["episodes"]),
-        ("Simple learner gamma", simple["gamma"]),
-        ("Simple learner learning rate", simple["learning_rate"]),
-        ("Simple learner batch size", simple["batch_size"]),
+        ("Reported model name", "RL agent"),
+        ("Available training backend", simple["backend"]),
+        ("Training episodes", simple["episodes"]),
+        ("Discount factor gamma", simple["gamma"]),
+        ("Learning rate", simple["learning_rate"]),
+        ("Batch size", simple["batch_size"]),
         ("Replay capacity", simple["replay_capacity"]),
         ("Learning starts", simple["learning_starts"]),
         ("Train frequency", simple["train_frequency"]),
@@ -138,10 +138,16 @@ def rl_table(configs: dict[str, dict[str, Any]]) -> pd.DataFrame:
         ("Periodic evaluation cadence", f"Every {simple['eval_interval_steps']} training steps"),
         ("Periodic evaluation episodes", simple["eval_during_training_episodes"]),
         ("Final evaluation episodes", simple["evaluation_episodes"]),
-        ("SB3 total timesteps", sb3["sb3"]["total_timesteps"]),
-        ("SB3 buffer size", sb3["sb3"]["buffer_size"]),
-        ("SB3 exploration fraction", sb3["sb3"]["exploration_fraction"]),
     ]
+    if agent:
+        agent_inner = agent.get("agent", {})
+        rows.extend(
+            [
+                ("RL agent total timesteps", agent_inner.get("total_timesteps", np.nan)),
+                ("RL agent replay buffer", agent_inner.get("buffer_size", np.nan)),
+                ("RL agent exploration fraction", agent_inner.get("exploration_fraction", np.nan)),
+            ]
+        )
     return pd.DataFrame(rows, columns=["Hyperparameter", "Value"])
 
 
@@ -278,4 +284,3 @@ def metric_summary_table(run_summaries: dict[str, dict[str, Any]]) -> pd.DataFra
             }
         )
     return pd.DataFrame(rows)
-

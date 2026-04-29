@@ -512,7 +512,7 @@ class WandbSb3Callback:
 
         for key, value in getattr(callback.model.logger, "name_to_value", {}).items():
             if isinstance(value, (int, float, np.integer, np.floating)) and np.isfinite(value):
-                metrics[f"sb3/{key}"] = float(value)
+                metrics[f"rl_agent/{key}"] = float(value)
                 if key == "train/loss":
                     self.latest_train_loss = float(value)
                 elif key == "rollout/exploration_rate":
@@ -543,27 +543,27 @@ class WandbSb3Callback:
         return True
 
 
-def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Path, run: Any) -> tuple[str, str]:
+def _train_with_rl_agent(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Path, run: Any) -> tuple[str, str]:
     from stable_baselines3 import DQN  # type: ignore
 
-    sb3_cfg = rl_cfg["sb3"]
+    agent_cfg = rl_cfg["agent"]
     device = resolve_torch_device(str(rl_cfg.get("device", "auto")))
     hidden_dims = [int(dim) for dim in rl_cfg.get("hidden_dims", [128, 128])]
     model = DQN(
         "MlpPolicy",
         env,
         learning_rate=float(rl_cfg["learning_rate"]),
-        buffer_size=int(sb3_cfg["buffer_size"]),
-        learning_starts=int(sb3_cfg["learning_starts"]),
-        batch_size=int(sb3_cfg["batch_size"]),
-        train_freq=int(sb3_cfg.get("train_freq", 4)),
-        gradient_steps=int(sb3_cfg.get("gradient_steps", 1)),
+        buffer_size=int(agent_cfg["buffer_size"]),
+        learning_starts=int(agent_cfg["learning_starts"]),
+        batch_size=int(agent_cfg["batch_size"]),
+        train_freq=int(agent_cfg.get("train_freq", 4)),
+        gradient_steps=int(agent_cfg.get("gradient_steps", 1)),
         gamma=float(rl_cfg["gamma"]),
-        tau=float(sb3_cfg["tau"]),
-        target_update_interval=int(sb3_cfg["target_update_interval"]),
-        exploration_fraction=float(sb3_cfg.get("exploration_fraction", 0.4)),
-        exploration_initial_eps=float(sb3_cfg.get("exploration_initial_eps", rl_cfg.get("epsilon_start", 1.0))),
-        exploration_final_eps=float(sb3_cfg.get("exploration_final_eps", rl_cfg.get("epsilon_end", 0.05))),
+        tau=float(agent_cfg["tau"]),
+        target_update_interval=int(agent_cfg["target_update_interval"]),
+        exploration_fraction=float(agent_cfg.get("exploration_fraction", 0.4)),
+        exploration_initial_eps=float(agent_cfg.get("exploration_initial_eps", rl_cfg.get("epsilon_start", 1.0))),
+        exploration_final_eps=float(agent_cfg.get("exploration_final_eps", rl_cfg.get("epsilon_end", 0.05))),
         policy_kwargs={"net_arch": hidden_dims},
         verbose=0,
         seed=seed,
@@ -574,10 +574,10 @@ def _train_with_sb3(env: Any, rl_cfg: dict[str, Any], seed: int, output_dir: Pat
         log_interval=int(rl_cfg.get("wandb_log_interval", 100)),
         step_log_interval=int(rl_cfg.get("wandb_step_log_interval", 1)),
     ).callback
-    model.learn(total_timesteps=int(sb3_cfg["total_timesteps"]), callback=callback)
+    model.learn(total_timesteps=int(agent_cfg["total_timesteps"]), callback=callback)
     checkpoint = output_dir / "best_model.zip"
     model.save(checkpoint)
-    return "sb3_dqn", str(checkpoint)
+    return "rl_agent", str(checkpoint)
 
 
 def _train_with_torch_dqn(
@@ -624,7 +624,7 @@ def _train_with_torch_dqn(
 
 
 def _make_rl_policy(backend: str, checkpoint_path: str) -> Callable[[np.ndarray, Any, bool], int]:
-    if backend == "sb3_dqn":
+    if backend == "rl_agent":
         from stable_baselines3 import DQN  # type: ignore
 
         model = DQN.load(checkpoint_path)
@@ -1017,14 +1017,14 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
 
     env = make_env(train_env_cfg, config["demand"], seed=seed)
     requested_backend = str(rl_cfg.get("backend", "auto")).strip().lower()
-    has_sb3 = importlib.util.find_spec("stable_baselines3") is not None
-    if requested_backend == "sb3_dqn" and not has_sb3:
-        raise RuntimeError("RL backend `sb3_dqn` requires `stable_baselines3`, but it is not installed in this environment.")
-    use_sb3 = has_sb3 and requested_backend == "sb3_dqn"
+    has_rl_agent_runtime = importlib.util.find_spec("stable_baselines3") is not None
+    if requested_backend == "rl_agent" and not has_rl_agent_runtime:
+        raise RuntimeError("The selected RL agent backend requires `stable_baselines3`, but it is not installed in this environment.")
+    use_rl_agent = has_rl_agent_runtime and requested_backend == "rl_agent"
 
     history: list[dict[str, float]] = []
-    if use_sb3:
-        backend, checkpoint_path = _train_with_sb3(env, rl_cfg, seed=seed, output_dir=output_dir, run=run)
+    if use_rl_agent:
+        backend, checkpoint_path = _train_with_rl_agent(env, rl_cfg, seed=seed, output_dir=output_dir, run=run)
     else:
         backend, checkpoint_path, history = _train_with_torch_dqn(
             env,

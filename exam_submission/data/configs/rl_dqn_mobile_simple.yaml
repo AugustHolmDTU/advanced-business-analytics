@@ -24,7 +24,7 @@ rl:
   eval_interval_steps: 15000
   eval_during_training_episodes: 10
   deterministic_eval: true
-  sb3:
+  agent:
     total_timesteps: 200000
     buffer_size: 200000
     learning_starts: 10000

@@ -13,7 +13,7 @@ What is included
 - `src/evch/utils/`: runtime, logging, seeding, and I/O helpers used by training
 - `src/evch/config/`: YAML config loader
 - `src/evch/baselines/`: baseline policy definitions
-- `src/evch/models/common.py`: shared MLP builder used by the simple learner
+- `src/evch/models/common.py`: shared MLP builder used by the RL agent
 - `configs/`: the active benchmark configs plus a short demo override
 
 Important note

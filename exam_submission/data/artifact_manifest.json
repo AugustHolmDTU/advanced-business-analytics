@@ -13,12 +13,7 @@
     {
       "path": "data/configs/rl_dqn_mobile_simple.yaml",
       "type": "config",
-      "note": "Current torch DQN/simple learner config including evaluation cadence."
-    },
-    {
-      "path": "data/configs/rl_dqn_mobile_sb3.yaml",
-      "type": "config",
-      "note": "Current SB3 DQN config; used for algorithm description only because no compatible checkpoint was found."
+      "note": "Current RL-agent training config including evaluation cadence."
     },
     {
       "path": "data/configs/experiment_mobile_mcs_line_abc_heldout_comparison.yaml",

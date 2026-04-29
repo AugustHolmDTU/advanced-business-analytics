@@ -46,7 +46,7 @@ def load_core_configs() -> dict[str, dict[str, Any]]:
     return {
         "environment": load_yaml(config_dir / "env_mobile_mcs_line_abc_current.yaml"),
         "rl_simple": load_yaml(config_dir / "rl_dqn_mobile_simple.yaml"),
-        "rl_sb3": load_yaml(config_dir / "rl_dqn_mobile_sb3.yaml", allow_missing=True),
+        "rl_agent": load_yaml(config_dir / "rl_agent_current.yaml", allow_missing=True),
         "experiment": load_yaml(config_dir / "experiment_mobile_mcs_line_abc_current.yaml"),
         "heldout": load_yaml(config_dir / "experiment_mobile_mcs_line_abc_heldout_comparison.yaml"),
     }
