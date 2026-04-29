@@ -1,0 +1,88 @@
+#!/bin/sh
+### General options
+#BSUB -q hpc
+#BSUB -J evch_line_abc_reward_sweep
+#BSUB -n 4
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=4GB]"
+#BSUB -M 5GB
+#BSUB -W 24:00
+#BSUB -o logs/train_mobile_line_abc_reward_sweep_%J.out
+#BSUB -e logs/train_mobile_line_abc_reward_sweep_%J.err
+
+set -euo pipefail
+
+PROJECT_ROOT="${PROJECT_ROOT:-${LS_SUBCWD:-$PWD}}"
+CONFIG_DIR="${CONFIG_DIR:-$PROJECT_ROOT/configs}"
+SWEEP_KIND="${SWEEP_KIND:?SWEEP_KIND is required}"
+REWARD_KEY="${REWARD_KEY:?REWARD_KEY is required}"
+REWARD_VALUE="${REWARD_VALUE:?REWARD_VALUE is required}"
+RUN_NAME="${RUN_NAME:?RUN_NAME is required}"
+WANDB_GROUP="${WANDB_GROUP:-mobile_mcs_line_abc_reward_sweep}"
+
+module load python3
+source "$PROJECT_ROOT/.venv/bin/activate"
+
+mkdir -p "$PROJECT_ROOT/logs"
+cd "$PROJECT_ROOT"
+
+export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
+export MPLCONFIGDIR="${MPLCONFIGDIR:-$PROJECT_ROOT/.cache/matplotlib}"
+export WANDB_PROJECT="${WANDB_PROJECT:-A-B-C}"
+export WANDB_ENTITY="${WANDB_ENTITY:-EV-charging}"
+mkdir -p "$MPLCONFIGDIR"
+
+OVERRIDE_DIR="$PROJECT_ROOT/.cache/reward_sweep_overrides/$RUN_NAME"
+mkdir -p "$OVERRIDE_DIR"
+ENV_OVERRIDE="$OVERRIDE_DIR/env_override.yaml"
+EXPERIMENT_OVERRIDE="$OVERRIDE_DIR/experiment_override.yaml"
+LOGGING_OVERRIDE="$OVERRIDE_DIR/logging_override.yaml"
+
+cat > "$ENV_OVERRIDE" <<EOF
+environment:
+  reward:
+    ${REWARD_KEY}: ${REWARD_VALUE}
+EOF
+
+cat > "$EXPERIMENT_OVERRIDE" <<EOF
+experiment:
+  name: ${RUN_NAME}
+EOF
+
+cat > "$LOGGING_OVERRIDE" <<EOF
+logging:
+  wandb:
+    group: ${WANDB_GROUP}
+    tags: ["dtu", "ev", "reward_sweep", "${SWEEP_KIND}"]
+EOF
+
+python -m evch.train.train_rl \
+  --config "$CONFIG_DIR/env/mobile_mcs_line_abc.yaml" \
+  --config "$ENV_OVERRIDE" \
+  --config "$CONFIG_DIR/demand/base.yaml" \
+  --config "$CONFIG_DIR/rl/dqn_mobile_simple.yaml" \
+  --config "$CONFIG_DIR/logging/base.yaml" \
+  --config "$CONFIG_DIR/logging/wandb_online.yaml" \
+  --config "$LOGGING_OVERRIDE" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml" \
+  --config "$EXPERIMENT_OVERRIDE" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_train_only.yaml"
+
+CHECKPOINT_PATH="$PROJECT_ROOT/outputs/$RUN_NAME/rl/best_model.pt"
+if [ ! -f "$CHECKPOINT_PATH" ]; then
+  echo "Expected checkpoint not found: $CHECKPOINT_PATH" >&2
+  exit 1
+fi
+
+python -m evch.train.run_mobile_rl_comparison \
+  --config "$CONFIG_DIR/env/mobile_mcs_line_abc.yaml" \
+  --config "$ENV_OVERRIDE" \
+  --config "$CONFIG_DIR/demand/base.yaml" \
+  --config "$CONFIG_DIR/rl/dqn_mobile_simple.yaml" \
+  --config "$CONFIG_DIR/logging/base.yaml" \
+  --config "$CONFIG_DIR/logging/wandb_online.yaml" \
+  --config "$LOGGING_OVERRIDE" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc.yaml" \
+  --config "$EXPERIMENT_OVERRIDE" \
+  --config "$CONFIG_DIR/experiment/mobile_mcs_line_abc_heldout_comparison.yaml" \
+  --agent-checkpoint "$CHECKPOINT_PATH"

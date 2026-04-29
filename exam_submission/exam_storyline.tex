@@ -1144,62 +1144,71 @@ idle\_capacity\_penalty & 0.1 & Penalizes carrying unused capacity. \\
 
 Reward calibration is a core modeling choice in this project. Mobile
 charging can reduce queues, but it also represents operating cost. If
-the cost weight is too low, the controller may over-deploy MCS. If the
-queue penalty is too low, the controller may accept poor service rather
-than spend mobile capacity.
+the MCS cost weight is too low, the controller may over-deploy mobile
+support. If the queue penalty is too low, the controller may tolerate
+poor service quality instead of protecting the queue.
 
-The historical reward sweep is useful here because it shows how changing
-these weights changes the learned operating point.
+The historical sweep available in the repository is sparse rather than a
+full grid. To keep the section clean and defensible, the two plots below
+use only the \textbf{one-factor slices} where one reward weight changes
+while the other is held fixed.
 
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_32_0.png}
     \end{center}
     { \hspace*{\fill} \\}
     
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+    \begin{longtable}[]{@{}lllll@{}}
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Run
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-MCS cost
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Queue cost
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Mean queue
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Mean wait
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Mean active MCS
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Final reward
-\end{minipage} \\
+Run & MCS cost & Queue cost (fixed) & Mean queue & Final reward \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-range\_c18\_q2p5 & 18.0 & 2.5 & 0.62 & 1.57 & 2.08 & -102.93 \\
-range\_c24\_q2p5 & 24.0 & 2.5 & 0.12 & 0.5 & 2.17 & -146.77 \\
-range\_c30\_q3 & 30.0 & 3.0 & 2.25 & 5.58 & 2.46 & -232.35 \\
-range\_c30\_q4 & 30.0 & 4.0 & 2.0 & 6.74 & 1.79 & -199.99 \\
-range\_c36\_q3 & 36.0 & 3.0 & 3.12 & 7.12 & 2.5 & -309.23 \\
-range\_c42\_q3p5 & 42.0 & 3.5 & 5.42 & 10.31 & 1.79 & -305.46 \\
+range\_c18\_q2p5 & 18.0 & 2.5 & 0.62 & -102.93 \\
+range\_c24\_q2p5 & 24.0 & 2.5 & 0.12 & -146.77 \\
 \end{longtable}
 
     
-    The trade-off is clear. Higher MCS cost tends to push the policy toward
-lower MCS usage, but that usually comes with worse queue outcomes.
-Increasing queue penalties pushes the controller toward protecting
-service quality more aggressively. In other words, there is no single
-universally correct reward: the preferred policy depends on how
-expensive mobile support is assumed to be relative to poor queue
-performance.
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_32_2.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{longtable}[]{@{}lllll@{}}
+\toprule\noalign{}
+Run & Queue cost & MCS cost (fixed) & Mean queue & Final reward \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+range\_c30\_q3 & 3.0 & 30.0 & 2.25 & -232.35 \\
+range\_c30\_q4 & 4.0 & 30.0 & 2.0 & -199.99 \\
+\end{longtable}
+
+    
+    These plots should be read as simple directional sensitivity checks
+rather than as a full optimization study.
+
+\begin{itemize}
+\tightlist
+\item
+  The \textbf{MCS-cost plot} isolates what happens when mobile support
+  becomes more expensive while the queue penalty stays fixed.
+\item
+  The \textbf{queue-cost plot} isolates what happens when poor queue
+  performance becomes more expensive while the MCS cost stays fixed.
+\item
+  The small tables below each plot show the corresponding reward
+  settings and the resulting final reward, which helps connect the queue
+  outcome back to the reward function that produced it.
+\end{itemize}
+
+The broader modeling point is that there is no single universally
+correct reward. The preferred calibration depends on the operational
+question: if mobile charging is expensive, conservative deployment may
+be rational; if queueing is very costly, the controller should be
+willing to spend more to protect service quality.
 
     \subsection{6. Training setup}\label{training-setup}
 
