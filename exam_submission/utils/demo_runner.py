@@ -155,6 +155,11 @@ def _heldout_demo_rollout(config: dict[str, Any], checkpoint_path: str) -> tuple
 
     summary = pd.DataFrame(summary_rows)
     if not summary.empty:
+        policy_display_names = {
+            "fixed": "No-agent baseline",
+            "mobile_noop": "No-agent baseline",
+            "rl": "RL agent",
+        }
         summary = summary[
             [
                 "policy",
@@ -167,9 +172,10 @@ def _heldout_demo_rollout(config: dict[str, Any], checkpoint_path: str) -> tuple
                 "reward",
             ]
         ].copy()
-        summary["policy"] = summary["policy"].map(lambda value: POLICY_LABELS.get(str(value), str(value)))
-        summary["policy"] = pd.Categorical(summary["policy"], categories=["No-agent baseline", "RL agent"], ordered=True)
-        summary = summary.sort_values("policy").reset_index(drop=True)
+        summary["policy"] = summary["policy"].map(lambda value: policy_display_names.get(str(value), POLICY_LABELS.get(str(value), str(value))))
+        summary["policy"] = summary["policy"].fillna("No-agent baseline")
+        summary["_sort"] = summary["policy"].map({"No-agent baseline": 0, "RL agent": 1}).fillna(99)
+        summary = summary.sort_values("_sort").drop(columns="_sort").reset_index(drop=True)
     return run_frames, summary
 
 

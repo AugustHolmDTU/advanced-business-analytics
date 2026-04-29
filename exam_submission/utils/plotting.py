@@ -18,13 +18,23 @@ POLICY_LABELS = {
 }
 
 POLICY_COLORS = {
-    "mobile_noop": "#4C566A",
-    "mobile_threshold": "#2A9D8F",
+    "mobile_noop": "#CC79A7",
+    "mobile_threshold": "#0072B2",
     "mobile_reactive": "#E76F51",
-    "fixed": "#4C566A",
-    "threshold": "#2A9D8F",
+    "fixed": "#CC79A7",
+    "threshold": "#0072B2",
     "reactive": "#E76F51",
-    "rl": "#264653",
+    "rl": "#0072B2",
+}
+
+POLICY_LINESTYLES = {
+    "mobile_noop": "--",
+    "mobile_threshold": "-",
+    "mobile_reactive": "-.",
+    "fixed": "--",
+    "threshold": "-",
+    "reactive": "-.",
+    "rl": "-",
 }
 
 
@@ -110,9 +120,10 @@ def plot_policy_rollout_panel(run_frames: dict[str, pd.DataFrame], title: str | 
     for policy_name, frame in run_frames.items():
         color = POLICY_COLORS[policy_name]
         label = POLICY_LABELS[policy_name]
-        axes[0].plot(frame["global_hour"], frame["queue_length"], color=color, linewidth=2.0, label=label)
-        axes[1].plot(frame["global_hour"], frame["queue_wait_mean_minutes"], color=color, linewidth=2.0, label=label)
-        axes[2].plot(frame["global_hour"], frame["num_active_mobile_stations"], color=color, linewidth=2.0, label=label)
+        linestyle = POLICY_LINESTYLES.get(policy_name, "-")
+        axes[0].plot(frame["global_hour"], frame["queue_length"], color=color, linestyle=linestyle, linewidth=2.4, label=label)
+        axes[1].plot(frame["global_hour"], frame["queue_wait_mean_minutes"], color=color, linestyle=linestyle, linewidth=2.4, label=label)
+        axes[2].plot(frame["global_hour"], frame["num_active_mobile_stations"], color=color, linestyle=linestyle, linewidth=2.4, label=label)
     axes[0].set_ylabel("Total queue length")
     axes[1].set_ylabel("Mean queue wait (minutes)")
     axes[2].set_ylabel("Active MCS")
