@@ -10,6 +10,10 @@ import yaml
 from .artifact_finder import data_root
 
 
+def repo_root() -> Path:
+    return data_root().parents[1]
+
+
 def load_json(path: str | Path) -> dict[str, Any]:
     target = Path(path)
     return json.loads(target.read_text(encoding="utf-8"))
@@ -68,6 +72,20 @@ def load_suite_outputs() -> dict[str, pd.DataFrame]:
 
 def load_reward_sweep_summary() -> pd.DataFrame:
     return load_csv(data_root() / "historical" / "reward_sweep_summary.csv")
+
+
+def current_training_history_path() -> Path:
+    return repo_root() / "outputs" / "mobile_mcs_line_abc" / "rl" / "history.json"
+
+
+def load_training_history() -> tuple[list[dict[str, Any]], str]:
+    current_path = current_training_history_path()
+    if current_path.exists():
+        payload = load_json(current_path)
+        return list(payload.get("history", [])), "current"
+
+    payload = load_json(data_root() / "historical" / "legacy_training_history_range_c24_q2p5.json")
+    return list(payload.get("history", [])), "historical"
 
 
 def load_legacy_training_history() -> list[dict[str, Any]]:

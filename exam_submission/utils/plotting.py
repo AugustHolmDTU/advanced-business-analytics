@@ -210,33 +210,64 @@ def plot_reward_sweep(summary: pd.DataFrame) -> tuple[plt.Figure, np.ndarray]:
     return fig, axes
 
 
-def plot_historical_training(history: list[dict[str, Any]]) -> tuple[plt.Figure, np.ndarray]:
+def plot_training_history(history: list[dict[str, Any]], source: str = "historical") -> tuple[plt.Figure, np.ndarray]:
     frame = pd.DataFrame(history)
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     axes[0, 0].plot(frame["episode"], frame["reward"], color="#264653", linewidth=2)
-    axes[0, 0].set_title("Historical train reward")
+    axes[0, 0].set_title("Train reward")
     axes[0, 0].set_xlabel("Episode")
     axes[0, 0].set_ylabel("Reward")
 
     axes[0, 1].plot(frame["episode"], frame["loss"], color="#E76F51", linewidth=2)
-    axes[0, 1].set_title("Historical train TD loss")
+    axes[0, 1].set_title("Train TD loss")
     axes[0, 1].set_xlabel("Episode")
     axes[0, 1].set_ylabel("Loss")
 
-    for axis, title in [
-        (axes[1, 0], "Evaluation reward"),
-        (axes[1, 1], "Evaluation TD loss"),
-    ]:
-        axis.axis("off")
-        axis.set_title(title)
-        axis.text(
+    has_eval_reward = "eval_mean_reward" in frame and frame["eval_mean_reward"].notna().any()
+    has_eval_loss = "eval_td_loss" in frame and frame["eval_td_loss"].notna().any()
+
+    if has_eval_reward:
+        reward_frame = frame.loc[frame["eval_mean_reward"].notna(), ["episode", "eval_mean_reward"]]
+        axes[1, 0].plot(reward_frame["episode"], reward_frame["eval_mean_reward"], color="#2A9D8F", linewidth=2, marker="o", markersize=4)
+        axes[1, 0].set_xlabel("Episode")
+        axes[1, 0].set_ylabel("Reward")
+    else:
+        axes[1, 0].axis("off")
+        axes[1, 0].text(
             0.5,
             0.55,
-            "No current-compatible RL evaluation-curve artifact\nwas found in the local checkout.\n\nOlder local histories do not include\nheld-out evaluation reward/loss.",
+            "No evaluation reward series was available\nin the selected history artifact.",
             ha="center",
             va="center",
             fontsize=11,
         )
-    fig.suptitle("Historical RL diagnostics from a superseded absolute-allocation variant", y=1.02, fontsize=14)
+    axes[1, 0].set_title("Evaluation reward")
+
+    if has_eval_loss:
+        loss_frame = frame.loc[frame["eval_td_loss"].notna(), ["episode", "eval_td_loss"]]
+        axes[1, 1].plot(loss_frame["episode"], loss_frame["eval_td_loss"], color="#F4A261", linewidth=2, marker="o", markersize=4)
+        axes[1, 1].set_xlabel("Episode")
+        axes[1, 1].set_ylabel("Loss")
+    else:
+        axes[1, 1].axis("off")
+        axes[1, 1].text(
+            0.5,
+            0.55,
+            "No evaluation TD-loss series was available\nin the selected history artifact.",
+            ha="center",
+            va="center",
+            fontsize=11,
+        )
+    axes[1, 1].set_title("Evaluation TD loss")
+
+    if source == "current":
+        title = "Current training-time RL diagnostics from outputs/mobile_mcs_line_abc/rl/history.json"
+    else:
+        title = "Historical RL diagnostics from a superseded absolute-allocation variant"
+    fig.suptitle(title, y=1.02, fontsize=14)
     fig.tight_layout()
     return fig, axes
+
+
+def plot_historical_training(history: list[dict[str, Any]]) -> tuple[plt.Figure, np.ndarray]:
+    return plot_training_history(history, source="historical")
