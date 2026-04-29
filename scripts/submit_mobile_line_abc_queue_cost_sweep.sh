@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-VALUES=(1.0 1.75 2.5 3.25 4.0)
+VALUES=(0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0)
 GROUP_NAME="mobile_mcs_line_abc_queue_cost_sweep"
 
 for value in "${VALUES[@]}"; do
