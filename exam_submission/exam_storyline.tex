@@ -463,6 +463,638 @@ The notebook follows this exact structure:
   Appendix
 \end{enumerate}
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{1}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{from} \PY{n+nn}{pathlib} \PY{k+kn}{import} \PY{n}{Path}
+\PY{k+kn}{import} \PY{n+nn}{sys}
+\PY{k+kn}{import} \PY{n+nn}{os}
+\PY{k+kn}{import} \PY{n+nn}{copy}
+\PY{k+kn}{import} \PY{n+nn}{subprocess}
+\PY{k+kn}{import} \PY{n+nn}{importlib}
+
+\PY{n}{REPO\PYZus{}ROOT} \PY{o}{=} \PY{n+nb}{next}\PY{p}{(}\PY{n}{path} \PY{k}{for} \PY{n}{path} \PY{o+ow}{in} \PY{p}{[}\PY{n}{Path}\PY{o}{.}\PY{n}{cwd}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{o}{*}\PY{n}{Path}\PY{o}{.}\PY{n}{cwd}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{parents}\PY{p}{]} \PY{k}{if} \PY{p}{(}\PY{n}{path} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{exists}\PY{p}{(}\PY{p}{)}\PY{p}{)}
+\PY{k}{if} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{p}{)} \PY{o+ow}{not} \PY{o+ow}{in} \PY{n}{sys}\PY{o}{.}\PY{n}{path}\PY{p}{:}
+    \PY{n}{sys}\PY{o}{.}\PY{n}{path}\PY{o}{.}\PY{n}{insert}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{p}{)}\PY{p}{)}
+\PY{n}{REFERENCE\PYZus{}CODE\PYZus{}SRC} \PY{o}{=} \PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission}\PY{l+s+s1}{\PYZsq{}} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{reference\PYZus{}code}\PY{l+s+s1}{\PYZsq{}} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{src}\PY{l+s+s1}{\PYZsq{}}
+\PY{k}{if} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REFERENCE\PYZus{}CODE\PYZus{}SRC}\PY{p}{)} \PY{o+ow}{not} \PY{o+ow}{in} \PY{n}{sys}\PY{o}{.}\PY{n}{path}\PY{p}{:}
+    \PY{n}{sys}\PY{o}{.}\PY{n}{path}\PY{o}{.}\PY{n}{insert}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REFERENCE\PYZus{}CODE\PYZus{}SRC}\PY{p}{)}\PY{p}{)}
+
+\PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+\PY{k+kn}{import} \PY{n+nn}{pandas} \PY{k}{as} \PY{n+nn}{pd}
+\PY{k+kn}{import} \PY{n+nn}{matplotlib}\PY{n+nn}{.}\PY{n+nn}{pyplot} \PY{k}{as} \PY{n+nn}{plt}
+\PY{k+kn}{from} \PY{n+nn}{IPython}\PY{n+nn}{.}\PY{n+nn}{display} \PY{k+kn}{import} \PY{n}{Markdown}\PY{p}{,} \PY{n}{display}
+
+\PY{k+kn}{import} \PY{n+nn}{exam\PYZus{}submission}\PY{n+nn}{.}\PY{n+nn}{utils}\PY{n+nn}{.}\PY{n+nn}{artifact\PYZus{}finder} \PY{k}{as} \PY{n+nn}{artifact\PYZus{}finder\PYZus{}module}
+\PY{k+kn}{import} \PY{n+nn}{exam\PYZus{}submission}\PY{n+nn}{.}\PY{n+nn}{utils}\PY{n+nn}{.}\PY{n+nn}{load\PYZus{}artifacts} \PY{k}{as} \PY{n+nn}{load\PYZus{}artifacts\PYZus{}module}
+\PY{k+kn}{import} \PY{n+nn}{exam\PYZus{}submission}\PY{n+nn}{.}\PY{n+nn}{utils}\PY{n+nn}{.}\PY{n+nn}{plotting} \PY{k}{as} \PY{n+nn}{plotting\PYZus{}module}
+\PY{k+kn}{import} \PY{n+nn}{exam\PYZus{}submission}\PY{n+nn}{.}\PY{n+nn}{utils}\PY{n+nn}{.}\PY{n+nn}{project\PYZus{}summary} \PY{k}{as} \PY{n+nn}{project\PYZus{}summary\PYZus{}module}
+
+\PY{n}{artifact\PYZus{}finder\PYZus{}module} \PY{o}{=} \PY{n}{importlib}\PY{o}{.}\PY{n}{reload}\PY{p}{(}\PY{n}{artifact\PYZus{}finder\PYZus{}module}\PY{p}{)}
+\PY{n}{load\PYZus{}artifacts\PYZus{}module} \PY{o}{=} \PY{n}{importlib}\PY{o}{.}\PY{n}{reload}\PY{p}{(}\PY{n}{load\PYZus{}artifacts\PYZus{}module}\PY{p}{)}
+\PY{n}{plotting\PYZus{}module} \PY{o}{=} \PY{n}{importlib}\PY{o}{.}\PY{n}{reload}\PY{p}{(}\PY{n}{plotting\PYZus{}module}\PY{p}{)}
+\PY{n}{project\PYZus{}summary\PYZus{}module} \PY{o}{=} \PY{n}{importlib}\PY{o}{.}\PY{n}{reload}\PY{p}{(}\PY{n}{project\PYZus{}summary\PYZus{}module}\PY{p}{)}
+
+\PY{k+kn}{from} \PY{n+nn}{exam\PYZus{}submission}\PY{n+nn}{.}\PY{n+nn}{utils}\PY{n+nn}{.}\PY{n+nn}{artifact\PYZus{}finder} \PY{k+kn}{import} \PY{n}{artifact\PYZus{}table}\PY{p}{,} \PY{n}{missing\PYZus{}notes}
+\PY{k+kn}{from} \PY{n+nn}{exam\PYZus{}submission}\PY{n+nn}{.}\PY{n+nn}{utils}\PY{n+nn}{.}\PY{n+nn}{load\PYZus{}artifacts} \PY{k+kn}{import} \PY{p}{(}
+    \PY{n}{load\PYZus{}core\PYZus{}configs}\PY{p}{,}
+    \PY{n}{load\PYZus{}heldout\PYZus{}runs}\PY{p}{,}
+    \PY{n}{load\PYZus{}reward\PYZus{}sweep\PYZus{}summary}\PY{p}{,}
+    \PY{n}{load\PYZus{}suite\PYZus{}outputs}\PY{p}{,}
+    \PY{n}{load\PYZus{}training\PYZus{}history}\PY{p}{,}
+\PY{p}{)}
+\PY{k+kn}{from} \PY{n+nn}{exam\PYZus{}submission}\PY{n+nn}{.}\PY{n+nn}{utils}\PY{n+nn}{.}\PY{n+nn}{plotting} \PY{k+kn}{import} \PY{p}{(}
+    \PY{n}{set\PYZus{}report\PYZus{}style}\PY{p}{,}
+    \PY{n}{plot\PYZus{}corridor\PYZus{}schematic}\PY{p}{,}
+    \PY{n}{plot\PYZus{}demand\PYZus{}profile}\PY{p}{,}
+    \PY{n}{plot\PYZus{}disruption\PYZus{}scenario}\PY{p}{,}
+    \PY{n}{plot\PYZus{}training\PYZus{}history}\PY{p}{,}
+\PY{p}{)}
+\PY{k+kn}{from} \PY{n+nn}{exam\PYZus{}submission}\PY{n+nn}{.}\PY{n+nn}{utils}\PY{n+nn}{.}\PY{n+nn}{project\PYZus{}summary} \PY{k+kn}{import} \PY{p}{(}
+    \PY{n}{WHAT\PYZus{}MODEL\PYZus{}DOES\PYZus{}NOT\PYZus{}KNOW}\PY{p}{,}
+    \PY{n}{action\PYZus{}table}\PY{p}{,}
+    \PY{n}{environment\PYZus{}table}\PY{p}{,}
+    \PY{n}{expected\PYZus{}daily\PYZus{}profile}\PY{p}{,}
+    \PY{n}{observation\PYZus{}table}\PY{p}{,}
+    \PY{n}{reward\PYZus{}table}\PY{p}{,}
+\PY{p}{)}
+\PY{k+kn}{from} \PY{n+nn}{evch}\PY{n+nn}{.}\PY{n+nn}{sim}\PY{n+nn}{.}\PY{n+nn}{line\PYZus{}corridor} \PY{k+kn}{import} \PY{n}{LineCorridorQueueSimulator}
+
+\PY{n}{set\PYZus{}report\PYZus{}style}\PY{p}{(}\PY{p}{)}
+\PY{n}{pd}\PY{o}{.}\PY{n}{set\PYZus{}option}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{display.max\PYZus{}colwidth}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{120}\PY{p}{)}
+\PY{n}{pd}\PY{o}{.}\PY{n}{set\PYZus{}option}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{display.width}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{160}\PY{p}{)}
+
+\PY{n}{configs} \PY{o}{=} \PY{n}{load\PYZus{}core\PYZus{}configs}\PY{p}{(}\PY{p}{)}
+\PY{n}{env\PYZus{}cfg} \PY{o}{=} \PY{n}{configs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{environment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{rl\PYZus{}simple\PYZus{}cfg} \PY{o}{=} \PY{n}{configs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rl\PYZus{}simple}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{rl\PYZus{}sb3\PYZus{}cfg} \PY{o}{=} \PY{n}{configs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rl\PYZus{}sb3}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{experiment\PYZus{}cfg} \PY{o}{=} \PY{n}{configs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{experiment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{heldout\PYZus{}cfg} \PY{o}{=} \PY{n}{configs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{heldout}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{heldout\PYZus{}runs} \PY{o}{=} \PY{n}{load\PYZus{}heldout\PYZus{}runs}\PY{p}{(}\PY{p}{)}
+\PY{n}{reward\PYZus{}sweep} \PY{o}{=} \PY{n}{load\PYZus{}reward\PYZus{}sweep\PYZus{}summary}\PY{p}{(}\PY{p}{)}
+\PY{n}{suite\PYZus{}outputs} \PY{o}{=} \PY{n}{load\PYZus{}suite\PYZus{}outputs}\PY{p}{(}\PY{p}{)}
+\PY{n}{training\PYZus{}history}\PY{p}{,} \PY{n}{training\PYZus{}history\PYZus{}source} \PY{o}{=} \PY{n}{load\PYZus{}training\PYZus{}history}\PY{p}{(}\PY{p}{)}
+
+\PY{n}{daily\PYZus{}profile} \PY{o}{=} \PY{n}{expected\PYZus{}daily\PYZus{}profile}\PY{p}{(}\PY{n}{env\PYZus{}cfg}\PY{p}{)}
+\PY{n}{heldout\PYZus{}frames} \PY{o}{=} \PY{p}{\PYZob{}}\PY{n}{name}\PY{p}{:} \PY{n}{payload}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{metrics}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{k}{for} \PY{n}{name}\PY{p}{,} \PY{n}{payload} \PY{o+ow}{in} \PY{n}{heldout\PYZus{}runs}\PY{o}{.}\PY{n}{items}\PY{p}{(}\PY{p}{)}\PY{p}{\PYZcb{}}
+\PY{n}{heldout\PYZus{}summaries} \PY{o}{=} \PY{p}{\PYZob{}}\PY{n}{name}\PY{p}{:} \PY{n}{payload}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{summary}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{k}{for} \PY{n}{name}\PY{p}{,} \PY{n}{payload} \PY{o+ow}{in} \PY{n}{heldout\PYZus{}runs}\PY{o}{.}\PY{n}{items}\PY{p}{(}\PY{p}{)}\PY{p}{\PYZcb{}}
+\PY{n}{artifact\PYZus{}df} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{artifact\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{)}
+
+\PY{n}{DISRUPTION\PYZus{}CASE\PYZus{}SPECS} \PY{o}{=} \PY{p}{\PYZob{}}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{capacity\PYZus{}drop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{p}{\PYZob{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{title}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Capacity drop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{capacity\PYZus{}drop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{station\PYZus{}ab}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{start\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{8.0}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{2.0}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{4.0}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{description}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Representative service\PYZhy{}capacity shock: AB base capacity falls from 12 plugs to 4 during the morning peak.}\PY{l+s+s1}{\PYZsq{}}
+    \PY{p}{\PYZcb{}}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{station\PYZus{}outage}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{p}{\PYZob{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{title}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Station outage}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{station\PYZus{}outage}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{station\PYZus{}ab}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{start\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{8.5}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{1.5}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{0.0}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{description}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Representative hard failure: AB is forced fully offline for 90 minutes during the peak build\PYZhy{}up.}\PY{l+s+s1}{\PYZsq{}}
+    \PY{p}{\PYZcb{}}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time\PYZus{}inflation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{p}{\PYZob{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{title}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Service\PYZhy{}time inflation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time\PYZus{}inflation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{station\PYZus{}ab}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{start\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{8.0}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{2.5}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{1.8}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{description}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Representative process slowdown: vehicles at AB occupy plugs 1.8x longer than normal.}\PY{l+s+s1}{\PYZsq{}}
+    \PY{p}{\PYZcb{}}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{demand\PYZus{}surge}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{p}{\PYZob{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{title}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Demand surge}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{demand\PYZus{}surge}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eastbound}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{start\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{7.5}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{2.0}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{2.2}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{description}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Representative demand shock: eastbound OD flows are multiplied by 2.2 during the morning rush.}\PY{l+s+s1}{\PYZsq{}}
+    \PY{p}{\PYZcb{}}\PY{p}{,}
+\PY{p}{\PYZcb{}}
+
+\PY{k}{def} \PY{n+nf}{run\PYZus{}scripted\PYZus{}disruption\PYZus{}case}\PY{p}{(}\PY{n}{case\PYZus{}key}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{l+m+mi}{7}\PY{p}{)}\PY{p}{:}
+    \PY{n}{spec} \PY{o}{=} \PY{n}{DISRUPTION\PYZus{}CASE\PYZus{}SPECS}\PY{p}{[}\PY{n}{case\PYZus{}key}\PY{p}{]}
+    \PY{n}{sim\PYZus{}cfg} \PY{o}{=} \PY{n}{copy}\PY{o}{.}\PY{n}{deepcopy}\PY{p}{(}\PY{n}{env\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{environment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{simulation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+    \PY{n}{sim\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{l+m+mf}{24.0}
+    \PY{n}{sim\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{\PYZob{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{enabled}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{k+kc}{True}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mode}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{scripted}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{event\PYZus{}types}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{p}{[}\PY{n}{spec}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{scripted\PYZus{}events}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{p}{[}\PY{p}{\PYZob{}}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{spec}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption\PYZus{}type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{spec}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{day\PYZus{}index}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mi}{0}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{start\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{spec}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{start\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{spec}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{spec}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+        \PY{p}{\PYZcb{}}\PY{p}{]}\PY{p}{,}
+    \PY{p}{\PYZcb{}}
+    \PY{n}{simulator} \PY{o}{=} \PY{n}{LineCorridorQueueSimulator}\PY{p}{(}\PY{n}{sim\PYZus{}cfg}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{n}{seed}\PY{p}{)}
+    \PY{k}{return} \PY{n}{simulator}\PY{o}{.}\PY{n}{run}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{metrics}
+
+\PY{n}{disruption\PYZus{}case\PYZus{}runs} \PY{o}{=} \PY{p}{\PYZob{}}
+    \PY{n}{case\PYZus{}key}\PY{p}{:} \PY{n}{run\PYZus{}scripted\PYZus{}disruption\PYZus{}case}\PY{p}{(}\PY{n}{case\PYZus{}key}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{l+m+mi}{7} \PY{o}{+} \PY{n}{idx}\PY{p}{)}
+    \PY{k}{for} \PY{n}{idx}\PY{p}{,} \PY{n}{case\PYZus{}key} \PY{o+ow}{in} \PY{n+nb}{enumerate}\PY{p}{(}\PY{n}{DISRUPTION\PYZus{}CASE\PYZus{}SPECS}\PY{p}{)}
+\PY{p}{\PYZcb{}}
+
+\PY{n}{MAIN\PYZus{}POLICIES} \PY{o}{=} \PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{MAIN\PYZus{}POLICY\PYZus{}LABELS} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Fixed / no\PYZhy{}agent}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Adaptive threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}
+\PY{n}{MAIN\PYZus{}COLORS} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}4C566A}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}2A9D8F}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}
+\PY{n}{ALL\PYZus{}POLICY\PYZus{}LABELS} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Fixed / no\PYZhy{}agent}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Adaptive threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}reactive}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reactive}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}
+\PY{n}{ALL\PYZus{}COLORS} \PY{o}{=} \PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}4C566A}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}2A9D8F}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}reactive}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}E76F51}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}
+
+
+\PY{k}{def} \PY{n+nf}{\PYZus{}markdown\PYZus{}escape}\PY{p}{(}\PY{n}{value}\PY{p}{)}\PY{p}{:}
+    \PY{k}{return} \PY{n+nb}{str}\PY{p}{(}\PY{n}{value}\PY{p}{)}\PY{o}{.}\PY{n}{replace}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{|}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+se}{\PYZbs{}\PYZbs{}}\PY{l+s+s1}{|}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{replace}\PY{p}{(}\PY{n+nb}{chr}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZlt{}br\PYZgt{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{\PYZus{}markdown\PYZus{}table}\PY{p}{(}\PY{n}{frame}\PY{p}{,} \PY{n}{index}\PY{o}{=}\PY{k+kc}{False}\PY{p}{)}\PY{p}{:}
+    \PY{n}{columns} \PY{o}{=} \PY{n+nb}{list}\PY{p}{(}\PY{n}{frame}\PY{o}{.}\PY{n}{columns}\PY{p}{)}
+    \PY{k}{if} \PY{n}{index}\PY{p}{:}
+        \PY{n}{columns} \PY{o}{=} \PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{index}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{o}{*}\PY{n}{columns}\PY{p}{]}
+    \PY{n}{header} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{| }\PY{l+s+s1}{\PYZsq{}} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ | }\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{join}\PY{p}{(}\PY{n}{\PYZus{}markdown\PYZus{}escape}\PY{p}{(}\PY{n}{col}\PY{p}{)} \PY{k}{for} \PY{n}{col} \PY{o+ow}{in} \PY{n}{columns}\PY{p}{)} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ |}\PY{l+s+s1}{\PYZsq{}}
+    \PY{n}{divider} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{| }\PY{l+s+s1}{\PYZsq{}} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ | }\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{join}\PY{p}{(}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}\PYZhy{}\PYZhy{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{*} \PY{n+nb}{len}\PY{p}{(}\PY{n}{columns}\PY{p}{)}\PY{p}{)} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ |}\PY{l+s+s1}{\PYZsq{}}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+    \PY{k}{for} \PY{n}{idx}\PY{p}{,} \PY{p}{(}\PY{n}{\PYZus{}}\PY{p}{,} \PY{n}{row}\PY{p}{)} \PY{o+ow}{in} \PY{n+nb}{enumerate}\PY{p}{(}\PY{n}{frame}\PY{o}{.}\PY{n}{iterrows}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{:}
+        \PY{n}{values} \PY{o}{=} \PY{n}{row}\PY{o}{.}\PY{n}{tolist}\PY{p}{(}\PY{p}{)}
+        \PY{k}{if} \PY{n}{index}\PY{p}{:}
+            \PY{n}{values} \PY{o}{=} \PY{p}{[}\PY{n}{frame}\PY{o}{.}\PY{n}{index}\PY{p}{[}\PY{n}{idx}\PY{p}{]}\PY{p}{,} \PY{o}{*}\PY{n}{values}\PY{p}{]}
+        \PY{n}{rows}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{| }\PY{l+s+s1}{\PYZsq{}} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ | }\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{join}\PY{p}{(}\PY{n}{\PYZus{}markdown\PYZus{}escape}\PY{p}{(}\PY{n}{value}\PY{p}{)} \PY{k}{for} \PY{n}{value} \PY{o+ow}{in} \PY{n}{values}\PY{p}{)} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ |}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{k}{return} \PY{n+nb}{chr}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}\PY{o}{.}\PY{n}{join}\PY{p}{(}\PY{p}{[}\PY{n}{header}\PY{p}{,} \PY{n}{divider}\PY{p}{,} \PY{o}{*}\PY{n}{rows}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{show\PYZus{}table}\PY{p}{(}\PY{n}{df}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{,} \PY{n}{index}\PY{o}{=}\PY{k+kc}{False}\PY{p}{)}\PY{p}{:}
+    \PY{n}{frame} \PY{o}{=} \PY{n}{df}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+    \PY{n}{numeric\PYZus{}cols} \PY{o}{=} \PY{n}{frame}\PY{o}{.}\PY{n}{select\PYZus{}dtypes}\PY{p}{(}\PY{n}{include}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{columns}
+    \PY{k}{if} \PY{n}{precision} \PY{o+ow}{is} \PY{o+ow}{not} \PY{k+kc}{None} \PY{o+ow}{and} \PY{n+nb}{len}\PY{p}{(}\PY{n}{numeric\PYZus{}cols}\PY{p}{)} \PY{o}{\PYZgt{}} \PY{l+m+mi}{0}\PY{p}{:}
+        \PY{n}{frame}\PY{o}{.}\PY{n}{loc}\PY{p}{[}\PY{p}{:}\PY{p}{,} \PY{n}{numeric\PYZus{}cols}\PY{p}{]} \PY{o}{=} \PY{n}{frame}\PY{o}{.}\PY{n}{loc}\PY{p}{[}\PY{p}{:}\PY{p}{,} \PY{n}{numeric\PYZus{}cols}\PY{p}{]}\PY{o}{.}\PY{n}{round}\PY{p}{(}\PY{n}{precision}\PY{p}{)}
+    \PY{n}{display}\PY{p}{(}\PY{n}{Markdown}\PY{p}{(}\PY{n}{\PYZus{}markdown\PYZus{}table}\PY{p}{(}\PY{n}{frame}\PY{p}{,} \PY{n}{index}\PY{o}{=}\PY{n}{index}\PY{p}{)}\PY{p}{)}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{rolling\PYZus{}mean}\PY{p}{(}\PY{n}{series}\PY{p}{,} \PY{n}{window\PYZus{}steps}\PY{o}{=}\PY{l+m+mi}{12}\PY{p}{)}\PY{p}{:}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{Series}\PY{p}{(}\PY{n}{series}\PY{p}{)}\PY{o}{.}\PY{n}{rolling}\PY{p}{(}\PY{n}{window\PYZus{}steps}\PY{p}{,} \PY{n}{min\PYZus{}periods}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{shade\PYZus{}disruptions}\PY{p}{(}\PY{n}{ax}\PY{p}{,} \PY{n}{frame}\PY{p}{)}\PY{p}{:}
+    \PY{n}{active} \PY{o}{=} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption\PYZus{}active}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{fillna}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{o}{.}\PY{n}{astype}\PY{p}{(}\PY{n+nb}{int}\PY{p}{)}\PY{o}{.}\PY{n}{to\PYZus{}numpy}\PY{p}{(}\PY{p}{)}
+    \PY{n}{hours} \PY{o}{=} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{global\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{to\PYZus{}numpy}\PY{p}{(}\PY{p}{)}
+    \PY{n}{start} \PY{o}{=} \PY{k+kc}{None}
+    \PY{k}{for} \PY{n}{idx}\PY{p}{,} \PY{n}{flag} \PY{o+ow}{in} \PY{n+nb}{enumerate}\PY{p}{(}\PY{n}{active}\PY{p}{)}\PY{p}{:}
+        \PY{k}{if} \PY{n}{flag} \PY{o}{==} \PY{l+m+mi}{1} \PY{o+ow}{and} \PY{n}{start} \PY{o+ow}{is} \PY{k+kc}{None}\PY{p}{:}
+            \PY{n}{start} \PY{o}{=} \PY{n}{hours}\PY{p}{[}\PY{n}{idx}\PY{p}{]}
+        \PY{k}{if} \PY{n}{flag} \PY{o}{==} \PY{l+m+mi}{0} \PY{o+ow}{and} \PY{n}{start} \PY{o+ow}{is} \PY{o+ow}{not} \PY{k+kc}{None}\PY{p}{:}
+            \PY{n}{ax}\PY{o}{.}\PY{n}{axvspan}\PY{p}{(}\PY{n}{start}\PY{p}{,} \PY{n}{hours}\PY{p}{[}\PY{n}{idx}\PY{p}{]}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}F4A261}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{alpha}\PY{o}{=}\PY{l+m+mf}{0.16}\PY{p}{)}
+            \PY{n}{start} \PY{o}{=} \PY{k+kc}{None}
+    \PY{k}{if} \PY{n}{start} \PY{o+ow}{is} \PY{o+ow}{not} \PY{k+kc}{None}\PY{p}{:}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{axvspan}\PY{p}{(}\PY{n}{start}\PY{p}{,} \PY{n}{hours}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}F4A261}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{alpha}\PY{o}{=}\PY{l+m+mf}{0.16}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}environment\PYZus{}overview\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{base} \PY{o}{=} \PY{n}{environment\PYZus{}table}\PY{p}{(}\PY{n}{env\PYZus{}cfg}\PY{p}{)}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+    \PY{n}{sim} \PY{o}{=} \PY{n}{env\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{environment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{simulation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{chargers} \PY{o}{=} \PY{n+nb}{int}\PY{p}{(}\PY{n}{env\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{environment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}station\PYZus{}chargers}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+    \PY{n}{mean\PYZus{}service} \PY{o}{=} \PY{n+nb}{float}\PY{p}{(}\PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+    \PY{n}{vehicles\PYZus{}per\PYZus{}hour} \PY{o}{=} \PY{n}{chargers} \PY{o}{*} \PY{l+m+mf}{60.0} \PY{o}{/} \PY{n}{mean\PYZus{}service}
+    \PY{n}{extra\PYZus{}rows} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean MCS throughput}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+si}{\PYZob{}}\PY{n}{vehicles\PYZus{}per\PYZus{}hour}\PY{l+s+si}{:}\PY{l+s+s2}{.1f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ vehicles/hour per MCS (\PYZti{}}\PY{l+s+si}{\PYZob{}}\PY{n}{vehicles\PYZus{}per\PYZus{}hour}\PY{o}{/}\PY{l+m+mi}{12}\PY{l+s+si}{:}\PY{l+s+s2}{.2f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ vehicles per 5\PYZhy{}minute step)}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Depot\PYZhy{}to\PYZhy{}station travel}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+si}{\PYZob{}}\PY{n+nb}{float}\PY{p}{(}\PY{n}{env\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{environment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{get}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mcs\PYZus{}middle\PYZus{}travel\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{30.0}\PY{p}{)}\PY{p}{)}\PY{l+s+si}{:}\PY{l+s+s2}{.0f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ minutes}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Full MCS recharge time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+si}{\PYZob{}}\PY{n+nb}{float}\PY{p}{(}\PY{n}{env\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{environment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{get}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mcs\PYZus{}charge\PYZus{}full\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{+w}{ }\PY{l+m+mf}{60.0}\PY{p}{)}\PY{p}{)}\PY{l+s+si}{:}\PY{l+s+s2}{.0f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ minutes}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Setting}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Value}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{concat}\PY{p}{(}\PY{p}{[}\PY{n}{base}\PY{p}{,} \PY{n}{extra\PYZus{}rows}\PY{p}{]}\PY{p}{,} \PY{n}{ignore\PYZus{}index}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}simulation\PYZus{}layers\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Base corridor}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Three cities in a line with one fixed station on each link.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Creates the minimal spatial setting in which local congestion can differ between AB and BC.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time\PYZhy{}varying demand}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Morning peak, afternoon peak, and a smaller midday bump.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Makes congestion depend on time of day rather than a flat average flow.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{OD structure}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Trips are split across AB, BA, BC, CB, AC, and CA flows.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Allows station pressure to come from directional travel patterns, not only total volume.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queueing and service}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Vehicles may stop to charge, join queues, and occupy plugs for stochastic service times.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Turns traffic into an operational service problem with waiting\PYZhy{}time consequences.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mobile charging stations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Up to 10 MCS units add flexible but delayed capacity.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Creates the control lever that can potentially improve resilience.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Disruptions}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Capacity drops, outages, service\PYZhy{}time inflation, and OD demand surges.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Creates stress conditions under which resilience can be evaluated directly.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Layer added}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Implementation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Why it matters}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}distribution\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{sim} \PY{o}{=} \PY{n}{env\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{environment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{simulation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{disruption} \PY{o}{=} \PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Expected total traffic}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Deterministic baseline + Gaussian\PYZhy{}shaped morning/evening peaks + midday bump}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Baseline }\PY{l+s+si}{\PYZob{}}\PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{traffic}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{baseline\PYZus{}cars\PYZus{}per\PYZus{}step}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{:}\PY{l+s+s2}{.0f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ cars/step; peak width }\PY{l+s+si}{\PYZob{}}\PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{traffic}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{peak\PYZus{}width\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{:}\PY{l+s+s2}{.1f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ h.}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Origin shares}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time\PYZhy{}varying weighted shares across A, B, and C origins}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Directional bias shifts origin pressure toward A in the morning and toward C in the evening.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Passing vehicles by OD and step}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Poisson draw around expected OD flow}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Implements stochastic arrivals around the deterministic demand profile.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Charging decision}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Binomial draw from passing vehicles with fixed stop probability}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Charging\PYZhy{}stop probability = }\PY{l+s+si}{\PYZob{}}\PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{charging\PYZus{}stop\PYZus{}probability}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{:}\PY{l+s+s2}{.3f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{.}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Station assignment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Multinomial assignment using OD\PYZhy{}specific station weights}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Long trips can pressure both stations; local trips pressure one side only.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Service time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Normal draw, then clipped to configured min/max bounds}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Mean }\PY{l+s+si}{\PYZob{}}\PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{:}\PY{l+s+s2}{.0f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ min, std }\PY{l+s+si}{\PYZob{}}\PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{std\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{:}\PY{l+s+s2}{.0f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{, clipped to }\PY{l+s+si}{\PYZob{}}\PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{min\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{:}\PY{l+s+s2}{.0f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{\PYZhy{}}\PY{l+s+si}{\PYZob{}}\PY{n}{sim}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{max\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{:}\PY{l+s+s2}{.0f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ min.}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Disruptions per day}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Categorical draw from configured day\PYZhy{}level count weights}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Weights: }\PY{l+s+si}{\PYZob{}}\PY{n+nb}{dict}\PY{p}{(}\PY{n}{disruption}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{day\PYZus{}disruption\PYZus{}count\PYZus{}weights}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{.}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Disruption timing and severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Uniform draws within configured ranges for start time, duration, and severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Keeps disruptions stochastic but bounded and interpretable.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Process}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Distribution / mechanism}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Assumption in the active benchmark}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}disruption\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{disruption} \PY{o}{=} \PY{n}{env\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{environment}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{simulation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{disruption}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+    \PY{k}{for} \PY{n}{key} \PY{o+ow}{in} \PY{n}{disruption}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{event\PYZus{}types}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{:}
+        \PY{n}{cfg} \PY{o}{=} \PY{n}{disruption}\PY{p}{[}\PY{n}{key}\PY{p}{]}
+        \PY{k}{if} \PY{n}{key} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{capacity\PYZus{}drop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+            \PY{n}{severity} \PY{o}{=} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Target plugs sampled from }\PY{l+s+si}{\PYZob{}}\PY{n}{cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target\PYZus{}num\PYZus{}plugs}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{\PYZdq{}}
+        \PY{k}{elif} \PY{n}{key} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{station\PYZus{}outage}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+            \PY{n}{severity} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Target station forced to zero plugs}\PY{l+s+s1}{\PYZsq{}}
+        \PY{k}{elif} \PY{n}{key} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time\PYZus{}inflation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+            \PY{n}{severity} \PY{o}{=} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Service\PYZhy{}time multiplier sampled from }\PY{l+s+si}{\PYZob{}}\PY{n}{cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{multiplier}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{\PYZdq{}}
+        \PY{k}{else}\PY{p}{:}
+            \PY{n}{severity} \PY{o}{=} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Demand multiplier sampled from }\PY{l+s+si}{\PYZob{}}\PY{n}{cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{multiplier}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{\PYZdq{}}
+        \PY{n}{rows}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{\PYZob{}}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{key}\PY{o}{.}\PY{n}{replace}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZus{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ }\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Targets}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{, }\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{join}\PY{p}{(}\PY{n}{cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{targets}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Start window}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+si}{\PYZob{}}\PY{n}{cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{start\PYZus{}hour\PYZus{}range}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{\PYZhy{}}\PY{l+s+si}{\PYZob{}}\PY{n}{cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{start\PYZus{}hour\PYZus{}range}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ h}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Duration}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n+nb}{str}\PY{p}{(}\PY{n}{cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{duration\PYZus{}hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Severity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{severity}\PY{p}{,}
+        \PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}state\PYZus{}group\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queue state}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Current queue length and current mean wait at AB and BC.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Recent flow}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Latest arrivals and latest service starts at each station.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Capacity state}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Effective plugs and active mobile capacity at AB and BC.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Spatial pressure}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Committed MCS bias and local deficit estimates by side of corridor.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Disruption state}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Whether a disruption is active, what type it is, and which side it affects.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MCS logistics}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{5}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Units available in depot, charging, or in transit to AB, BC, or middle.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time\PYZhy{}of\PYZhy{}day}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{2}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Sine and cosine encodings of time within the day.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Feature group}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Count}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Why it is in the state}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}architecture\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{simple} \PY{o}{=} \PY{n}{rl\PYZus{}simple\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{sb3} \PY{o}{=} \PY{n}{rl\PYZus{}sb3\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{hidden} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ → }\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{join}\PY{p}{(}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{27}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{o}{*}\PY{p}{[}\PY{n+nb}{str}\PY{p}{(}\PY{n}{v}\PY{p}{)} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{hidden\PYZus{}dims}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+    \PY{n}{checkpoint\PYZus{}candidates} \PY{o}{=} \PY{n+nb}{sorted}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{o}{.}\PY{n}{glob}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{**/best\PYZus{}model.pt}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)} \PY{o}{+} \PY{n+nb}{sorted}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{o}{.}\PY{n}{glob}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{**/best\PYZus{}model.zip}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+    \PY{n}{checkpoint\PYZus{}note} \PY{o}{=} \PY{n+nb}{str}\PY{p}{(}\PY{n}{checkpoint\PYZus{}candidates}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{relative\PYZus{}to}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{p}{)}\PY{p}{)} \PY{k}{if} \PY{n}{checkpoint\PYZus{}candidates} \PY{k}{else} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No current compatible checkpoint found in checkout}\PY{l+s+s1}{\PYZsq{}}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Observation size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{27}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Action size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Simple learner backend}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{backend}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Simple learner network}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{MLP }\PY{l+s+si}{\PYZob{}}\PY{n}{hidden}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Simple learner optimizer}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Adam, learning rate }\PY{l+s+si}{\PYZob{}}\PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{learning\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Simple learner TD loss}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Huber / smooth L1 loss on one\PYZhy{}step TD targets}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SB3 candidate backend}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{backend}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SB3 policy class}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MlpPolicy with net\PYZus{}arch [256, 256]}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Current checkpoint status}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{checkpoint\PYZus{}note}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Item}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Value}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}simple\PYZus{}hyperparameter\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{simple} \PY{o}{=} \PY{n}{rl\PYZus{}simple\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Episodes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{episodes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Max steps / episode}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{max\PYZus{}steps\PYZus{}per\PYZus{}episode}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Discount factor γ}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{gamma}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Learning rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{learning\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Batch size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{batch\PYZus{}size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Replay capacity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{replay\PYZus{}capacity}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Learning starts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{learning\PYZus{}starts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Train frequency}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{train\PYZus{}frequency}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Gradient steps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{gradient\PYZus{}steps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Target update interval}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target\PYZus{}update\PYZus{}interval}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Hidden dimensions}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{hidden\PYZus{}dims}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Exploration start ε}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{epsilon\PYZus{}start}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Exploration end ε}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{epsilon\PYZus{}end}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Exploration decay steps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{epsilon\PYZus{}decay\PYZus{}steps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Periodic eval cadence}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Every }\PY{l+s+si}{\PYZob{}}\PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eval\PYZus{}interval\PYZus{}steps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ environment steps}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Periodic eval episodes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eval\PYZus{}during\PYZus{}training\PYZus{}episodes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Simple learner hyperparameter}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Value}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}sb3\PYZus{}hyperparameter\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{sb3} \PY{o}{=} \PY{n}{rl\PYZus{}sb3\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{sb3\PYZus{}inner} \PY{o}{=} \PY{n}{sb3}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{sb3}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Total timesteps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{total\PYZus{}timesteps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Learning rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{learning\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Discount factor γ}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{gamma}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Replay buffer}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{buffer\PYZus{}size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Learning starts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{learning\PYZus{}starts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Batch size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{batch\PYZus{}size}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Train frequency}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{train\PYZus{}freq}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Gradient steps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{gradient\PYZus{}steps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Exploration fraction}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exploration\PYZus{}fraction}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Initial ε}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exploration\PYZus{}initial\PYZus{}eps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Final ε}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exploration\PYZus{}final\PYZus{}eps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Target update interval}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3\PYZus{}inner}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{target\PYZus{}update\PYZus{}interval}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Evaluation episodes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{sb3}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{evaluation\PYZus{}episodes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SB3 hyperparameter}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Value}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}reward\PYZus{}term\PYZus{}tables}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{positive} \PY{o}{=} \PY{n}{reward\PYZus{}table}\PY{p}{(}\PY{n}{env\PYZus{}cfg}\PY{p}{,} \PY{n}{positive}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}\PY{o}{.}\PY{n}{rename}\PY{p}{(}\PY{n}{columns}\PY{o}{=}\PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Term}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Positive term}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Weight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Weight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Interpretation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Operational role}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{n}{negative} \PY{o}{=} \PY{n}{reward\PYZus{}table}\PY{p}{(}\PY{n}{env\PYZus{}cfg}\PY{p}{,} \PY{n}{positive}\PY{o}{=}\PY{k+kc}{False}\PY{p}{)}\PY{o}{.}\PY{n}{rename}\PY{p}{(}\PY{n}{columns}\PY{o}{=}\PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Term}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Negative term}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Weight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Weight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Interpretation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Operational role}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{k}{return} \PY{n}{positive}\PY{p}{,} \PY{n}{negative}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}reward\PYZus{}slice\PYZus{}table}\PY{p}{(}\PY{n}{frame}\PY{p}{,} \PY{n}{changing\PYZus{}label}\PY{p}{,} \PY{n}{fixed\PYZus{}label}\PY{p}{,} \PY{n}{fixed\PYZus{}value}\PY{p}{)}\PY{p}{:}
+    \PY{k}{if} \PY{n}{frame}\PY{o}{.}\PY{n}{empty}\PY{p}{:}
+        \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{p}{[}\PY{p}{\PYZob{}}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Run}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No matching slice}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+            \PY{n}{changing\PYZus{}label}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{n/a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+            \PY{n}{fixed\PYZus{}label}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{n/a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{n/a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Final reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{n/a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{p}{\PYZcb{}}\PY{p}{]}\PY{p}{)}
+    \PY{n}{view} \PY{o}{=} \PY{n}{frame}\PY{p}{[}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{run}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}mean\PYZus{}queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+    \PY{k}{if} \PY{n}{changing\PYZus{}label} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MCS cost}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+        \PY{n}{view}\PY{p}{[}\PY{n}{changing\PYZus{}label}\PY{p}{]} \PY{o}{=} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{active\PYZus{}mcs\PYZus{}cost}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{values}
+    \PY{k}{else}\PY{p}{:}
+        \PY{n}{view}\PY{p}{[}\PY{n}{changing\PYZus{}label}\PY{p}{]} \PY{o}{=} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}penalty}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{values}
+    \PY{n}{view}\PY{p}{[}\PY{n}{fixed\PYZus{}label}\PY{p}{]} \PY{o}{=} \PY{n}{fixed\PYZus{}value}
+    \PY{n}{view} \PY{o}{=} \PY{n}{view}\PY{p}{[}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{run}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{changing\PYZus{}label}\PY{p}{,} \PY{n}{fixed\PYZus{}label}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}mean\PYZus{}queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}
+    \PY{n}{view} \PY{o}{=} \PY{n}{view}\PY{o}{.}\PY{n}{rename}\PY{p}{(}\PY{n}{columns}\PY{o}{=}\PY{p}{\PYZob{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{run}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Run}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}mean\PYZus{}queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Final reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{k}{return} \PY{n}{view}\PY{o}{.}\PY{n}{reset\PYZus{}index}\PY{p}{(}\PY{n}{drop}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}mcs\PYZus{}cost\PYZus{}reward\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{frame}\PY{p}{,} \PY{n}{fixed\PYZus{}queue\PYZus{}cost} \PY{o}{=} \PY{n}{reward\PYZus{}slice\PYZus{}mcs\PYZus{}cost}\PY{p}{(}\PY{n}{reward\PYZus{}sweep}\PY{p}{)}
+    \PY{k}{return} \PY{n}{build\PYZus{}reward\PYZus{}slice\PYZus{}table}\PY{p}{(}\PY{n}{frame}\PY{p}{,} \PY{n}{changing\PYZus{}label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MCS cost}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fixed\PYZus{}label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queue cost (fixed)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fixed\PYZus{}value}\PY{o}{=}\PY{n}{fixed\PYZus{}queue\PYZus{}cost}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}queue\PYZus{}cost\PYZus{}reward\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{frame}\PY{p}{,} \PY{n}{fixed\PYZus{}mcs\PYZus{}cost} \PY{o}{=} \PY{n}{reward\PYZus{}slice\PYZus{}queue\PYZus{}cost}\PY{p}{(}\PY{n}{reward\PYZus{}sweep}\PY{p}{)}
+    \PY{k}{return} \PY{n}{build\PYZus{}reward\PYZus{}slice\PYZus{}table}\PY{p}{(}\PY{n}{frame}\PY{p}{,} \PY{n}{changing\PYZus{}label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queue cost}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fixed\PYZus{}label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MCS cost (fixed)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fixed\PYZus{}value}\PY{o}{=}\PY{n}{fixed\PYZus{}mcs\PYZus{}cost}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}training\PYZus{}setup\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{simple} \PY{o}{=} \PY{n}{rl\PYZus{}simple\PYZus{}cfg}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{rl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Training episodes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Randomized 2\PYZhy{}6 day episodes sampled from training seeds 0\PYZhy{}9999.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Periodic evaluation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+si}{\PYZob{}}\PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eval\PYZus{}during\PYZus{}training\PYZus{}episodes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ held\PYZhy{}out episodes every }\PY{l+s+si}{\PYZob{}}\PY{n}{simple}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eval\PYZus{}interval\PYZus{}steps}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{ environment steps without exploration or learning updates.}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Validation split}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Configured held\PYZhy{}out validation seeds starting at 10000; useful for policy checks even without hyperparameter tuning.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Held\PYZhy{}out rollout}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{A fixed unseen `test\PYZus{}id` scenario used for the main time\PYZhy{}series comparison in this report.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Test stress suite}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Named one\PYZhy{}day scripted disruptions used for robustness checks; kept in the appendix to avoid clutter.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Component}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{How it is used in this report}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}training\PYZus{}status\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{history\PYZus{}frame} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{training\PYZus{}history}\PY{p}{)}
+    \PY{n}{checkpoint\PYZus{}candidates} \PY{o}{=} \PY{n+nb}{sorted}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{o}{.}\PY{n}{glob}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{**/best\PYZus{}model.pt}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)} \PY{o}{+} \PY{n+nb}{sorted}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{o}{.}\PY{n}{glob}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{**/best\PYZus{}model.zip}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+    \PY{k}{if} \PY{n}{training\PYZus{}history\PYZus{}source} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{submission\PYZus{}copy}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+        \PY{n}{source\PYZus{}label} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Copied current training history in exam\PYZus{}submission/data/generated/training/history\PYZus{}current.json}\PY{l+s+s1}{\PYZsq{}}
+    \PY{k}{elif} \PY{n}{training\PYZus{}history\PYZus{}source} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{current\PYZus{}outputs}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}
+        \PY{n}{source\PYZus{}label} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Current outputs/mobile\PYZus{}mcs\PYZus{}line\PYZus{}abc/rl/history.json}\PY{l+s+s1}{\PYZsq{}}
+    \PY{k}{else}\PY{p}{:}
+        \PY{n}{source\PYZus{}label} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Historical fallback artifact}\PY{l+s+s1}{\PYZsq{}}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Training\PYZhy{}history source}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{source\PYZus{}label}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Train reward available}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Yes}\PY{l+s+s1}{\PYZsq{}} \PY{k}{if} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{reward}\PY{l+s+s1}{\PYZsq{}} \PY{o+ow}{in} \PY{n}{history\PYZus{}frame} \PY{k}{else} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Train TD loss available}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Yes}\PY{l+s+s1}{\PYZsq{}} \PY{k}{if} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{loss}\PY{l+s+s1}{\PYZsq{}} \PY{o+ow}{in} \PY{n}{history\PYZus{}frame} \PY{k}{else} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Eval reward available}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Yes}\PY{l+s+s1}{\PYZsq{}} \PY{k}{if} \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eval\PYZus{}mean\PYZus{}reward}\PY{l+s+s1}{\PYZsq{}} \PY{o+ow}{in} \PY{n}{history\PYZus{}frame} \PY{o+ow}{and} \PY{n}{history\PYZus{}frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eval\PYZus{}mean\PYZus{}reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{notna}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{any}\PY{p}{(}\PY{p}{)}\PY{p}{)} \PY{k}{else} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Eval TD loss available}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Yes}\PY{l+s+s1}{\PYZsq{}} \PY{k}{if} \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eval\PYZus{}td\PYZus{}loss}\PY{l+s+s1}{\PYZsq{}} \PY{o+ow}{in} \PY{n}{history\PYZus{}frame} \PY{o+ow}{and} \PY{n}{history\PYZus{}frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{eval\PYZus{}td\PYZus{}loss}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{notna}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{any}\PY{p}{(}\PY{p}{)}\PY{p}{)} \PY{k}{else} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Current compatible checkpoint available}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Yes}\PY{l+s+s1}{\PYZsq{}} \PY{k}{if} \PY{n}{checkpoint\PYZus{}candidates} \PY{k}{else} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Artifact check}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Status}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}main\PYZus{}results\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{fixed} \PY{o}{=} \PY{n}{heldout\PYZus{}frames}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{adaptive} \PY{o}{=} \PY{n}{heldout\PYZus{}frames}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+    \PY{k}{for} \PY{n}{key}\PY{p}{,} \PY{n}{frame} \PY{o+ow}{in} \PY{p}{[}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fixed}\PY{p}{)}\PY{p}{,} \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{adaptive}\PY{p}{)}\PY{p}{]}\PY{p}{:}
+        \PY{n}{rows}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{\PYZob{}}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Policy}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{MAIN\PYZus{}POLICY\PYZus{}LABELS}\PY{p}{[}\PY{n}{key}\PY{p}{]}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Peak queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{max}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean wait (min)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}wait\PYZus{}mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Peak wait (min)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}wait\PYZus{}mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{max}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Breach rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}wait\PYZus{}target\PYZus{}breached}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Started sessions}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{starts\PYZus{}total}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{sum}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean active MCS}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}active\PYZus{}mobile\PYZus{}stations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MCS hours}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}active\PYZus{}mobile\PYZus{}stations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{sum}\PY{p}{(}\PY{p}{)} \PY{o}{*} \PY{l+m+mi}{5} \PY{o}{/} \PY{l+m+mi}{60}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{sum}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+        \PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{n}{table} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{)}
+    \PY{n}{fixed\PYZus{}row} \PY{o}{=} \PY{n}{table}\PY{o}{.}\PY{n}{iloc}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}
+    \PY{n}{table}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queue improvement vs fixed (}\PY{l+s+s1}{\PYZpc{}}\PY{l+s+s1}{)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{[}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{l+m+mf}{100.0} \PY{o}{*} \PY{p}{(}\PY{n}{fixed\PYZus{}row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{table}\PY{o}{.}\PY{n}{iloc}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)} \PY{o}{/} \PY{n}{fixed\PYZus{}row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}
+    \PY{n}{table}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Wait improvement vs fixed (}\PY{l+s+s1}{\PYZpc{}}\PY{l+s+s1}{)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{[}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{l+m+mf}{100.0} \PY{o}{*} \PY{p}{(}\PY{n}{fixed\PYZus{}row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean wait (min)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{table}\PY{o}{.}\PY{n}{iloc}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean wait (min)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)} \PY{o}{/} \PY{n}{fixed\PYZus{}row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean wait (min)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}
+    \PY{n}{table}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reward change vs fixed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{[}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{table}\PY{o}{.}\PY{n}{iloc}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{fixed\PYZus{}row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}
+    \PY{k}{return} \PY{n}{table}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}appendix\PYZus{}policy\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+    \PY{n}{fixed} \PY{o}{=} \PY{n}{heldout\PYZus{}frames}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{n}{fixed\PYZus{}mean\PYZus{}queue} \PY{o}{=} \PY{n}{fixed}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}
+    \PY{n}{fixed\PYZus{}mean\PYZus{}wait} \PY{o}{=} \PY{n}{fixed}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}wait\PYZus{}mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}
+    \PY{k}{for} \PY{n}{key} \PY{o+ow}{in} \PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}reactive}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{:}
+        \PY{n}{frame} \PY{o}{=} \PY{n}{heldout\PYZus{}frames}\PY{p}{[}\PY{n}{key}\PY{p}{]}
+        \PY{n}{rows}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{\PYZob{}}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Policy}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{ALL\PYZus{}POLICY\PYZus{}LABELS}\PY{p}{[}\PY{n}{key}\PY{p}{]}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean wait (min)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}wait\PYZus{}mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean active MCS}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}active\PYZus{}mobile\PYZus{}stations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{reward}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{sum}\PY{p}{(}\PY{p}{)}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queue improvement vs fixed (}\PY{l+s+s1}{\PYZpc{}}\PY{l+s+s1}{)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{100.0} \PY{o}{*} \PY{p}{(}\PY{n}{fixed\PYZus{}mean\PYZus{}queue} \PY{o}{\PYZhy{}} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{)} \PY{o}{/} \PY{n}{fixed\PYZus{}mean\PYZus{}queue}\PY{p}{,}
+            \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Wait improvement vs fixed (}\PY{l+s+s1}{\PYZpc{}}\PY{l+s+s1}{)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+m+mf}{100.0} \PY{o}{*} \PY{p}{(}\PY{n}{fixed\PYZus{}mean\PYZus{}wait} \PY{o}{\PYZhy{}} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}wait\PYZus{}mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{)} \PY{o}{/} \PY{n}{fixed\PYZus{}mean\PYZus{}wait}\PY{p}{,}
+        \PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}reference\PYZus{}file\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{reference\PYZus{}root} \PY{o}{=} \PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission}\PY{l+s+s1}{\PYZsq{}} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{reference\PYZus{}code}\PY{l+s+s1}{\PYZsq{}}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+    \PY{k}{for} \PY{n}{path} \PY{o+ow}{in} \PY{n+nb}{sorted}\PY{p}{(}\PY{n}{reference\PYZus{}root}\PY{o}{.}\PY{n}{rglob}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{*}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}\PY{p}{:}
+        \PY{k}{if} \PY{n}{path}\PY{o}{.}\PY{n}{is\PYZus{}dir}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+            \PY{k}{continue}
+        \PY{n}{rel} \PY{o}{=} \PY{n}{path}\PY{o}{.}\PY{n}{relative\PYZus{}to}\PY{p}{(}\PY{n}{reference\PYZus{}root}\PY{p}{)}
+        \PY{n}{rows}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{File}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n+nb}{str}\PY{p}{(}\PY{n}{rel}\PY{p}{)}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Role}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Code}\PY{l+s+s1}{\PYZsq{}} \PY{k}{if} \PY{n}{rel}\PY{o}{.}\PY{n}{parts}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{src}\PY{l+s+s1}{\PYZsq{}} \PY{k}{else} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Config}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}observation\PYZus{}appendix\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{k}{return} \PY{n}{observation\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{o}{.}\PY{n}{rename}\PY{p}{(}\PY{n}{columns}\PY{o}{=}\PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Index}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Idx}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}checkpoint\PYZus{}status\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{candidates} \PY{o}{=} \PY{n+nb}{sorted}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{o}{.}\PY{n}{glob}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{**/best\PYZus{}model.pt}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)} \PY{o}{+} \PY{n+nb}{sorted}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{o}{.}\PY{n}{glob}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{**/best\PYZus{}model.zip}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+    \PY{n}{rows} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+    \PY{k}{if} \PY{n}{candidates}\PY{p}{:}
+        \PY{k}{for} \PY{n}{path} \PY{o+ow}{in} \PY{n}{candidates}\PY{p}{:}
+            \PY{n}{rows}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Checkpoint}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{n+nb}{str}\PY{p}{(}\PY{n}{path}\PY{o}{.}\PY{n}{relative\PYZus{}to}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT}\PY{p}{)}\PY{p}{)}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Exists}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{k+kc}{True}\PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{k}{else}\PY{p}{:}
+        \PY{n}{rows}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Checkpoint}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No current compatible RL checkpoint found in the checkout}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Exists}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{k+kc}{False}\PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{k}{return} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{rows}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{build\PYZus{}artifact\PYZus{}status\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+    \PY{n}{frame} \PY{o}{=} \PY{n}{artifact\PYZus{}df}\PY{p}{[}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{path}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exists}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{note}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{]}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+    \PY{n}{frame}\PY{o}{.}\PY{n}{columns} \PY{o}{=} \PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Artifact path}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Exists}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Why it is included}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{k}{return} \PY{n}{frame}
+
+
+\PY{k}{def} \PY{n+nf}{\PYZus{}largest\PYZus{}one\PYZus{}factor\PYZus{}slice}\PY{p}{(}\PY{n}{frame}\PY{p}{,} \PY{n}{varying\PYZus{}col}\PY{p}{,} \PY{n}{fixed\PYZus{}col}\PY{p}{)}\PY{p}{:}
+    \PY{n}{groups} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+    \PY{k}{for} \PY{n}{fixed\PYZus{}value}\PY{p}{,} \PY{n}{subset} \PY{o+ow}{in} \PY{n}{frame}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{n}{fixed\PYZus{}col}\PY{p}{)}\PY{p}{:}
+        \PY{n}{varying\PYZus{}count} \PY{o}{=} \PY{n}{subset}\PY{p}{[}\PY{n}{varying\PYZus{}col}\PY{p}{]}\PY{o}{.}\PY{n}{nunique}\PY{p}{(}\PY{p}{)}
+        \PY{k}{if} \PY{n}{varying\PYZus{}count} \PY{o}{\PYZgt{}} \PY{l+m+mi}{1}\PY{p}{:}
+            \PY{n}{groups}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{(}\PY{n}{varying\PYZus{}count}\PY{p}{,} \PY{n+nb}{len}\PY{p}{(}\PY{n}{subset}\PY{p}{)}\PY{p}{,} \PY{n}{fixed\PYZus{}value}\PY{p}{,} \PY{n}{subset}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{)}
+    \PY{k}{if} \PY{o+ow}{not} \PY{n}{groups}\PY{p}{:}
+        \PY{k}{return} \PY{n}{frame}\PY{o}{.}\PY{n}{iloc}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{:}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{k+kc}{None}
+    \PY{n}{groups}\PY{o}{.}\PY{n}{sort}\PY{p}{(}\PY{n}{key}\PY{o}{=}\PY{k}{lambda} \PY{n}{item}\PY{p}{:} \PY{p}{(}\PY{o}{\PYZhy{}}\PY{n}{item}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{o}{\PYZhy{}}\PY{n}{item}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{n}{item}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{)}\PY{p}{)}
+    \PY{n}{best} \PY{o}{=} \PY{n}{groups}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}
+    \PY{k}{return} \PY{n}{best}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{o}{.}\PY{n}{sort\PYZus{}values}\PY{p}{(}\PY{n}{varying\PYZus{}col}\PY{p}{)}\PY{o}{.}\PY{n}{reset\PYZus{}index}\PY{p}{(}\PY{n}{drop}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}\PY{p}{,} \PY{n}{best}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}
+
+
+\PY{k}{def} \PY{n+nf}{reward\PYZus{}slice\PYZus{}mcs\PYZus{}cost}\PY{p}{(}\PY{n}{summary}\PY{p}{)}\PY{p}{:}
+    \PY{k}{return} \PY{n}{\PYZus{}largest\PYZus{}one\PYZus{}factor\PYZus{}slice}\PY{p}{(}\PY{n}{summary}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{varying\PYZus{}col}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{active\PYZus{}mcs\PYZus{}cost}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fixed\PYZus{}col}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}penalty}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{reward\PYZus{}slice\PYZus{}queue\PYZus{}cost}\PY{p}{(}\PY{n}{summary}\PY{p}{)}\PY{p}{:}
+    \PY{k}{return} \PY{n}{\PYZus{}largest\PYZus{}one\PYZus{}factor\PYZus{}slice}\PY{p}{(}\PY{n}{summary}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{varying\PYZus{}col}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}penalty}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fixed\PYZus{}col}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{active\PYZus{}mcs\PYZus{}cost}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+
+
+\PY{k}{def} \PY{n+nf}{plot\PYZus{}mcs\PYZus{}cost\PYZus{}sensitivity\PYZus{}simple}\PY{p}{(}\PY{n}{summary}\PY{p}{)}\PY{p}{:}
+    \PY{n}{frame}\PY{p}{,} \PY{n}{fixed\PYZus{}queue\PYZus{}cost} \PY{o}{=} \PY{n}{reward\PYZus{}slice\PYZus{}mcs\PYZus{}cost}\PY{p}{(}\PY{n}{summary}\PY{p}{)}
+    \PY{n}{fig}\PY{p}{,} \PY{n}{ax} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{subplots}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mf}{6.2}\PY{p}{,} \PY{l+m+mf}{4.6}\PY{p}{)}\PY{p}{)}
+    \PY{k}{if} \PY{n}{frame}\PY{o}{.}\PY{n}{empty}\PY{p}{:}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{axis}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{off}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{text}\PY{p}{(}\PY{l+m+mf}{0.5}\PY{p}{,} \PY{l+m+mf}{0.5}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No one\PYZhy{}factor MCS\PYZhy{}cost slice was available in the historical sweep.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{ha}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{center}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{va}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{center}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{11}\PY{p}{)}
+        \PY{k}{return} \PY{n}{fig}\PY{p}{,} \PY{n}{ax}
+    \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{active\PYZus{}mcs\PYZus{}cost}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}mean\PYZus{}queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}2A9D8F}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{linewidth}\PY{o}{=}\PY{l+m+mf}{2.2}\PY{p}{,} \PY{n}{marker}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{o}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{markersize}\PY{o}{=}\PY{l+m+mi}{7}\PY{p}{)}
+    \PY{k}{for} \PY{n}{\PYZus{}}\PY{p}{,} \PY{n}{row} \PY{o+ow}{in} \PY{n}{frame}\PY{o}{.}\PY{n}{iterrows}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{annotate}\PY{p}{(}\PY{n}{row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{run}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{p}{(}\PY{n}{row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{active\PYZus{}mcs\PYZus{}cost}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}mean\PYZus{}queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,} \PY{n}{textcoords}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{offset points}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{xytext}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{,} \PY{l+m+mi}{6}\PY{p}{)}\PY{p}{,} \PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{8}\PY{p}{)}
+    \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+sa}{f}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MCS cost sensitivity at fixed queue cost = }\PY{l+s+si}{\PYZob{}}\PY{n}{fixed\PYZus{}queue\PYZus{}cost}\PY{l+s+si}{:}\PY{l+s+s1}{g}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Active MCS cost weight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Final mean queue length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{fig}\PY{o}{.}\PY{n}{tight\PYZus{}layout}\PY{p}{(}\PY{p}{)}
+    \PY{k}{return} \PY{n}{fig}\PY{p}{,} \PY{n}{ax}
+
+
+\PY{k}{def} \PY{n+nf}{plot\PYZus{}queue\PYZus{}cost\PYZus{}sensitivity\PYZus{}simple}\PY{p}{(}\PY{n}{summary}\PY{p}{)}\PY{p}{:}
+    \PY{n}{frame}\PY{p}{,} \PY{n}{fixed\PYZus{}mcs\PYZus{}cost} \PY{o}{=} \PY{n}{reward\PYZus{}slice\PYZus{}queue\PYZus{}cost}\PY{p}{(}\PY{n}{summary}\PY{p}{)}
+    \PY{n}{fig}\PY{p}{,} \PY{n}{ax} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{subplots}\PY{p}{(}\PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mf}{6.2}\PY{p}{,} \PY{l+m+mf}{4.6}\PY{p}{)}\PY{p}{)}
+    \PY{k}{if} \PY{n}{frame}\PY{o}{.}\PY{n}{empty}\PY{p}{:}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{axis}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{off}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{text}\PY{p}{(}\PY{l+m+mf}{0.5}\PY{p}{,} \PY{l+m+mf}{0.5}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{No one\PYZhy{}factor queue\PYZhy{}cost slice was available in the historical sweep.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{ha}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{center}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{va}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{center}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{11}\PY{p}{)}
+        \PY{k}{return} \PY{n}{fig}\PY{p}{,} \PY{n}{ax}
+    \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}penalty}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}mean\PYZus{}queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}E76F51}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{linewidth}\PY{o}{=}\PY{l+m+mf}{2.2}\PY{p}{,} \PY{n}{marker}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{o}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{markersize}\PY{o}{=}\PY{l+m+mi}{7}\PY{p}{)}
+    \PY{k}{for} \PY{n}{\PYZus{}}\PY{p}{,} \PY{n}{row} \PY{o+ow}{in} \PY{n}{frame}\PY{o}{.}\PY{n}{iterrows}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{annotate}\PY{p}{(}\PY{n}{row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{run}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{p}{(}\PY{n}{row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}penalty}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{row}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{final\PYZus{}mean\PYZus{}queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}\PY{p}{,} \PY{n}{textcoords}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{offset points}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{xytext}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{,} \PY{l+m+mi}{6}\PY{p}{)}\PY{p}{,} \PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{8}\PY{p}{)}
+    \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+sa}{f}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queue\PYZhy{}cost sensitivity at fixed MCS cost = }\PY{l+s+si}{\PYZob{}}\PY{n}{fixed\PYZus{}mcs\PYZus{}cost}\PY{l+s+si}{:}\PY{l+s+s1}{g}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queue penalty weight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Final mean queue length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{fig}\PY{o}{.}\PY{n}{tight\PYZus{}layout}\PY{p}{(}\PY{p}{)}
+    \PY{k}{return} \PY{n}{fig}\PY{p}{,} \PY{n}{ax}
+
+
+\PY{k}{def} \PY{n+nf}{plot\PYZus{}main\PYZus{}rollout\PYZus{}comparison}\PY{p}{(}\PY{n}{run\PYZus{}frames}\PY{p}{,} \PY{n}{policy\PYZus{}names}\PY{o}{=}\PY{n}{MAIN\PYZus{}POLICIES}\PY{p}{)}\PY{p}{:}
+    \PY{n}{fig}\PY{p}{,} \PY{n}{axes} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{subplots}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{,} \PY{l+m+mf}{8.6}\PY{p}{)}\PY{p}{,} \PY{n}{sharex}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+    \PY{n}{base\PYZus{}frame} \PY{o}{=} \PY{n}{run\PYZus{}frames}\PY{p}{[}\PY{n}{policy\PYZus{}names}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{]}
+    \PY{k}{for} \PY{n}{ax} \PY{o+ow}{in} \PY{n}{axes}\PY{p}{:}
+        \PY{n}{shade\PYZus{}disruptions}\PY{p}{(}\PY{n}{ax}\PY{p}{,} \PY{n}{base\PYZus{}frame}\PY{p}{)}
+    \PY{n}{metrics} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Total queue length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}wait\PYZus{}mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue wait (minutes)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}active\PYZus{}mobile\PYZus{}stations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Active mobile stations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{for} \PY{n}{policy\PYZus{}name} \PY{o+ow}{in} \PY{n}{policy\PYZus{}names}\PY{p}{:}
+        \PY{n}{frame} \PY{o}{=} \PY{n}{run\PYZus{}frames}\PY{p}{[}\PY{n}{policy\PYZus{}name}\PY{p}{]}
+        \PY{k}{for} \PY{n}{ax}\PY{p}{,} \PY{p}{(}\PY{n}{col}\PY{p}{,} \PY{n}{ylabel}\PY{p}{)} \PY{o+ow}{in} \PY{n+nb}{zip}\PY{p}{(}\PY{n}{axes}\PY{p}{,} \PY{n}{metrics}\PY{p}{)}\PY{p}{:}
+            \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{global\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{frame}\PY{p}{[}\PY{n}{col}\PY{p}{]}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{n}{MAIN\PYZus{}COLORS}\PY{p}{[}\PY{n}{policy\PYZus{}name}\PY{p}{]}\PY{p}{,} \PY{n}{linewidth}\PY{o}{=}\PY{l+m+mf}{2.0}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{n}{MAIN\PYZus{}POLICY\PYZus{}LABELS}\PY{p}{[}\PY{n}{policy\PYZus{}name}\PY{p}{]}\PY{p}{)}
+            \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{n}{ylabel}\PY{p}{)}
+    \PY{n}{axes}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reproducible held\PYZhy{}out rollout: fixed baseline versus adaptive threshold controller}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{axes}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Global hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{axes}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{legend}\PY{p}{(}\PY{n}{loc}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{upper right}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{ncol}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}
+    \PY{n}{fig}\PY{o}{.}\PY{n}{tight\PYZus{}layout}\PY{p}{(}\PY{p}{)}
+    \PY{k}{return} \PY{n}{fig}\PY{p}{,} \PY{n}{axes}
+
+
+\PY{k}{def} \PY{n+nf}{plot\PYZus{}spatial\PYZus{}station\PYZus{}overlays}\PY{p}{(}\PY{n}{frame}\PY{p}{,} \PY{n}{rolling\PYZus{}steps}\PY{o}{=}\PY{l+m+mi}{12}\PY{p}{)}\PY{p}{:}
+    \PY{n}{fig}\PY{p}{,} \PY{n}{axes} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{subplots}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{,} \PY{l+m+mf}{7.4}\PY{p}{)}\PY{p}{,} \PY{n}{sharex}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+    \PY{n}{station\PYZus{}specs} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ab}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{AB station}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}2A9D8F}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{bc}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{BC station}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}E76F51}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{for} \PY{n}{ax}\PY{p}{,} \PY{p}{(}\PY{n}{suffix}\PY{p}{,} \PY{n}{title}\PY{p}{,} \PY{n}{color}\PY{p}{)} \PY{o+ow}{in} \PY{n+nb}{zip}\PY{p}{(}\PY{n}{axes}\PY{p}{,} \PY{n}{station\PYZus{}specs}\PY{p}{)}\PY{p}{:}
+        \PY{n}{shade\PYZus{}disruptions}\PY{p}{(}\PY{n}{ax}\PY{p}{,} \PY{n}{frame}\PY{p}{)}
+        \PY{n}{demand} \PY{o}{=} \PY{n}{rolling\PYZus{}mean}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+sa}{f}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{expected\PYZus{}station\PYZus{}arrivals\PYZus{}}\PY{l+s+si}{\PYZob{}}\PY{n}{suffix}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{rolling\PYZus{}steps}\PY{p}{)}
+        \PY{n}{queue} \PY{o}{=} \PY{n}{rolling\PYZus{}mean}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+sa}{f}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}length\PYZus{}station\PYZus{}}\PY{l+s+si}{\PYZob{}}\PY{n}{suffix}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{rolling\PYZus{}steps}\PY{p}{)}
+        \PY{n}{mcs} \PY{o}{=} \PY{n}{rolling\PYZus{}mean}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+sa}{f}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}active\PYZus{}mobile\PYZus{}stations\PYZus{}station\PYZus{}}\PY{l+s+si}{\PYZob{}}\PY{n}{suffix}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{rolling\PYZus{}steps}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{global\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{demand}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}264653}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{linewidth}\PY{o}{=}\PY{l+m+mf}{2.0}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Expected charging demand (1h avg)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{global\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{queue}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{n}{color}\PY{p}{,} \PY{n}{linewidth}\PY{o}{=}\PY{l+m+mf}{1.8}\PY{p}{,} \PY{n}{linestyle}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}\PYZhy{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Queue length (1h avg)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Demand / queue}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{n}{title}\PY{p}{)}
+        \PY{n}{twin} \PY{o}{=} \PY{n}{ax}\PY{o}{.}\PY{n}{twinx}\PY{p}{(}\PY{p}{)}
+        \PY{n}{twin}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{global\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{mcs}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}8D5524}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{linewidth}\PY{o}{=}\PY{l+m+mf}{2.0}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MCS allocation (1h avg)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{twin}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Allocated MCS}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{lines}\PY{p}{,} \PY{n}{labels} \PY{o}{=} \PY{n}{ax}\PY{o}{.}\PY{n}{get\PYZus{}legend\PYZus{}handles\PYZus{}labels}\PY{p}{(}\PY{p}{)}
+        \PY{n}{twin\PYZus{}lines}\PY{p}{,} \PY{n}{twin\PYZus{}labels} \PY{o}{=} \PY{n}{twin}\PY{o}{.}\PY{n}{get\PYZus{}legend\PYZus{}handles\PYZus{}labels}\PY{p}{(}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{legend}\PY{p}{(}\PY{n}{lines} \PY{o}{+} \PY{n}{twin\PYZus{}lines}\PY{p}{,} \PY{n}{labels} \PY{o}{+} \PY{n}{twin\PYZus{}labels}\PY{p}{,} \PY{n}{loc}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{upper right}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{axes}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Global hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Spatial\PYZhy{}awareness check for the adaptive threshold controller}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{y}\PY{o}{=}\PY{l+m+mf}{1.02}\PY{p}{,} \PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{14}\PY{p}{)}
+    \PY{n}{fig}\PY{o}{.}\PY{n}{tight\PYZus{}layout}\PY{p}{(}\PY{p}{)}
+    \PY{k}{return} \PY{n}{fig}\PY{p}{,} \PY{n}{axes}
+
+
+\PY{k}{def} \PY{n+nf}{plot\PYZus{}appendix\PYZus{}reactive}\PY{p}{(}\PY{n}{run\PYZus{}frames}\PY{p}{)}\PY{p}{:}
+    \PY{n}{fig}\PY{p}{,} \PY{n}{axes} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{subplots}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{,} \PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{,} \PY{l+m+mf}{8.8}\PY{p}{)}\PY{p}{,} \PY{n}{sharex}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+    \PY{n}{base\PYZus{}frame} \PY{o}{=} \PY{n}{run\PYZus{}frames}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+    \PY{k}{for} \PY{n}{ax} \PY{o+ow}{in} \PY{n}{axes}\PY{p}{:}
+        \PY{n}{shade\PYZus{}disruptions}\PY{p}{(}\PY{n}{ax}\PY{p}{,} \PY{n}{base\PYZus{}frame}\PY{p}{)}
+    \PY{n}{metrics} \PY{o}{=} \PY{p}{[}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Total queue length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{queue\PYZus{}wait\PYZus{}mean\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Mean queue wait (minutes)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{num\PYZus{}active\PYZus{}mobile\PYZus{}stations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Active mobile stations}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}
+    \PY{k}{for} \PY{n}{policy\PYZus{}name} \PY{o+ow}{in} \PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}noop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}reactive}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{:}
+        \PY{n}{frame} \PY{o}{=} \PY{n}{run\PYZus{}frames}\PY{p}{[}\PY{n}{policy\PYZus{}name}\PY{p}{]}
+        \PY{k}{for} \PY{n}{ax}\PY{p}{,} \PY{p}{(}\PY{n}{col}\PY{p}{,} \PY{n}{ylabel}\PY{p}{)} \PY{o+ow}{in} \PY{n+nb}{zip}\PY{p}{(}\PY{n}{axes}\PY{p}{,} \PY{n}{metrics}\PY{p}{)}\PY{p}{:}
+            \PY{n}{ax}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{global\PYZus{}hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{frame}\PY{p}{[}\PY{n}{col}\PY{p}{]}\PY{p}{,} \PY{n}{color}\PY{o}{=}\PY{n}{ALL\PYZus{}COLORS}\PY{p}{[}\PY{n}{policy\PYZus{}name}\PY{p}{]}\PY{p}{,} \PY{n}{linewidth}\PY{o}{=}\PY{l+m+mf}{2.0}\PY{p}{,} \PY{n}{label}\PY{o}{=}\PY{n}{ALL\PYZus{}POLICY\PYZus{}LABELS}\PY{p}{[}\PY{n}{policy\PYZus{}name}\PY{p}{]}\PY{p}{)}
+            \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{n}{ylabel}\PY{p}{)}
+    \PY{n}{axes}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Appendix comparison including the reactive baseline}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{axes}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Global hour}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{axes}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{o}{.}\PY{n}{legend}\PY{p}{(}\PY{n}{loc}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{upper right}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{ncol}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{)}
+    \PY{n}{fig}\PY{o}{.}\PY{n}{tight\PYZus{}layout}\PY{p}{(}\PY{p}{)}
+    \PY{k}{return} \PY{n}{fig}\PY{p}{,} \PY{n}{axes}
+
+
+\PY{k}{def} \PY{n+nf}{plot\PYZus{}stress\PYZus{}heatmaps}\PY{p}{(}\PY{n}{stress\PYZus{}frame}\PY{p}{)}\PY{p}{:}
+    \PY{n}{frame} \PY{o}{=} \PY{n}{stress\PYZus{}frame}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+    \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Policy}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{n}{frame}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{policy\PYZus{}alias}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{map}\PY{p}{(}\PY{p}{\PYZob{}}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{fixed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Fixed / no\PYZhy{}agent}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Adaptive threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{reactive}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Reactive}\PY{l+s+s1}{\PYZsq{}}\PY{p}{\PYZcb{}}\PY{p}{)}
+    \PY{n}{queue} \PY{o}{=} \PY{n}{frame}\PY{o}{.}\PY{n}{pivot}\PY{p}{(}\PY{n}{index}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{stress\PYZus{}scenario}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Policy}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{values}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mean\PYZus{}queue\PYZus{}length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{wait} \PY{o}{=} \PY{n}{frame}\PY{o}{.}\PY{n}{pivot}\PY{p}{(}\PY{n}{index}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{stress\PYZus{}scenario}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{columns}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Policy}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{values}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mean\PYZus{}queue\PYZus{}wait\PYZus{}minutes}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{fig}\PY{p}{,} \PY{n}{axes} \PY{o}{=} \PY{n}{plt}\PY{o}{.}\PY{n}{subplots}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{2}\PY{p}{,} \PY{n}{figsize}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{13}\PY{p}{,} \PY{l+m+mf}{5.2}\PY{p}{)}\PY{p}{)}
+    \PY{k}{for} \PY{n}{ax}\PY{p}{,} \PY{n}{pivot}\PY{p}{,} \PY{n}{title} \PY{o+ow}{in} \PY{p}{[}
+        \PY{p}{(}\PY{n}{axes}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{n}{queue}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Stress scenarios: mean queue length}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{p}{(}\PY{n}{axes}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{n}{wait}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Stress scenarios: mean queue wait (minutes)}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{p}{]}\PY{p}{:}
+        \PY{n}{image} \PY{o}{=} \PY{n}{ax}\PY{o}{.}\PY{n}{imshow}\PY{p}{(}\PY{n}{pivot}\PY{o}{.}\PY{n}{to\PYZus{}numpy}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{aspect}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{auto}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{cmap}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{YlOrRd}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}xticks}\PY{p}{(}\PY{n+nb}{range}\PY{p}{(}\PY{n}{pivot}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}\PY{p}{,} \PY{n}{pivot}\PY{o}{.}\PY{n}{columns}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}yticks}\PY{p}{(}\PY{n+nb}{range}\PY{p}{(}\PY{n}{pivot}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{)}\PY{p}{,} \PY{p}{[}\PY{n}{label}\PY{o}{.}\PY{n}{replace}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZus{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ }\PY{l+s+s1}{\PYZsq{}}\PY{p}{)} \PY{k}{for} \PY{n}{label} \PY{o+ow}{in} \PY{n}{pivot}\PY{o}{.}\PY{n}{index}\PY{p}{]}\PY{p}{)}
+        \PY{n}{ax}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{n}{title}\PY{p}{)}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{pivot}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{pivot}\PY{o}{.}\PY{n}{shape}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}\PY{p}{:}
+                \PY{n}{ax}\PY{o}{.}\PY{n}{text}\PY{p}{(}\PY{n}{j}\PY{p}{,} \PY{n}{i}\PY{p}{,} \PY{l+s+sa}{f}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+si}{\PYZob{}}\PY{n}{pivot}\PY{o}{.}\PY{n}{iloc}\PY{p}{[}\PY{n}{i}\PY{p}{,}\PY{+w}{ }\PY{n}{j}\PY{p}{]}\PY{l+s+si}{:}\PY{l+s+s2}{.1f}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{ha}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{center}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{va}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{center}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fontsize}\PY{o}{=}\PY{l+m+mi}{8}\PY{p}{)}
+        \PY{n}{fig}\PY{o}{.}\PY{n}{colorbar}\PY{p}{(}\PY{n}{image}\PY{p}{,} \PY{n}{ax}\PY{o}{=}\PY{n}{ax}\PY{p}{,} \PY{n}{fraction}\PY{o}{=}\PY{l+m+mf}{0.046}\PY{p}{,} \PY{n}{pad}\PY{o}{=}\PY{l+m+mf}{0.04}\PY{p}{)}
+    \PY{n}{fig}\PY{o}{.}\PY{n}{tight\PYZus{}layout}\PY{p}{(}\PY{p}{)}
+    \PY{k}{return} \PY{n}{fig}\PY{p}{,} \PY{n}{axes}
+\end{Verbatim}
+\end{tcolorbox}
+
     \subsection{1. Motivation / problem
 definition}\label{motivation-problem-definition}
 
@@ -526,6 +1158,15 @@ time is 30 minutes. That means one MCS can complete roughly \textbf{4
 charging sessions per hour}, or about \textbf{0.33 vehicles per 5-minute
 step on average}. This makes MCS deployment meaningful but not magically
 dominant.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{2}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}environment\PYZus{}overview\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}corridor\PYZus{}schematic}\PY{p}{(}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
@@ -622,6 +1263,15 @@ service time, or create temporary demand surges. This is what turns the
 simulator into a resilience testbed rather than a normal-day capacity
 exercise.
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{3}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}simulation\PYZus{}layers\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}demand\PYZus{}profile}\PY{p}{(}\PY{n}{daily\PYZus{}profile}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
@@ -669,6 +1319,14 @@ shows that expected charging demand is structured around a morning peak,
 an afternoon/evening peak, and a smaller midday bump. The lower panel
 shows the OD components that generate this pattern, which is why
 congestion can become directional rather than purely aggregate.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{4}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}distribution\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}disruption\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
@@ -765,6 +1423,19 @@ A capacity-drop disruption reduces the number of usable fixed plugs at a
 targeted station without changing the incoming demand. It therefore
 represents a service-capability shock rather than a traffic shock.
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{5}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}disruption\PYZus{}scenario}\PY{p}{(}
+    \PY{n}{disruption\PYZus{}case\PYZus{}runs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{capacity\PYZus{}drop}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+    \PY{n}{title}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Illustrative disruption run: capacity drop at station AB}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{subtitle}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{AB base capacity falls from 12 plugs to 4 between 08:00 and 10:00. Demand is unchanged, so the queue spike is a pure capacity\PYZhy{}side effect.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{rolling\PYZus{}steps}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{,}
+\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_12_0.png}
     \end{center}
@@ -781,6 +1452,19 @@ A station-outage disruption is the most severe local service failure in
 the benchmark. The targeted station is forced completely offline for a
 limited period, so all arriving charging demand must either wait or be
 absorbed later when capacity returns.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{6}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}disruption\PYZus{}scenario}\PY{p}{(}
+    \PY{n}{disruption\PYZus{}case\PYZus{}runs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{station\PYZus{}outage}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+    \PY{n}{title}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Illustrative disruption run: outage at station AB}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{subtitle}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{AB is fully offline between 08:30 and 10:00. Demand remains normal, but service at the affected station temporarily collapses.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{rolling\PYZus{}steps}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{,}
+\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_15_0.png}
@@ -799,6 +1483,19 @@ each charging session last longer. Operationally, this mimics slower
 charging, faulty chargers operating below normal speed, or supporting
 processes that delay turnover.
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{7}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}disruption\PYZus{}scenario}\PY{p}{(}
+    \PY{n}{disruption\PYZus{}case\PYZus{}runs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{service\PYZus{}time\PYZus{}inflation}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+    \PY{n}{title}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Illustrative disruption run: service\PYZhy{}time inflation at station AB}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{subtitle}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Charging sessions at AB last 1.8x longer between 08:00 and 10:30. Capacity exists, but plug turnover slows materially.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{rolling\PYZus{}steps}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{,}
+\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_18_0.png}
     \end{center}
@@ -816,6 +1513,19 @@ changes the arrival side of the system rather than the service side. In
 the scripted example below, eastbound OD flows are multiplied during the
 morning rush, which pushes more charging demand into the corridor before
 any extra fixed capacity is available.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{8}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}disruption\PYZus{}scenario}\PY{p}{(}
+    \PY{n}{disruption\PYZus{}case\PYZus{}runs}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{demand\PYZus{}surge}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,}
+    \PY{n}{title}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Illustrative disruption run: eastbound demand surge}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{subtitle}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Eastbound OD demand is multiplied by 2.2 between 07:30 and 09:30. Here the demand line itself jumps, and queueing follows that load increase.}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{n}{rolling\PYZus{}steps}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{,}
+\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_21_0.png}
@@ -854,6 +1564,15 @@ Because the current checkout does not contain a compatible final RL
 checkpoint, this report distinguishes between the \textbf{RL design} and
 the \textbf{reproducible final rollout evidence}. The RL design can
 still be described precisely and evaluated through training diagnostics.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{9}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}architecture\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}simple\PYZus{}hyperparameter\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}sb3\PYZus{}hyperparameter\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
@@ -938,6 +1657,15 @@ pressure, recent flow, effective local capacity, mobile-station
 logistics, disruption indicators, and time-of-day information. This
 means the policy can react to where pressure is building, but it does
 \textbf{not} have perfect future knowledge.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{10}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}state\PYZus{}group\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\PY{k}{for} \PY{n}{item} \PY{o+ow}{in} \PY{n}{WHAT\PYZus{}MODEL\PYZus{}DOES\PYZus{}NOT\PYZus{}KNOW}\PY{p}{:}
+    \PY{n}{display}\PY{p}{(}\PY{n}{Markdown}\PY{p}{(}\PY{l+s+sa}{f}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{} }\PY{l+s+si}{\PYZob{}}\PY{n}{item}\PY{l+s+si}{\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
@@ -1030,6 +1758,13 @@ or by shifting one committed unit from BC. The policy chooses the
 \textbf{directional intent}; the environment resolves the
 \textbf{physical logistics}.
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{11}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{action\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
@@ -1078,6 +1813,15 @@ values, compares them with one-step bootstrap targets, and updates the
 network to reduce that temporal-difference error. Huber loss is used
 because it is less brittle than pure squared error when RL targets are
 noisy.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{12}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{positive\PYZus{}reward\PYZus{}table}\PY{p}{,} \PY{n}{negative\PYZus{}reward\PYZus{}table} \PY{o}{=} \PY{n}{build\PYZus{}reward\PYZus{}term\PYZus{}tables}\PY{p}{(}\PY{p}{)}
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{positive\PYZus{}reward\PYZus{}table}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{negative\PYZus{}reward\PYZus{}table}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
@@ -1152,6 +1896,18 @@ The historical sweep available in the repository is sparse rather than a
 full grid. To keep the section clean and defensible, the two plots below
 use only the \textbf{one-factor slices} where one reward weight changes
 while the other is held fixed.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{13}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}mcs\PYZus{}cost\PYZus{}sensitivity\PYZus{}simple}\PY{p}{(}\PY{n}{reward\PYZus{}sweep}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}mcs\PYZus{}cost\PYZus{}reward\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}queue\PYZus{}cost\PYZus{}sensitivity\PYZus{}simple}\PY{p}{(}\PY{n}{reward\PYZus{}sweep}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}queue\PYZus{}cost\PYZus{}reward\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_32_0.png}
@@ -1236,6 +1992,13 @@ evaluation is still useful. It shows whether the policy is improving on
 held-out scenarios rather than only fitting the randomness of the latest
 training episodes.
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{14}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}training\PYZus{}setup\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
@@ -1277,6 +2040,16 @@ evidence about whether the RL learner improved during training.
 The optional demo cell below is intentionally separate from the reported
 results. Its only purpose is to show how an examiner can launch a short
 local train/eval run using the included configs and reference code.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{15}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}training\PYZus{}status\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}checkpoint\PYZus{}status\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}training\PYZus{}history}\PY{p}{(}\PY{n}{training\PYZus{}history}\PY{p}{,} \PY{n}{source}\PY{o}{=}\PY{n}{training\PYZus{}history\PYZus{}source}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
@@ -1344,6 +2117,46 @@ because the compatible final checkpoint is missing, the report cannot
 make a final reproducible claim about RL rollout performance on the
 active benchmark.
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{16}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{RUN\PYZus{}DEMO\PYZus{}TRAINING} \PY{o}{=} \PY{k+kc}{False}
+
+\PY{n}{demo\PYZus{}command} \PY{o}{=} \PY{p}{[}
+    \PY{n}{sys}\PY{o}{.}\PY{n}{executable}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}m}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{evch.train.train\PYZus{}rl}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}\PYZhy{}config}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission/reference\PYZus{}code/configs/env/mobile\PYZus{}mcs\PYZus{}line\PYZus{}abc.yaml}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}\PYZhy{}config}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission/reference\PYZus{}code/configs/demand/base.yaml}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}\PYZhy{}config}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission/reference\PYZus{}code/configs/rl/dqn\PYZus{}mobile\PYZus{}simple.yaml}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}\PYZhy{}config}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission/reference\PYZus{}code/configs/debug/logging\PYZus{}disabled.yaml}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}\PYZhy{}config}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission/reference\PYZus{}code/configs/experiment/mobile\PYZus{}mcs\PYZus{}line\PYZus{}abc\PYZus{}train\PYZus{}only.yaml}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZhy{}\PYZhy{}config}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{exam\PYZus{}submission/reference\PYZus{}code/configs/demo/mobile\PYZus{}mcs\PYZus{}line\PYZus{}abc\PYZus{}demo\PYZus{}short.yaml}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+\PY{p}{]}
+
+\PY{k}{if} \PY{n}{RUN\PYZus{}DEMO\PYZus{}TRAINING}\PY{p}{:}
+    \PY{n}{env} \PY{o}{=} \PY{n}{os}\PY{o}{.}\PY{n}{environ}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+    \PY{n}{env}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{PYTHONPATH}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{n+nb}{str}\PY{p}{(}\PY{n}{REPO\PYZus{}ROOT} \PY{o}{/} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{src}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)} \PY{o}{+} \PY{n}{os}\PY{o}{.}\PY{n}{pathsep} \PY{o}{+} \PY{n}{env}\PY{o}{.}\PY{n}{get}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{PYTHONPATH}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+    \PY{n}{completed} \PY{o}{=} \PY{n}{subprocess}\PY{o}{.}\PY{n}{run}\PY{p}{(}
+        \PY{n}{demo\PYZus{}command}\PY{p}{,}
+        \PY{n}{cwd}\PY{o}{=}\PY{n}{REPO\PYZus{}ROOT}\PY{p}{,}
+        \PY{n}{env}\PY{o}{=}\PY{n}{env}\PY{p}{,}
+        \PY{n}{timeout}\PY{o}{=}\PY{l+m+mi}{300}\PY{p}{,}
+        \PY{n}{capture\PYZus{}output}\PY{o}{=}\PY{k+kc}{True}\PY{p}{,}
+        \PY{n}{text}\PY{o}{=}\PY{k+kc}{True}\PY{p}{,}
+        \PY{n}{check}\PY{o}{=}\PY{k+kc}{True}\PY{p}{,}
+    \PY{p}{)}
+    \PY{n}{display}\PY{p}{(}\PY{n}{Markdown}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}\PYZsh{}\PYZsh{} Demo run output}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{```text}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{\PYZsq{}} \PY{o}{+} \PY{n}{completed}\PY{o}{.}\PY{n}{stdout}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{4000}\PY{p}{:}\PY{p}{]} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{```}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+\PY{k}{else}\PY{p}{:}
+    \PY{n}{display}\PY{p}{(}\PY{n}{Markdown}\PY{p}{(}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{\PYZsh{}\PYZsh{}\PYZsh{} Optional demo run}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{\PYZsq{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{The demo run is disabled by default so the notebook stays fast and deterministic. }\PY{l+s+s1}{\PYZsq{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{To run a short local train/eval demonstration, set `RUN\PYZus{}DEMO\PYZus{}TRAINING = False` in this cell.}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{\PYZsq{}}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{```bash}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{\PYZsq{}} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ }\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{join}\PY{p}{(}\PY{n}{demo\PYZus{}command}\PY{p}{)} \PY{o}{+} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{```}\PY{l+s+s1}{\PYZsq{}}
+    \PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
     \subsubsection{Optional demo run}\label{optional-demo-run}
 
 The demo run is disabled by default so the notebook stays fast and
@@ -1383,6 +2196,15 @@ nothing adaptive at all? The appendix retains the reactive rule as
 secondary context, but it is removed from the main section to keep the
 story clean.
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{17}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{main\PYZus{}frames} \PY{o}{=} \PY{p}{\PYZob{}}\PY{n}{name}\PY{p}{:} \PY{n}{heldout\PYZus{}frames}\PY{p}{[}\PY{n}{name}\PY{p}{]} \PY{k}{for} \PY{n}{name} \PY{o+ow}{in} \PY{n}{MAIN\PYZus{}POLICIES}\PY{p}{\PYZcb{}}
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}main\PYZus{}rollout\PYZus{}comparison}\PY{p}{(}\PY{n}{main\PYZus{}frames}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_41_0.png}
     \end{center}
@@ -1405,6 +2227,13 @@ The table below summarizes the held-out rollout used in the main
 comparison. Breach-rate columns are shown for completeness, but they are
 not informative in the active exported artifacts because the queue-wait
 target is zero throughout the rollout files.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{18}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}main\PYZus{}results\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
@@ -1476,6 +2305,14 @@ BC should increase when BC is more stressed.
 The threshold controller is the clearest current artifact for checking
 this. The plots below show one-hour rolling averages of expected station
 demand, local queue length, and MCS allocation for AB and BC separately.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{19}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{fig}\PY{p}{,} \PY{n}{\PYZus{}} \PY{o}{=} \PY{n}{plot\PYZus{}spatial\PYZus{}station\PYZus{}overlays}\PY{p}{(}\PY{n}{heldout\PYZus{}frames}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{mobile\PYZus{}threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{,} \PY{n}{rolling\PYZus{}steps}\PY{o}{=}\PY{l+m+mi}{12}\PY{p}{)}
+\PY{n}{plt}\PY{o}{.}\PY{n}{show}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_47_0.png}
@@ -1573,6 +2410,13 @@ still documenting the broader evidence base used in the project.
 
     \subsubsection{A. Full 27-feature observation
 table}\label{a.-full-27-feature-observation-table}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{20}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{show\PYZus{}table}\PY{p}{(}\PY{n}{build\PYZus{}observation\PYZus{}appendix\PYZus{}table}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{precision}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
