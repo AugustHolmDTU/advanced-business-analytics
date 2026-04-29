@@ -1,0 +1,2 @@
+summary_type,suite_name,policy_alias,mean_queue_length,peak_queue_length,mean_queue_wait_minutes,peak_queue_wait_minutes,queue_wait_target_breach_fraction,queue_wait_excess_minutes,served_demand,unmet_demand,mean_active_mobile_stations,total_activated_mobile_stations,total_adjusted_mobile_stations,mcs_hours,active_mcs_steps,reward
+validation,validation,rl,8.211805555555555,42.0,5.793080920663972,38.095237731933594,0.0,0.0,1486.0,4730.0,0.0,0.0,0.0,0.0,0.0,-2950.3934039904034

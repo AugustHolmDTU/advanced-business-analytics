@@ -1,2 +1,1 @@
-"""Utilities for the exam submission notebook."""
-
+"""Notebook-specific utility modules for the exam submission."""

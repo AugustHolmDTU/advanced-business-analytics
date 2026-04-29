@@ -1316,9 +1316,10 @@ artifact. That artifact contains train reward, train TD loss, evaluation
 reward, and evaluation TD loss. These diagnostics are therefore used as
 evidence about whether the RL learner improved during training.
 
-The optional demo cell below is intentionally separate from the reported
-results. Its only purpose is to show how an examiner can launch a short
-local train/eval run using the included configs and reference code.
+A separate appendix demo shows how an examiner can launch a short local
+train/eval run from a single helper function. That appendix demo is
+intentionally illustrative only and is not used as evidence for the
+reported results in the main body.
 
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_41_0.png}
@@ -1345,19 +1346,12 @@ because the compatible final checkpoint is missing, the report cannot
 make a final reproducible claim about RL rollout performance on the
 active benchmark.
 
-    \subsubsection{Optional demo run}\label{optional-demo-run}
+    The short local demo is now kept in \textbf{Appendix B}. There, the
+notebook calls \texttt{run\_appendix\_demo()} from
+\texttt{exam\_submission/utils/demo\_runner.py}, which trains briefly,
+plots train/eval reward and TD loss, and then runs one held-out test
+rollout for inspection.
 
-The demo run is disabled by default so the notebook stays fast and
-deterministic. To run a short local train/eval demonstration, set
-\texttt{RUN\_DEMO\_TRAINING\ =\ True} in this cell.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\ExtensionTok{/Library/Frameworks/Python.framework/Versions/3.11/bin/python3.11} \AttributeTok{{-}m}\NormalTok{ evch.train.train\_rl }\AttributeTok{{-}{-}config}\NormalTok{ reference\_code/configs/env/mobile\_mcs\_line\_abc.yaml }\AttributeTok{{-}{-}config}\NormalTok{ reference\_code/configs/demand/base.yaml }\AttributeTok{{-}{-}config}\NormalTok{ reference\_code/configs/rl/dqn\_mobile\_simple.yaml }\AttributeTok{{-}{-}config}\NormalTok{ reference\_code/configs/debug/logging\_disabled.yaml }\AttributeTok{{-}{-}config}\NormalTok{ reference\_code/configs/experiment/mobile\_mcs\_line\_abc\_train\_only.yaml }\AttributeTok{{-}{-}config}\NormalTok{ reference\_code/configs/demo/mobile\_mcs\_line\_abc\_demo\_short.yaml}
-\end{Highlighting}
-\end{Shaded}
-
-    
     \subsection{8. Simulation comparison
 rollout}\label{simulation-comparison-rollout}
 
@@ -1644,6 +1638,35 @@ the middle depot. \\
 Time & 26 & sin\_time\_of\_day & Sine encoding of time of day. \\
 Time & 27 & cos\_time\_of\_day & Cosine encoding of time of day. \\
 \end{longtable}
+
+    
+    \subsubsection{B. Short local RL-agent
+demo}\label{b.-short-local-rl-agent-demo}
+
+The demo below is deliberately simple. The notebook imports one helper
+function from \texttt{exam\_submission/utils/demo\_runner.py}. That
+helper:
+
+\begin{itemize}
+\tightlist
+\item
+  loads the copied reference configs,
+\item
+  trains the RL agent for a short 30-episode demo run,
+\item
+  plots the train/eval reward and TD-loss diagnostics, and
+\item
+  runs one held-out \texttt{test\_id} rollout for the trained RL agent.
+\end{itemize}
+
+Set \texttt{RUN\_APPENDIX\_DEMO\ =\ True} if you want to execute it
+locally.
+
+    \subsubsection{Appendix demo disabled}\label{appendix-demo-disabled}
+
+Set \texttt{RUN\_APPENDIX\_DEMO\ =\ True} in this cell to run a short
+local RL-agent demo. It trains the RL agent for 30 episodes, then shows
+one learning-curve figure and one held-out test figure.
 
     
 

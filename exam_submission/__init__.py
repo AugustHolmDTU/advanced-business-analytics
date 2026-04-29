@@ -1,1 +1,1 @@
-"""Exam submission package."""
+"""Exam submission helpers and notebook assets."""

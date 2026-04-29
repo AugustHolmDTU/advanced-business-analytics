@@ -1,0 +1,15 @@
+{
+  "backend": "torch_dql",
+  "checkpoint_path": "exam_submission/demo_outputs/exam_appendix_demo/rl/best_model.pt",
+  "runtime": {
+    "cpu_count": 10,
+    "device": "cpu",
+    "torch_num_threads": 8
+  },
+  "validation": {
+    "mean_reward": -2950.3934039904057,
+    "mean_served_demand": 1486.0,
+    "mean_true_demand_total": 1475.0,
+    "mean_unmet_demand": 4730.0
+  }
+}

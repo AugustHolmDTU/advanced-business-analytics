@@ -11,12 +11,20 @@ POLICY_LABELS = {
     "mobile_noop": "Fixed / no-agent",
     "mobile_threshold": "Threshold",
     "mobile_reactive": "Reactive",
+    "fixed": "Fixed / no-agent",
+    "threshold": "Threshold",
+    "reactive": "Reactive",
+    "rl": "RL agent",
 }
 
 POLICY_COLORS = {
     "mobile_noop": "#4C566A",
     "mobile_threshold": "#2A9D8F",
     "mobile_reactive": "#E76F51",
+    "fixed": "#4C566A",
+    "threshold": "#2A9D8F",
+    "reactive": "#E76F51",
+    "rl": "#264653",
 }
 
 
@@ -105,12 +113,16 @@ def plot_policy_rollout_panel(run_frames: dict[str, pd.DataFrame]) -> tuple[plt.
         axes[0].plot(frame["global_hour"], frame["queue_length"], color=color, linewidth=2.0, label=label)
         axes[1].plot(frame["global_hour"], frame["queue_wait_mean_minutes"], color=color, linewidth=2.0, label=label)
         axes[2].plot(frame["global_hour"], frame["num_active_mobile_stations"], color=color, linewidth=2.0, label=label)
-    axes[0].set_title("Held-out rollout comparison on one unseen 5-day `test_id` scenario")
     axes[0].set_ylabel("Total queue length")
     axes[1].set_ylabel("Mean queue wait (minutes)")
     axes[2].set_ylabel("Active MCS")
     axes[2].set_xlabel("Global hour")
-    axes[0].legend(ncol=3, loc="upper right")
+    axes[0].legend(ncol=max(1, min(3, len(run_frames))), loc="upper right")
+    if len(run_frames) == 1:
+        policy_name = next(iter(run_frames))
+        axes[0].set_title(f"Held-out appendix-demo rollout for the trained {POLICY_LABELS.get(policy_name, policy_name)}")
+    else:
+        axes[0].set_title("Held-out rollout comparison on one unseen 5-day `test_id` scenario")
     fig.tight_layout()
     return fig, axes
 
@@ -276,6 +288,8 @@ def plot_training_history(history: list[dict[str, Any]], source: str = "historic
         title = "Current training-time RL diagnostics from exam_submission/data/generated/training/history_current.json"
     elif source == "current_outputs":
         title = "Current training-time RL diagnostics from outputs/mobile_mcs_line_abc/rl/history.json"
+    elif source == "appendix_demo":
+        title = "Appendix demo: short local RL-agent training diagnostics"
     else:
         title = "Historical RL diagnostics from a superseded absolute-allocation variant"
     fig.suptitle(title, y=1.02, fontsize=14)

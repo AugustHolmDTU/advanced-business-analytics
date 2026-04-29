@@ -7,7 +7,7 @@
 - `exam_storyline.ipynb`: main report notebook. This is the primary submission artifact.
 - `data/`: copied local artifacts used by the notebook.
 - `utils/`: small notebook-only helper modules.
-- `reference_code/`: minimal copied training, simulation, environment, and config files needed to inspect the implementation and run the optional short demo training cell.
+- `reference_code/`: minimal copied training, simulation, environment, and config files needed to inspect the implementation and support the optional appendix demo helper.
 
 ## Notebook Structure
 
@@ -43,7 +43,7 @@ To execute the notebook non-interactively:
 MPLCONFIGDIR=/private/tmp/codex_mpl_exam jupyter nbconvert --to notebook --execute --inplace exam_submission/exam_storyline.ipynb
 ```
 
-The notebook runs top-to-bottom from the repository root. It imports only from `exam_submission/` during normal report execution.
+The notebook runs top-to-bottom from the repository root. The main report cells import only from `exam_submission/`; the optional appendix demo helper additionally uses the repository `src/` package to launch a short local training run.
 
 ## PDF / LaTeX Export
 
@@ -115,7 +115,7 @@ Included categories:
 - `src/evch/models/common.py`: shared MLP builder
 - `configs/`: active benchmark configs plus a short demo override
 
-The optional demo cell in section 7 uses these copied configs together with the original repository `src/` package path to run a small local training/evaluation example.
+Appendix B calls `exam_submission/utils/demo_runner.py`, which uses these copied configs together with the original repository `src/` package path to run a small local training/evaluation example.
 
 ## Important Assumptions And Caveats
 
@@ -125,7 +125,7 @@ The optional demo cell in section 7 uses these copied configs together with the 
 - The main rollout comparison therefore emphasizes the strongest current comparable policy evidence available locally: fixed-only versus threshold control.
 - The reactive baseline is kept only as secondary appendix material.
 - Queue-wait target breach metrics remain zero in the active line-corridor outputs because the current artifacts do not expose a non-zero queue-wait target threshold.
-- The short demo training cell is illustrative only and is clearly separated from the reported results.
+- The short appendix demo is illustrative only and is clearly separated from the reported results.
 
 ## Figure Policy
 

@@ -3,7 +3,7 @@ This folder contains the minimal project code and configs referenced by the exam
 Purpose
 - document the exact simulation and RL implementation used in the project
 - make the training and evaluation pipeline inspectable without copying the whole repository
-- support the optional short demo training cell in `exam_submission/exam_storyline.ipynb`
+- support the optional appendix demo helper in `exam_submission/exam_storyline.ipynb`
 
 What is included
 - `src/evch/train/`: RL training, evaluation-suite, and comparison entrypoints
@@ -18,4 +18,4 @@ What is included
 
 Important note
 - The notebook keeps the main reported results fully reproducible from copied artifacts in `exam_submission/data/`.
-- The short demo run is separate from the real reported results and is only meant to show how an examiner can launch a small training/evaluation run locally.
+- The short appendix demo is separate from the real reported results and is only meant to show how an examiner can launch a small training/evaluation run locally.

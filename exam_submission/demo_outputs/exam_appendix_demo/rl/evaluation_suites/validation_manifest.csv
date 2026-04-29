@@ -1,0 +1,2 @@
+suite_name,seed,scenario_id,num_days,disruption_count,disruption_types,disruption_targets,start_times,durations,severities
+validation,10000,validation_10000,2,2,station_outage|demand_surge,station_ab|od_ac,0@9.24|1@12.04,1.83|2.75,0.00|2.66
