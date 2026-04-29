@@ -1,0 +1,8 @@
+# Single-scenario held-out comparison override for W&B `sim/*` overlays.
+# This uses one fixed seed from the `train_val_test.test_id` split so
+# RL and baseline runs see the exact same unseen simulated day.
+comparison_rollout:
+  enabled: true
+  seed_source: test_id
+  seed_index: 0
+  use_seeded_episode: true

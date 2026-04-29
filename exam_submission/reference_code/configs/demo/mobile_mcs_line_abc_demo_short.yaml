@@ -1,0 +1,31 @@
+experiment:
+  name: exam_demo_mobile_mcs_line_abc
+  output_root: exam_submission/demo_outputs
+  save_plots: false
+
+comparison_rollout:
+  enabled: false
+
+rl:
+  episodes: 6
+  max_steps_per_episode: 288
+  replay_capacity: 4000
+  learning_starts: 128
+  batch_size: 64
+  hidden_dims: [128, 128]
+  eval_interval_steps: 400
+  eval_during_training_episodes: 2
+  evaluation_episodes: 2
+
+train_val_test:
+  validation:
+    enabled: false
+    periodic_enabled: true
+    seeds:
+      start: 10000
+      count: 8
+    periodic_seed_count: 8
+  test_id:
+    enabled: false
+  test_stress:
+    enabled: false

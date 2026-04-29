@@ -1,12 +1,33 @@
 # Exam Submission Folder
 
-`exam_storyline.ipynb` is the main artifact in this folder. It is written as a polished technical-report notebook for the DTU 42578 final project on resilient EV charging operations under disruption.
+`exam_storyline.ipynb` is the main hand-in artifact in this folder. It is structured as a technical report for the DTU 42578 final project on resilience in EV charging operations under disruption.
 
 ## Contents
 
-- `exam_storyline.ipynb`: main submission notebook and technical narrative.
-- `data/`: copied configs and selected local artifacts used by the notebook.
-- `utils/`: small helper modules used only by the notebook.
+- `exam_storyline.ipynb`: main report notebook. This is the primary submission artifact.
+- `data/`: copied local artifacts used by the notebook.
+- `utils/`: small notebook-only helper modules.
+- `reference_code/`: minimal copied training, simulation, environment, and config files needed to inspect the implementation and run the optional short demo training cell.
+
+## Notebook Structure
+
+The notebook follows this exact report outline:
+
+1. Motivation / problem definition
+2. Simulation environment
+3. Simulation design
+4. RL agent and methods
+5. Reward calibration
+6. Training setup
+7. Training the model
+8. Simulation comparison rollout
+9. Summary metrics table
+10. Spatial awareness
+11. Limitations
+12. Conclusion
+13. Appendix
+
+Secondary plots and broader artifact summaries are intentionally moved to the appendix to keep the main narrative compact.
 
 ## How To Run
 
@@ -16,15 +37,39 @@ From the repository root:
 jupyter notebook exam_submission/exam_storyline.ipynb
 ```
 
-or execute non-interactively:
+To execute the notebook non-interactively:
 
 ```bash
-jupyter nbconvert --to notebook --execute --inplace exam_submission/exam_storyline.ipynb
+MPLCONFIGDIR=/private/tmp/codex_mpl_exam jupyter nbconvert --to notebook --execute --inplace exam_submission/exam_storyline.ipynb
 ```
 
-The notebook is designed to run top-to-bottom without importing from `src/`; it only imports from `exam_submission/`.
+The notebook runs top-to-bottom from the repository root. It imports only from `exam_submission/` during normal report execution.
 
-## Selected Artifacts
+## PDF / LaTeX Export
+
+LaTeX export works with:
+
+```bash
+jupyter nbconvert --to latex --no-input exam_submission/exam_storyline.ipynb
+```
+
+This produces:
+
+```bash
+exam_submission/exam_storyline.tex
+```
+
+If direct PDF compilation fails, the issue is the local LaTeX installation, not the notebook structure. On this machine, XeLaTeX still requires the missing package `tcolorbox.sty`.
+
+Reliable fallback:
+
+```bash
+jupyter nbconvert --to html --no-input --embed-images exam_submission/exam_storyline.ipynb
+```
+
+Then print the generated HTML to PDF from the browser.
+
+## Selected Artifacts Used In The Notebook
 
 Current active benchmark/config artifacts:
 
@@ -34,7 +79,7 @@ Current active benchmark/config artifacts:
 - `data/configs/experiment_mobile_mcs_line_abc_current.yaml`
 - `data/configs/experiment_mobile_mcs_line_abc_heldout_comparison.yaml`
 
-Current generated evaluation artifacts copied for the notebook:
+Current generated artifacts:
 
 - `data/generated/training/history_current.json`
 - `data/generated/heldout/mobile_noop_comparison_timestep_metrics.csv`
@@ -47,20 +92,40 @@ Current generated evaluation artifacts copied for the notebook:
 - `data/generated/evaluation_suites_small/paired_test_results.csv`
 - `data/generated/evaluation_suites_small/test_stress_summary.csv`
 - `data/generated/evaluation_suites_small/scenario_manifest.csv`
+- `data/generated/evaluation_suites_small/suite_outputs.json`
 
-Historical artifacts used only for careful context, not final claims about the active line-corridor setup:
+Historical context artifacts used only in the reward-calibration / historical-context discussion:
 
 - `data/historical/reward_sweep_summary.csv`
 - `data/historical/legacy_training_history_range_c24_q2p5.json`
 
+## Reference Code
+
+`reference_code/` contains the minimal code and configs needed to inspect the active simulator and launch a short training run. It does not duplicate the full repository.
+
+Included categories:
+
+- `src/evch/train/`: training, evaluation, and comparison entry points
+- `src/evch/envs/`: active line-corridor environment and factories
+- `src/evch/rl/`: simple DQN implementation and evaluation helpers
+- `src/evch/sim/`: line-corridor simulator logic
+- `src/evch/utils/`: logging, I/O, seeding, and runtime helpers
+- `src/evch/config/`: YAML config loader
+- `src/evch/baselines/`: baseline policy definitions
+- `src/evch/models/common.py`: shared MLP builder
+- `configs/`: active benchmark configs plus a short demo override
+
+The optional demo cell in section 7 uses these copied configs together with the original repository `src/` package path to run a small local training/evaluation example.
+
 ## Important Assumptions And Caveats
 
-- No current-compatible RL checkpoint was found locally for the active `27`-feature, `5`-action A-B-C corridor environment.
-- The train/eval curve section prefers `data/generated/training/history_current.json`, which should be copied from the training job's `history.json`.
-- Because of that, the notebook does **not** make a clean final RL-vs-baseline quantitative claim for the active implementation.
-- The notebook uses current baseline rollouts and current reduced baseline evaluation summaries as the main quantitative evidence.
-- Older local RL artifacts are treated as historical only because they come from a superseded absolute-allocation action space.
-- Queue-wait target breach metrics remain zero in the active line-corridor outputs because the current environment does not expose a nonzero queue-wait target.
+- No current-compatible final RL checkpoint was found locally for the active `27`-feature, `5`-action line-corridor environment.
+- Because of that, the notebook does not claim a final reproducible RL-vs-baseline held-out rollout result for the active benchmark.
+- The train/eval learning-curve section uses `data/generated/training/history_current.json`, copied from the latest simple-DQN training run.
+- The main rollout comparison therefore emphasizes the strongest current comparable policy evidence available locally: fixed-only versus threshold control.
+- The reactive baseline is kept only as secondary appendix material.
+- Queue-wait target breach metrics remain zero in the active line-corridor outputs because the current artifacts do not expose a non-zero queue-wait target threshold.
+- The short demo training cell is illustrative only and is clearly separated from the reported results.
 
 ## Figure Policy
 

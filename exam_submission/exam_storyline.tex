@@ -398,154 +398,134 @@ Disruption}\label{resilient-ev-charging-under-disruption}
 \subsection{Technical report notebook for DTU 42578 Advanced Business
 Analytics}\label{technical-report-notebook-for-dtu-42578-advanced-business-analytics}
 
-\subsubsection{Executive overview}\label{executive-overview}
+This notebook is the final technical report for the project on
+resilience in EV charging operations. It is written as a structured
+report rather than an exploration log. The central question is whether
+mobile charging stations can be used intelligently to reduce queueing
+pressure when demand is uneven and charging infrastructure is disrupted.
 
-This notebook is the main technical report for the final project. The
-project studies resilience in EV charging operations under disruptions
-on a synthetic A-B-C corridor with two fixed charging stations and
-relocatable mobile charging stations (MCS).
+The intended research question is:
 
-The practical question is whether adaptive control of mobile charging
-support can reduce queueing pain when charging demand becomes uneven,
-capacity drops locally, or service times inflate.
+\textbf{Can a reinforcement learning policy improve resilience in an EV
+charging corridor by dynamically reallocating mobile charging stations
+to reduce queue length and waiting time under disruptions?}
 
-\textbf{Research question}
+A crucial caveat shapes the report: the current checkout contains the
+active simulator, the active configs, copied RL training history, and
+baseline rollout artifacts, but it does \textbf{not} contain a
+current-compatible RL checkpoint or RL rollout artifact for the active
+27-feature, 5-action A-B-C benchmark. The report therefore separates
+three things carefully:
 
-Can a reinforcement learning policy improve resilience in an EV charging
-corridor by dynamically reallocating mobile charging stations to reduce
-queue length and waiting time under disruptions?
+\begin{itemize}
+\tightlist
+\item
+  the \textbf{RL formulation}, which can be described precisely,
+\item
+  the \textbf{RL training diagnostics}, which are available from copied
+  training history,
+\item
+  the \textbf{reproducible operational rollout evidence}, which is
+  currently available for the fixed baseline and heuristic adaptive
+  baselines.
+\end{itemize}
 
-The intended comparison is between: - a fixed / no-agent baseline, - a
-threshold-style rule baseline, - and an RL-controlled mobile-charging
-policy.
-
-The current local artifact set supports the full simulator and current
-baseline evaluations directly. It does \textbf{not} contain a
-current-compatible RL checkpoint for the active 27-feature, 5-action
-A-B-C environment, so the quantitative result sections below focus on
-the strongest reproducible current evidence and treat older RL artifacts
-only as historical context.
+The notebook follows this exact structure:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
+\tightlist
 \item
-  Simulation goals and design philosophy
+  Motivation / problem definition\\
 \item
-  Simulation environment
+  Simulation environment\\
 \item
-  Problem formulation
+  Simulation design\\
 \item
-  RL agent and method
+  RL agent and methods\\
 \item
-  Hyperparameters
+  Reward calibration\\
 \item
-  State space
+  Training setup\\
 \item
-  Action space
+  Training the model\\
 \item
-  Reward function
+  Simulation comparison rollout\\
 \item
-  Reward calibration and alternative business priorities
+  Summary metrics table\\
 \item
-  Training, validation, and test setup
+  Spatial awareness\\
 \item
-  Training and evaluation learning curves
+  Limitations\\
 \item
-  Simulation rollout comparison
+  Conclusion\\
 \item
-  Summary metrics table
-\item
-  Reduced multi-seed evaluation and stress scenarios
-\item
-  Spatial awareness
-\item
-  Missing pieces, failures, and limitations
-\item
-  Conclusion
+  Appendix
 \end{enumerate}
 
-    \subsection{1. Simulation goals and design
-philosophy}\label{simulation-goals-and-design-philosophy}
+    \subsection{1. Motivation / problem
+definition}\label{motivation-problem-definition}
 
-The simulator is not intended to be a perfect real-world digital twin.
-Its purpose is to create a controlled but operationally meaningful
-testbed for resilience questions:
+Fast-charging infrastructure for electric vehicles is expensive,
+geographically fixed, and often unevenly used over the day. In practice,
+this creates four operational problems at the same time:
 
 \begin{itemize}
 \tightlist
 \item
-  demand varies over the day instead of staying flat,
+  charging demand is not constant, because traffic has strong
+  time-of-day peaks,
 \item
-  morning and evening peaks create predictable congestion pressure,
+  congestion is local, because one station can become stressed while
+  another still has spare capacity,
 \item
-  charging stations have finite plugs and stochastic service times,
+  disruptions can suddenly reduce usable capacity or sharply increase
+  demand,
 \item
-  disruption events locally damage effective service capacity,
-\item
-  mobile charging stations can be reallocated, but not instantaneously,
-\item
-  performance is judged using queueing and waiting-time outcomes under
-  disruption.
+  building permanent spare infrastructure everywhere is costly and can
+  leave assets under-used most of the time.
 \end{itemize}
 
-That design choice matters for the project story. Resilience is about
-whether the system continues to serve vehicles when local conditions
-deteriorate, not only about average utilization on a normal day.
+The project studies a corridor setting in which these problems are
+deliberately combined. The practical goal is simple:
 
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_3_0.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
-    The first panel shows the daily charging-demand shape that the corridor
-is exposed to. The pattern is interpretable rather than arbitrary: a
-morning peak, an afternoon/evening peak, and a smaller midday bump. The
-second panel shows the underlying OD flow components that create this
-station-level charging demand.
+\textbf{use mobile charging stations intelligently to reduce queue
+length and waiting time when pressure shifts across the corridor or when
+a disruption occurs.}
 
-This matters because resilience claims are more credible when
-disruptions are layered on top of a demand process with clear structure.
+That is a resilience question. The interest is not only average
+performance on a normal day, but whether the charging system can keep
+serving vehicles when conditions deteriorate.
 
     \subsection{2. Simulation environment}\label{simulation-environment}
 
-The active benchmark is a synthetic line corridor with three cities and
-two fixed charging stations:
+The active benchmark is a synthetic A-B-C corridor with three cities
+arranged on a line and two fixed fast-charging stations:
 
 \begin{itemize}
 \tightlist
 \item
-  City A to City B: 100 km,
+  one fixed station between city A and city B,
 \item
-  City B to City C: 100 km,
+  one fixed station between city B and city C,
 \item
-  one fixed station between A and B (\texttt{station\_ab}),
-\item
-  one fixed station between B and C (\texttt{station\_bc}).
+  a middle depot at city B from which mobile charging stations (MCS) can
+  be dispatched.
 \end{itemize}
 
-Episodes proceed in 5-minute decision steps. Vehicles arrive
-stochastically, may choose to charge, join a station queue if necessary,
-and start service when a plug becomes free. Mobile charging stations
-(MCS) provide extra chargers, but they create a real control problem
-because they cannot support both sides of the corridor simultaneously.
+The simulator runs in 5-minute decision steps. Vehicles enter the
+corridor, some decide to charge, they queue if no plug is free, and they
+start service once capacity becomes available. Mobile charging stations
+add temporary extra chargers, but they are not free to teleport: they
+must travel from the depot, can be moved between stations, and need time
+to recharge before they can be reused.
 
-Operationally important frictions in the current environment are:
-
-\begin{itemize}
-\tightlist
-\item
-  depot-to-station travel time,
-\item
-  station-to-station relocation lag,
-\item
-  return-to-middle behavior,
-\item
-  recharge delay before an MCS can be reused.
-\end{itemize}
-
-Those frictions make the problem spatial and delayed. The controller is
-not just ``adding capacity''; it is committing scarce mobile support
-under travel and recharge constraints.
+A useful operational calibration is how much one MCS can actually do. In
+the active environment, one MCS has two chargers and the average service
+time is 30 minutes. That means one MCS can complete roughly \textbf{4
+charging sessions per hour}, or about \textbf{0.33 vehicles per 5-minute
+step on average}. This makes MCS deployment meaningful but not magically
+dominant.
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
@@ -574,148 +554,933 @@ Evening peak & 17.0:00 \\
 Disruption mode & random \\
 Supported disruption types & capacity\_drop, station\_outage,
 service\_time\_inflation, demand\_surge \\
+Mean MCS throughput & 4.0 vehicles/hour per MCS (\textasciitilde0.33
+vehicles per 5-minute step) \\
+Depot-to-station travel & 30 minutes \\
+Full MCS recharge time & 60 minutes \\
 \end{longtable}
 
     
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_6_1.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_4_1.png}
     \end{center}
     { \hspace*{\fill} \\}
     
-    The middle depot is crucial for interpretation. MCS units do not
-teleport. They move from the middle depot to AB or BC, can be recalled,
-and return for recharge. This is exactly why spatial awareness is
-meaningful in this project: the controller must decide \emph{where}
-support is worth committing before queues become severe.
+    The schematic highlights the key spatial constraint in the project. The
+depot is in the middle, while congestion may emerge on either side of
+the corridor. A controller therefore faces a real allocation problem:
+support sent to AB is not simultaneously available at BC, and vice
+versa.
 
-    \subsection{3. Problem formulation}\label{problem-formulation}
+    \subsection{3. Simulation design}\label{simulation-design}
 
-The control problem is to decide how mobile charging support should be
-used to reduce local service pressure under normal demand variation and
-under disruptions.
+This section explains how the simulator is built up step by step. The
+purpose is not to mimic every real-world detail, but to construct an
+operationally meaningful resilience testbed in which the control problem
+is interpretable.
 
-Why is this difficult?
+\subsubsection{3.1 Base corridor}\label{base-corridor}
 
-\begin{itemize}
-\tightlist
-\item
-  fixed capacity is static while demand and disruptions are
-  time-varying,
-\item
-  the pressure may be local to AB or BC rather than system-wide,
-\item
-  MCS deployment is delayed by movement and recharge,
-\item
-  aggressively using MCS can improve service but also incurs operational
-  cost.
-\end{itemize}
+The starting point is the simplest spatial setting that still has local
+congestion: three cities on a line and one fixed charging station on
+each link. This gives two service points, AB and BC, that can become
+stressed differently.
 
-In this project, \textbf{spatial awareness} means that a good controller
-should send more support toward the side of the corridor with higher
-local pressure, such as larger queue buildup, higher waiting times,
-lower effective local capacity, or a disruption directly affecting that
-side.
+\subsubsection{3.2 Time-varying demand}\label{time-varying-demand}
 
-    \subsection{4. RL agent and method}\label{rl-agent-and-method}
+The next layer is demand variation over the day. Morning and evening
+peaks are added so that queue pressure is not constant. This matters
+because a resilience intervention should help most when traffic is
+concentrated, not only when the system is quiet.
+
+\subsubsection{3.3 OD structure}\label{od-structure}
+
+Demand is then split into origin-destination flows rather than a single
+generic arrival stream. That matters because some trips pressure only
+one station while long trips pressure both. The corridor therefore has
+directional structure, which is important for spatial allocation.
+
+\subsubsection{3.4 Queueing and service}\label{queueing-and-service}
+
+Passing traffic is converted into charging demand. Some vehicles decide
+to stop, they join the queue of the relevant station, and they occupy a
+plug for a stochastic service time. This is the step that turns traffic
+variation into a service-level problem with waiting times.
+
+\subsubsection{3.5 Mobile charging
+stations}\label{mobile-charging-stations}
+
+Mobile charging stations are added only after the fixed charging system
+exists. Their role is to add flexible capacity, not replace the fixed
+system. Introducing travel and recharge delays makes the MCS decision
+spatial and delayed rather than trivial.
+
+\subsubsection{3.6 Disruptions}\label{disruptions}
+
+Finally, disruption events are added. These reduce capacity, inflate
+service time, or create temporary demand surges. This is what turns the
+simulator into a resilience testbed rather than a normal-day capacity
+exercise.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Layer added
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Implementation
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Why it matters
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Base corridor & Three cities in a line with one fixed station on each
+link. & Creates the minimal spatial setting in which local congestion
+can differ between AB and BC. \\
+Time-varying demand & Morning peak, afternoon peak, and a smaller midday
+bump. & Makes congestion depend on time of day rather than a flat
+average flow. \\
+OD structure & Trips are split across AB, BA, BC, CB, AC, and CA flows.
+& Allows station pressure to come from directional travel patterns, not
+only total volume. \\
+Queueing and service & Vehicles may stop to charge, join queues, and
+occupy plugs for stochastic service times. & Turns traffic into an
+operational service problem with waiting-time consequences. \\
+Mobile charging stations & Up to 10 MCS units add flexible but delayed
+capacity. & Creates the control lever that can potentially improve
+resilience. \\
+Disruptions & Capacity drops, outages, service-time inflation, and OD
+demand surges. & Creates stress conditions under which resilience can be
+evaluated directly. \\
+\end{longtable}
+
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_7_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The demand plot is the first important building block. The top panel
+shows that expected charging demand is structured around a morning peak,
+an afternoon/evening peak, and a smaller midday bump. The lower panel
+shows the OD components that generate this pattern, which is why
+congestion can become directional rather than purely aggregate.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Process
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Distribution / mechanism
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Assumption in the active benchmark
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Expected total traffic & Deterministic baseline + Gaussian-shaped
+morning/evening peaks + midday bump & Baseline 26 cars/step; peak width
+1.6 h. \\
+Origin shares & Time-varying weighted shares across A, B, and C origins
+& Directional bias shifts origin pressure toward A in the morning and
+toward C in the evening. \\
+Passing vehicles by OD and step & Poisson draw around expected OD flow &
+Implements stochastic arrivals around the deterministic demand
+profile. \\
+Charging decision & Binomial draw from passing vehicles with fixed stop
+probability & Charging-stop probability = 0.055. \\
+Station assignment & Multinomial assignment using OD-specific station
+weights & Long trips can pressure both stations; local trips pressure
+one side only. \\
+Service time & Normal draw, then clipped to configured min/max bounds &
+Mean 30 min, std 8, clipped to 15-50 min. \\
+Disruptions per day & Categorical draw from configured day-level count
+weights & Weights: \{0: 0.1, 1: 0.45, 2: 0.3, 3: 0.15\}. \\
+Disruption timing and severity & Uniform draws within configured ranges
+for start time, duration, and severity & Keeps disruptions stochastic
+but bounded and interpretable. \\
+\end{longtable}
+
+    
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Targets
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Start window
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Duration
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Severity
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+capacity drop & station\_ab, station\_bc & 6.0-20.0 h & {[}1.0, 3.5{]} &
+Target plugs sampled from {[}1, 5{]} \\
+station outage & station\_ab, station\_bc & 6.0-21.0 h & {[}1.0, 2.5{]}
+& Target station forced to zero plugs \\
+service time inflation & station\_ab, station\_bc & 6.0-20.0 h & {[}1.0,
+3.5{]} & Service-time multiplier sampled from {[}1.5, 2.1{]} \\
+demand surge & od\_ab, od\_ba, od\_cb, od\_bc, od\_ac, od\_ca & 6.0-20.0
+h & {[}1.5, 4.5{]} & Demand multiplier sampled from {[}1.9, 2.9{]} \\
+\end{longtable}
+
+    
+    Two design choices deserve emphasis.
+
+First, the simulator mixes deterministic structure and stochastic
+realization. The daily demand profile is interpretable, but arrivals and
+service times are still random. Second, disruptions are sampled from
+bounded ranges. That keeps the scenarios diverse enough to test
+robustness, while still allowing the examiner to understand what a
+disruption actually means in this benchmark.
+
+    \subsection{4. RL agent and methods}\label{rl-agent-and-methods}
 
 The repository contains two RL paths:
 
 \begin{itemize}
 \tightlist
 \item
-  a custom \texttt{torch\_dqn} / simple DQL learner, useful as a
-  lightweight baseline learner,
+  a \textbf{simple PyTorch DQN / DQL path} that writes full train/eval
+  diagnostics,
 \item
-  an \texttt{sb3\_dqn} path, intended as the stronger final RL
-  candidate.
+  an \textbf{SB3 DQN path} that is the intended stronger final policy
+  path.
 \end{itemize}
 
-Conceptually the RL loop is standard and practical:
+For the active benchmark, the action problem is deliberately posed as a
+\textbf{small directional control problem} rather than a large
+absolute-allocation table. The agent does not choose an arbitrary global
+allocation in one jump. Instead, it chooses whether to hold, push
+commitment toward AB or BC, or recall commitment from one side. This is
+easier to learn, easier to interpret, and more faithful to the
+operational story of gradual reallocation.
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  observe the current corridor state,
-\item
-  choose an action for MCS commitment,
-\item
-  receive a scalar reward tied to service quality and operating cost,
-\item
-  improve the action-value function from rollout experience,
-\item
-  evaluate the learned policy in held-out simulated scenarios.
-\end{enumerate}
+Because the current checkout does not contain a compatible final RL
+checkpoint, this report distinguishes between the \textbf{RL design} and
+the \textbf{reproducible final rollout evidence}. The RL design can
+still be described precisely and evaluated through training diagnostics.
 
-The important point for this report is not RL theory for its own sake,
-but whether the learned controller can improve resilience under
-disruption without over-using mobile capacity.
-
-\subsubsection{Artifact status for the active
-benchmark}\label{artifact-status-for-the-active-benchmark}
-
-The current local checkout does not contain a compatible RL checkpoint
-for the active A-B-C benchmark after the move to the 27-dimensional
-observation and 5-action directional control space. That means the
-notebook can document the RL formulation precisely, but the reproducible
-\textbf{current} quantitative results below are baseline-only.
-
-    \subsection{5. Hyperparameters}\label{hyperparameters}
-
-The project is config-driven. The tables below summarize the current
-environment and RL settings that define the active benchmark.
-
-    \begin{longtable}[]{@{}ll@{}}
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
 \toprule\noalign{}
-Hyperparameter & Value \\
+\begin{minipage}[b]{\linewidth}\raggedright
+Item
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Value
+\end{minipage} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Preferred final algorithm path & SB3 DQN \\
-Available simple learner path & torch\_dqn \\
-Simple learner episodes & 130 \\
-Simple learner gamma & 0.98 \\
-Simple learner learning rate & 0.0005 \\
-Simple learner batch size & 128 \\
+Observation size & 27 \\
+Action size & 5 \\
+Simple learner backend & torch\_dqn \\
+Simple learner network & MLP 27 → 256 → 256 → 5 \\
+Simple learner optimizer & Adam, learning rate 0.0005 \\
+Simple learner TD loss & Huber / smooth L1 loss on one-step TD
+targets \\
+SB3 candidate backend & sb3\_dqn \\
+SB3 policy class & MlpPolicy with net\_arch {[}256, 256{]} \\
+Current checkpoint status & No current compatible checkpoint found in
+checkout \\
+\end{longtable}
+
+    
+    \begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Simple learner hyperparameter & Value \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Episodes & 130 \\
+Max steps / episode & 1728 \\
+Discount factor γ & 0.98 \\
+Learning rate & 0.0005 \\
+Batch size & 128 \\
 Replay capacity & 200000 \\
 Learning starts & 10000 \\
 Train frequency & 4 \\
 Gradient steps & 4 \\
 Target update interval & 200 \\
 Hidden dimensions & {[}256, 256{]} \\
-Exploration start & 1.0 \\
-Exploration end & 0.05 \\
+Exploration start ε & 1.0 \\
+Exploration end ε & 0.05 \\
 Exploration decay steps & 125000 \\
-Periodic evaluation cadence & Every 15000 training steps \\
-Periodic evaluation episodes & 10 \\
-Final evaluation episodes & 12 \\
-SB3 total timesteps & 250000 \\
-SB3 buffer size & 200000 \\
-SB3 exploration fraction & 0.5 \\
+Periodic eval cadence & Every 15000 environment steps \\
+Periodic eval episodes & 10 \\
 \end{longtable}
 
     
-    Two points matter for interpretation:
+    \begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+SB3 hyperparameter & Value \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Total timesteps & 250000.0 \\
+Learning rate & 0.0005 \\
+Discount factor γ & 0.98 \\
+Replay buffer & 200000.0 \\
+Learning starts & 10000.0 \\
+Batch size & 128.0 \\
+Train frequency & 4.0 \\
+Gradient steps & 1.0 \\
+Exploration fraction & 0.5 \\
+Initial ε & 1.0 \\
+Final ε & 0.05 \\
+Target update interval & 1000.0 \\
+Evaluation episodes & 12.0 \\
+\end{longtable}
+
+    
+    \subsubsection{State space}\label{state-space}
+
+The observation is 27-dimensional. The model is given local queue
+pressure, recent flow, effective local capacity, mobile-station
+logistics, disruption indicators, and time-of-day information. This
+means the policy can react to where pressure is building, but it does
+\textbf{not} have perfect future knowledge.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Feature group
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Count
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Why it is in the state
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Queue state & 4 & Current queue length and current mean wait at AB and
+BC. \\
+Recent flow & 4 & Latest arrivals and latest service starts at each
+station. \\
+Capacity state & 4 & Effective plugs and active mobile capacity at AB
+and BC. \\
+Spatial pressure & 4 & Committed MCS bias and local deficit estimates by
+side of corridor. \\
+Disruption state & 4 & Whether a disruption is active, what type it is,
+and which side it affects. \\
+MCS logistics & 5 & Units available in depot, charging, or in transit to
+AB, BC, or middle. \\
+Time-of-day & 2 & Sine and cosine encodings of time within the day. \\
+\end{longtable}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No exact future arrivals or exact future queue realizations.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No oracle action labels or optimal allocation target.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No foreknowledge of future random disruptions before they begin.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No exact per-MCS battery state-of-charge representation.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No direct remaining-disruption-time feature in the current
+  observation.
+\end{itemize}
+
+    
+    \begin{itemize}
+\tightlist
+\item
+  No explicit demand forecast beyond current local state and disruption
+  indicators.
+\end{itemize}
+
+    
+    \subsubsection{Action space}\label{action-space}
+
+The active action space has five commands: hold, move one unit toward
+AB, move one unit toward BC, recall one unit from AB, and recall one
+unit from BC. This should be read as a deliberate modeling choice, not a
+reduced convenience version. It keeps the controller focused on
+directional decisions that respect depot availability and relocation
+lag.
+
+A subtle but important detail is that the environment itself decides
+whether a \texttt{toward\_ab} command is satisfied from the middle depot
+or by shifting one committed unit from BC. The policy chooses the
+\textbf{directional intent}; the environment resolves the
+\textbf{physical logistics}.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Action
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interpretation
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+hold & Keep the committed mobile-station allocation unchanged. \\
+toward\_ab & Move one unit of commitment toward AB, either from depot or
+from BC. \\
+toward\_bc & Move one unit of commitment toward BC, either from depot or
+from AB. \\
+recall\_ab & Recall one committed unit away from AB toward the middle
+depot. \\
+recall\_bc & Recall one committed unit away from BC toward the middle
+depot. \\
+\end{longtable}
+
+    
+    \subsubsection{Reward function and loss
+function}\label{reward-function-and-loss-function}
+
+The reward combines service-quality incentives and operating-cost
+penalties.
+
+The positive terms reward the agent for serving vehicles, using capacity
+productively, and placing mobile support where local deficits are
+estimated to be highest. The negative terms penalize queueing, waiting,
+unmet demand, unnecessary MCS activation, repeated adjustment, and
+carrying idle capacity.
+
+This distinction matters because \textbf{operational performance} and
+\textbf{reward} are related but not identical. A policy may reduce
+queueing substantially while still earning a poor total reward if it
+uses too much costly mobile capacity.
+
+The simple learner is trained with a \textbf{Huber TD loss}
+(\texttt{smooth\_l1\_loss}). Intuitively, the model predicts action
+values, compares them with one-step bootstrap targets, and updates the
+network to reduce that temporal-difference error. Huber loss is used
+because it is less brittle than pure squared error when RL targets are
+noisy.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Positive term
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Weight
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Operational role
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+served\_reward\_weight & 1.0 & Rewards charging sessions that start
+service. \\
+utilization\_bonus & 1.0 & Rewards productive use of available charging
+capacity. \\
+spatial\_deficit\_alignment\_bonus & 24.0 & Rewards mobile capacity that
+covers estimated local deficits. \\
+spatial\_deficit\_direction\_bonus & 12.0 & Rewards sending MCS in the
+correct corridor direction. \\
+\end{longtable}
+
+    
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Negative term
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Weight
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Operational role
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+unmet\_penalty & 2.5 & Penalizes vehicles left in queue after the
+step. \\
+queue\_length\_penalty & 2.5 & Adds extra pressure against persistent
+queue accumulation. \\
+queue\_wait\_penalty & 0.02 & Penalizes queue-wait burden, not just
+queue count. \\
+local\_queue\_peak\_penalty & 1.0 & Penalizes the worst station queue in
+the step. \\
+local\_wait\_peak\_penalty & 0.1 & Penalizes the worst station waiting
+time in the step. \\
+active\_mobile\_station\_cost & 18.0 & Charges for keeping MCS active in
+the field. \\
+activation\_cost & 2.0 & Charges for newly activating MCS. \\
+adjustment\_cost & 0.5 & Charges for reallocating MCS commitment. \\
+idle\_capacity\_penalty & 0.1 & Penalizes carrying unused capacity. \\
+\end{longtable}
+
+    
+    \subsection{5. Reward calibration}\label{reward-calibration}
+
+Reward calibration is a core modeling choice in this project. Mobile
+charging can reduce queues, but it also represents operating cost. If
+the cost weight is too low, the controller may over-deploy MCS. If the
+queue penalty is too low, the controller may accept poor service rather
+than spend mobile capacity.
+
+The historical reward sweep is useful here because it shows how changing
+these weights changes the learned operating point.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_20_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Run
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+MCS cost
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Queue cost
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean queue
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean wait
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean active MCS
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Final reward
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+range\_c18\_q2p5 & 18.0 & 2.5 & 0.62 & 1.57 & 2.08 & -102.93 \\
+range\_c24\_q2p5 & 24.0 & 2.5 & 0.12 & 0.5 & 2.17 & -146.77 \\
+range\_c30\_q3 & 30.0 & 3.0 & 2.25 & 5.58 & 2.46 & -232.35 \\
+range\_c30\_q4 & 30.0 & 4.0 & 2.0 & 6.74 & 1.79 & -199.99 \\
+range\_c36\_q3 & 36.0 & 3.0 & 3.12 & 7.12 & 2.5 & -309.23 \\
+range\_c42\_q3p5 & 42.0 & 3.5 & 5.42 & 10.31 & 1.79 & -305.46 \\
+\end{longtable}
+
+    
+    The trade-off is clear. Higher MCS cost tends to push the policy toward
+lower MCS usage, but that usually comes with worse queue outcomes.
+Increasing queue penalties pushes the controller toward protecting
+service quality more aggressively. In other words, there is no single
+universally correct reward: the preferred policy depends on how
+expensive mobile support is assumed to be relative to poor queue
+performance.
+
+    \subsection{6. Training setup}\label{training-setup}
+
+The training pipeline separates training episodes, periodic evaluation,
+held-out rollouts, and named stress scenarios.
 
 \begin{itemize}
 \tightlist
 \item
-  the simple learner includes periodic held-out evaluation during
-  training in principle,
+  \textbf{Training} uses randomized episodes from the benchmark
+  distribution.
 \item
-  the SB3 path is treated in the repository notes as the preferred
-  serious RL route.
+  \textbf{Periodic evaluation} checks the current policy on held-out
+  seeds without exploration and without learning updates.
+\item
+  The \textbf{held-out rollout} is the final time-series comparison used
+  in the main report.
+\item
+  \textbf{Stress scenarios} are scripted one-day disruptions used as
+  robustness checks and are kept in the appendix.
 \end{itemize}
 
-That said, the absence of a current-compatible checkpoint means those
-settings are best interpreted as the intended final training setup
-rather than a fully reproducible final RL result in this checkout.
+Even without hyperparameter tuning or early stopping, periodic
+evaluation is still useful. It shows whether the policy is improving on
+held-out scenarios rather than only fitting the randomness of the latest
+training episodes.
 
-    \subsection{6. State space}\label{state-space}
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Component
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+How it is used in this report
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Training episodes & Randomized 2-6 day episodes sampled from training
+seeds 0-9999. \\
+Periodic evaluation & 10 held-out episodes every 15000 environment steps
+without exploration or learning updates. \\
+Validation split & Configured held-out validation seeds starting at
+10000; useful for policy checks even without hyperparameter tuning. \\
+Held-out rollout & A fixed unseen \texttt{test\_id} scenario used for
+the main time-series comparison in this report. \\
+Test stress suite & Named one-day scripted disruptions used for
+robustness checks; kept in the appendix to avoid clutter. \\
+\end{longtable}
 
-The active observation is a 27-dimensional vector. It is deliberately
-station-aware and logistics-aware rather than purely aggregate.
+    
+    \subsection{7. Training the model}\label{training-the-model}
+
+The final intended model path is SB3 DQN. However, the current
+repository snapshot does not contain a compatible checkpoint for the
+active benchmark, so the notebook cannot load and roll out that policy
+directly.
+
+What \textbf{is} available is a copied current training-history
+artifact. That artifact contains train reward, train TD loss, evaluation
+reward, and evaluation TD loss. These diagnostics are therefore used as
+evidence about whether the RL learner improved during training.
+
+The optional demo cell below is intentionally separate from the reported
+results. Its only purpose is to show how an examiner can launch a short
+local train/eval run using the included configs and reference code.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Artifact check
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Status
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Training-history source & Copied current training history in
+exam\_submission/data/generated/training/history\_current.json \\
+Train reward available & Yes \\
+Train TD loss available & Yes \\
+Eval reward available & Yes \\
+Eval TD loss available & Yes \\
+Current compatible checkpoint available & No \\
+\end{longtable}
+
+    
+    \begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Checkpoint & Exists \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+No current compatible RL checkpoint found in the checkout & False \\
+\end{longtable}
+
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_25_2.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The learning curves should be interpreted carefully.
+
+\begin{itemize}
+\tightlist
+\item
+  Train reward and TD loss are noisy, as expected in RL.
+\item
+  Evaluation reward is more informative than raw training reward because
+  it is measured without exploration.
+\item
+  Evaluation TD loss is not a supervised validation loss, but it is
+  still useful as a consistency check on the learned value function.
+\end{itemize}
+
+The copied history suggests that the learner improved relative to its
+very poor early episodes and reached a more stable regime. However,
+because the compatible final checkpoint is missing, the report cannot
+make a final reproducible claim about RL rollout performance on the
+active benchmark.
+
+    \subsubsection{Optional demo run}\label{optional-demo-run}
+
+The demo run is disabled by default so the notebook stays fast and
+deterministic. To run a short local train/eval demonstration, set
+\texttt{RUN\_DEMO\_TRAINING\ =\ True} in this cell.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{/Library/Frameworks/Python.framework/Versions/3.11/bin/python3.11} \AttributeTok{{-}m}\NormalTok{ evch.train.train\_rl }\AttributeTok{{-}{-}config}\NormalTok{ /Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced{-}business{-}analytics/exam\_submission/reference\_code/configs/env/mobile\_mcs\_line\_abc.yaml }\AttributeTok{{-}{-}config}\NormalTok{ /Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced{-}business{-}analytics/exam\_submission/reference\_code/configs/demand/base.yaml }\AttributeTok{{-}{-}config}\NormalTok{ /Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced{-}business{-}analytics/exam\_submission/reference\_code/configs/rl/dqn\_mobile\_simple.yaml }\AttributeTok{{-}{-}config}\NormalTok{ /Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced{-}business{-}analytics/exam\_submission/reference\_code/configs/debug/logging\_disabled.yaml }\AttributeTok{{-}{-}config}\NormalTok{ /Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced{-}business{-}analytics/exam\_submission/reference\_code/configs/experiment/mobile\_mcs\_line\_abc\_train\_only.yaml }\AttributeTok{{-}{-}config}\NormalTok{ /Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2. Sem/42578/advanced{-}business{-}analytics/exam\_submission/reference\_code/configs/demo/mobile\_mcs\_line\_abc\_demo\_short.yaml}
+\end{Highlighting}
+\end{Shaded}
+
+    
+    \subsection{8. Simulation comparison
+rollout}\label{simulation-comparison-rollout}
+
+The intended main comparison was fixed-only capacity versus the final RL
+controller. Because no current-compatible RL rollout artifact is present
+in the checkout, that exact comparison cannot be reproduced honestly in
+this notebook.
+
+To keep the report reproducible, the main operational comparison below
+uses:
+
+\begin{itemize}
+\tightlist
+\item
+  the \textbf{fixed / no-agent baseline}, and
+\item
+  the \textbf{adaptive threshold controller}, which is the strongest
+  current adaptive rollout artifact available.
+\end{itemize}
+
+This still answers an important resilience question: does adaptive
+mobile support materially reduce queueing pressure relative to doing
+nothing adaptive at all? The appendix retains the reactive rule as
+secondary context, but it is removed from the main section to keep the
+story clean.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_29_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The held-out rollout shows a clear operational improvement. Fixed
+capacity alone allows queue length and waiting time to build up
+substantially during disruption windows. The adaptive threshold
+controller responds by activating mobile support, which reduces both
+total queueing and average waiting time.
+
+The plot also illustrates the cost side of the problem: queue
+improvement is achieved by using MCS, not by creating capacity from
+nowhere. That is why the reward section and the reward-calibration
+section matter for interpretation.
+
+    \subsection{9. Summary metrics table}\label{summary-metrics-table}
+
+The table below summarizes the held-out rollout used in the main
+comparison. Breach-rate columns are shown for completeness, but they are
+not informative in the active exported artifacts because the queue-wait
+target is zero throughout the rollout files.
+
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Policy
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean queue
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Peak queue
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean wait (min)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Peak wait (min)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Breach rate
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Started sessions
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean active MCS
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+MCS hours
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Reward
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Queue improvement vs fixed (\%)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Wait improvement vs fixed (\%)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Reward change vs fixed
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Fixed / no-agent & 16.6 & 97.0 & 12.37 & 78.14 & 0.0 & 3851.0 & 0.0 &
+0.0 & -15969.37 & 0.0 & 0.0 & 0.0 \\
+Adaptive threshold & 2.65 & 24.0 & 1.28 & 22.69 & 0.0 & 3846.0 & 0.95 &
+113.5 & -4202.84 & 84.06 & 89.62 & 11766.53 \\
+\end{longtable}
+
+    
+    The key result is that adaptive mobile support meaningfully reduces
+queueing pain relative to fixed-only operation. The threshold controller
+improves service outcomes while using much less mobile support than the
+more aggressive reactive rule shown later in the appendix. That makes it
+the cleanest main comparator among the currently reproducible adaptive
+artifacts.
+
+    \subsection{10. Spatial awareness}\label{spatial-awareness}
+
+A spatially aware controller should allocate support where local
+pressure is highest. In this corridor, that means MCS at AB should
+increase when AB has higher local demand or queue pressure, while MCS at
+BC should increase when BC is more stressed.
+
+The threshold controller is the clearest current artifact for checking
+this. The plots below show one-hour rolling averages of expected station
+demand, local queue length, and MCS allocation for AB and BC separately.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_35_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The spatial response is meaningful but not perfect.
+
+\begin{itemize}
+\tightlist
+\item
+  When local pressure rises, MCS allocation generally rises on the same
+  side of the corridor.
+\item
+  The response is not instantaneous, which is expected because MCS units
+  must travel and recharge.
+\item
+  The relationship is clearer for the threshold controller than for the
+  reactive rule, because the reactive policy tends to keep many units
+  active system-wide rather than expressing a clean directional
+  response.
+\end{itemize}
+
+So the appropriate claim is not ``perfect spatial awareness''. A more
+defensible conclusion is that the current simulator can reveal spatial
+behavior clearly, and the adaptive threshold artifact shows a visible
+directional response to local service pressure.
+
+    \subsection{11. Limitations}\label{limitations}
+
+Several limitations are important and should be stated directly.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{The simulator is synthetic.} It is designed to be
+  operationally meaningful, but it is not a calibrated production model
+  of a real EV corridor.
+\item
+  \textbf{The current checkout lacks a compatible RL checkpoint.} The RL
+  formulation and training diagnostics are available, but a final
+  reproducible RL-vs-baseline rollout claim cannot be made from this
+  repository snapshot alone.
+\item
+  \textbf{Reward sensitivity is substantial.} Different cost weights can
+  change the preferred behavior significantly, especially the
+  willingness to keep MCS active.
+\item
+  \textbf{Spatial behavior is partial rather than perfect.} Travel
+  delay, recharge delay, directional symmetry, and cost all weaken
+  one-to-one alignment between local pressure and instantaneous
+  allocation.
+\item
+  \textbf{Logistics are simplified.} The simulator captures relocation
+  and recharge delays, but not the full operational complexity of
+  staffing, road-network uncertainty, or battery degradation.
+\item
+  \textbf{Stress coverage is limited.} The appendix shows several
+  scripted stress scenarios, but this is still a bounded test set rather
+  than a full uncertainty analysis over all possible disruptions.
+\end{enumerate}
+
+These limitations do not invalidate the project, but they do constrain
+what can be claimed. The report therefore focuses on what is actually
+supported by the copied artifacts.
+
+    \subsection{12. Conclusion}\label{conclusion}
+
+The project builds a coherent simulator for resilience in EV charging
+under disruption on a simple but informative A-B-C corridor. The
+environment combines time-varying demand, OD structure, queueing,
+service dynamics, mobile charging logistics, and several disruption
+types in a way that is interpretable from top to bottom.
+
+Within the \textbf{current reproducible artifacts}, adaptive mobile
+support clearly improves service outcomes relative to fixed-only
+operation. The threshold controller reduces mean and peak queueing while
+using a moderate amount of mobile support. The RL formulation itself is
+well specified, and the copied train/eval curves suggest learning
+progress, but the absence of a compatible current RL checkpoint prevents
+a final reproducible RL rollout claim.
+
+The most defensible final takeaway is therefore twofold: the simulator
+is strong enough to study resilience and spatial allocation, and
+adaptive mobile charging has clear value in that simulator. The next
+concrete step would be to recover or retrain a current-compatible RL
+checkpoint and benchmark it directly against the threshold baseline
+documented here.
+
+    \subsection{13. Appendix}\label{appendix}
+
+The appendix keeps secondary material out of the main narrative while
+still documenting the broader evidence base used in the project.
+
+    \subsubsection{A. Full 27-feature observation
+table}\label{a.-full-27-feature-observation-table}
 
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
@@ -726,7 +1491,7 @@ station-aware and logistics-aware rather than purely aggregate.
 \begin{minipage}[b]{\linewidth}\raggedright
 Group
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Index
+Idx
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
 Feature
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
@@ -788,497 +1553,13 @@ Time & 27 & cos\_time\_of\_day & Cosine encoding of time of day. \\
 \end{longtable}
 
     
-    \subsubsection{What the model does not
-know}\label{what-the-model-does-not-know}
-
-    \begin{itemize}
-\tightlist
-\item
-  No exact future arrivals or exact future queue realizations.
-\end{itemize}
-
-    
-    \begin{itemize}
-\tightlist
-\item
-  No oracle action labels or optimal allocation target.
-\end{itemize}
-
-    
-    \begin{itemize}
-\tightlist
-\item
-  No foreknowledge of future random disruptions before they begin.
-\end{itemize}
-
-    
-    \begin{itemize}
-\tightlist
-\item
-  No exact per-MCS battery state-of-charge representation.
-\end{itemize}
-
-    
-    \begin{itemize}
-\tightlist
-\item
-  No direct remaining-disruption-time feature in the current
-  observation.
-\end{itemize}
-
-    
-    \begin{itemize}
-\tightlist
-\item
-  No explicit demand forecast beyond current local state and disruption
-  indicators.
-\end{itemize}
-
-    
-    This is important for honesty. The agent is not given an oracle forecast
-of future arrivals, an exact best action label, or full future
-disruption knowledge. It must infer useful reallocations from local
-queue/capacity conditions and the currently visible disruption state.
-
-    \subsection{7. Action space}\label{action-space}
-
-The current action space is intentionally small and directional. That is
-a better match for the operational question than a large
-absolute-allocation table.
-
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Action
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Interpretation
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-hold & Keep the committed mobile-station allocation unchanged. \\
-toward\_ab & Move one unit of commitment toward AB, either from depot or
-from BC. \\
-toward\_bc & Move one unit of commitment toward BC, either from depot or
-from AB. \\
-recall\_ab & Recall one committed unit away from AB toward the middle
-depot. \\
-recall\_bc & Recall one committed unit away from BC toward the middle
-depot. \\
-\end{longtable}
-
-    
-    This design makes the control policy easier to interpret:
-
-\begin{itemize}
-\tightlist
-\item
-  \texttt{hold} means do nothing,
-\item
-  \texttt{toward\_ab} and \texttt{toward\_bc} express directional
-  support decisions,
-\item
-  \texttt{recall\_ab} and \texttt{recall\_bc} reduce commitment on one
-  side.
-\end{itemize}
-
-Compared with a large absolute allocation space, this is more learnable,
-more interpretable, and more consistent with movement/recharge
-logistics.
-
-    \subsection{8. Reward function}\label{reward-function}
-
-The reward is not just a generic RL score. It encodes an explicit
-operations tradeoff between service quality and the cost of using mobile
-support.
-
-\subsubsection{Positive terms}\label{positive-terms}
-
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Term
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Weight
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Interpretation
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-served\_reward\_weight & 1.0 & Rewards charging sessions that start
-service. \\
-utilization\_bonus & 1.0 & Rewards productive use of available charging
-capacity. \\
-spatial\_deficit\_alignment\_bonus & 24.0 & Rewards mobile capacity that
-covers estimated local deficits. \\
-spatial\_deficit\_direction\_bonus & 12.0 & Rewards sending MCS in the
-correct corridor direction. \\
-\end{longtable}
-
-    
-    \subsubsection{Negative terms}\label{negative-terms}
-
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Term
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Weight
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Interpretation
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-unmet\_penalty & 2.5 & Penalizes vehicles left in queue after the
-step. \\
-queue\_length\_penalty & 2.5 & Adds extra pressure against persistent
-queue accumulation. \\
-queue\_wait\_penalty & 0.02 & Penalizes queue-wait burden, not just
-queue count. \\
-local\_queue\_peak\_penalty & 1.0 & Penalizes the worst station queue in
-the step. \\
-local\_wait\_peak\_penalty & 0.1 & Penalizes the worst station waiting
-time in the step. \\
-active\_mobile\_station\_cost & 18.0 & Charges for keeping MCS active in
-the field. \\
-activation\_cost & 2.0 & Charges for newly activating MCS. \\
-adjustment\_cost & 0.5 & Charges for reallocating MCS commitment. \\
-idle\_capacity\_penalty & 0.1 & Penalizes carrying unused capacity. \\
-\end{longtable}
-
-    
-    The intuition is straightforward:
-
-\begin{itemize}
-\tightlist
-\item
-  serve vehicles,
-\item
-  keep queues and waits low,
-\item
-  prevent one station from blowing up while the average still looks
-  acceptable,
-\item
-  reward spatially useful MCS placement,
-\item
-  but charge for deploying and adjusting MCS so the controller cannot
-  treat mobile support as free.
-\end{itemize}
-
-This also means \textbf{reward and operational performance are related
-but not identical}. A policy can reduce queues strongly and still have a
-worse reward if it uses too much expensive mobile support.
-
-    \subsection{9. Reward calibration and alternative business
-priorities}\label{reward-calibration-and-alternative-business-priorities}
-
-The reward structure can be tuned to reflect different operating
-priorities. That is a strength of the framework, not a flaw, as long as
-the choice is made explicit.
-
-Examples of business priorities that would justify different weights
-are:
-
-\begin{itemize}
-\tightlist
-\item
-  minimizing queue length at almost any cost,
-\item
-  enforcing a service-level target with limited MCS usage,
-\item
-  penalizing active MCS-hours heavily because mobile support is
-  expensive,
-\item
-  prioritizing fairness across stations rather than only aggregate
-  averages.
-\end{itemize}
-
-The repository itself contains evidence that this was treated as a
-design knob: there are separate reward-focused configs in the repo, and
-the local historical sweep below shows that changing queue and cost
-weights materially changes the operating point.
+    \subsubsection{B. Additional policy comparison including the reactive
+rule}\label{b.-additional-policy-comparison-including-the-reactive-rule}
 
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_27_0.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_43_0.png}
     \end{center}
     { \hspace*{\fill} \\}
-    
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-run
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-active\_mcs\_cost
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-queue\_penalty
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-episodes
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-final\_reward
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-final\_mean\_queue\_length
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-final\_mean\_queue\_wait\_minutes
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-final\_mean\_active\_mobile\_stations
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-final\_unmet\_demand
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-final\_served\_demand
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-range\_c18\_q2p5 & 18.0 & 2.5 & 100 & -102.93 & 0.62 & 1.57 & 2.08 &
-15.0 & 250.0 \\
-range\_c24\_q2p5 & 24.0 & 2.5 & 100 & -146.77 & 0.12 & 0.5 & 2.17 & 3.0
-& 232.0 \\
-range\_c30\_q3 & 30.0 & 3.0 & 100 & -232.35 & 2.25 & 5.58 & 2.46 & 54.0
-& 237.0 \\
-range\_c30\_q4 & 30.0 & 4.0 & 100 & -199.99 & 2.0 & 6.74 & 1.79 & 48.0 &
-252.0 \\
-range\_c36\_q3 & 36.0 & 3.0 & 100 & -309.23 & 3.12 & 7.12 & 2.5 & 75.0 &
-257.0 \\
-range\_c42\_q3p5 & 42.0 & 3.5 & 100 & -305.46 & 5.42 & 10.31 & 1.79 &
-130.0 & 258.0 \\
-\end{longtable}
-
-    
-    The sweep does not by itself prove which reward is ``correct''. Instead,
-it shows the key modeling fact: the policy objective can be calibrated
-to fit different cost assumptions. Higher mobile-station cost generally
-pushes the controller toward less deployment and worse queue outcomes,
-while lower cost permits more active support.
-
-This is exactly why the final exam discussion should separate:
-
-\begin{itemize}
-\tightlist
-\item
-  operational metrics such as queue and waiting time,
-\item
-  the chosen reward calibration,
-\item
-  and the business meaning of MCS cost.
-\end{itemize}
-
-    \subsection{10. Training, validation, and test
-setup}\label{training-validation-and-test-setup}
-
-The intended experimental design is seed-driven rather than based on one
-hand-picked scenario.
-
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Split
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Purpose
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Training & Randomized 2-6 day episodes from seeds 0-9999 \\
-Validation & Held-out same-distribution seeds starting at 10000 \\
-Test ID & Unseen deployment-style seeds starting at 20000 with 3-5 day
-overrides \\
-Test stress & Named scripted disruption scenarios \\
-Held-out rollout & One fixed unseen test\_id seed for direct time-series
-comparison \\
-\end{longtable}
-
-    
-    The project notes emphasize a clear separation between:
-
-\begin{itemize}
-\tightlist
-\item
-  randomized training episodes,
-\item
-  held-out same-distribution validation,
-\item
-  unseen \texttt{test\_id} seeds meant to mimic deployment-style
-  evaluation,
-\item
-  and separate stress scenarios for robustness.
-\end{itemize}
-
-This is a good evaluation philosophy even when there is no
-hyperparameter search or early stopping, because it distinguishes
-training exposure from final held-out behavior.
-
-    \subsection{11. Training and evaluation learning
-curves}\label{training-and-evaluation-learning-curves}
-
-This section uses the \textbf{training-time history artifact only}. The
-preferred self-contained source is:
-
-\begin{itemize}
-\tightlist
-\item
-  \texttt{exam\_submission/data/generated/training/history\_current.json}
-\end{itemize}
-
-If that copied file is not present, the notebook falls back to:
-
-\begin{itemize}
-\tightlist
-\item
-  \texttt{outputs/mobile\_mcs\_line\_abc/rl/history.json}
-\end{itemize}
-
-Only if neither exists does it use the historical fallback artifact.
-
-This means the train/eval curve section does \textbf{not} require the
-large final evaluation-suite outputs. It only needs the training
-\texttt{history.json} produced by the training job.
-
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_33_0.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Status
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Value
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Interpretation
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Training history source &
-exam\_submission/data/generated/training/history\_current.json & The
-notebook is using the copied submission artifact. \\
-Current compatible RL training history & Yes & This is the correct
-artifact for train/eval learning curves in the active benchmark. \\
-Training-time evaluation reward curve & Yes & Evaluation reward comes
-from periodic held-out evaluation during training. \\
-Training-time evaluation TD-loss curve & Yes & Evaluation TD loss comes
-from periodic held-out evaluation during training. \\
-Large final evaluation suite required for this plot & No & The full
-validation/test/stress suite is not needed for this section. \\
-\end{longtable}
-
-    
-    The practical implication is that the notebook can document the
-\emph{evaluation design} rigorously, but it cannot make a defensible
-final RL-learning claim for the active environment without retraining or
-recovering a compatible checkpoint/history pair.
-
-    \subsection{12. Simulation rollout
-comparison}\label{simulation-rollout-comparison}
-
-The strongest reproducible current comparison is a fixed unseen 5-day
-\texttt{test\_id} rollout using the active line-corridor implementation.
-
-Because the RL artifact is missing, this section compares three
-baselines that \emph{are} available and current:
-
-\begin{itemize}
-\tightlist
-\item
-  fixed / no-agent (\texttt{mobile\_noop}),
-\item
-  threshold baseline,
-\item
-  reactive baseline.
-\end{itemize}
-
-This still answers an important resilience question: does adaptive
-mobile support materially reduce queueing pain under disruptions, and
-how costly is a more aggressive control rule?
-
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_36_0.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
-    The difference is immediate. Leaving all mobile support unused creates
-large queue accumulation and long waiting times over the held-out
-horizon. Both adaptive baselines help substantially.
-
-The reactive rule is the strongest queue-reduction baseline in the
-current held-out rollout, but it keeps many MCS active for most of the
-episode. The threshold rule is more frugal: it achieves a large
-reduction in queueing while using much less mobile support.
-
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_38_0.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
-    The station-level view makes the resilience story clearer. Congestion is
-local, not only aggregate. The adaptive rules keep AB and BC from
-diverging as severely as the fixed baseline, which is exactly the kind
-of local resilience behavior the project was designed to test.
-
-    \subsection{13. Summary metrics table}\label{summary-metrics-table}
-
-The table below aggregates the current held-out rollout results and
-computes improvement relative to the fixed/no-agent baseline.
-
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Policy
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Mean queue length
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Peak queue length
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Mean wait (min)
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Peak wait (min)
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Fixed / no-agent & 16.6 & 97.0 & 12.37 & 78.14 \\
-Threshold & 2.65 & 24.0 & 1.28 & 22.69 \\
-Reactive & 1.29 & 28.0 & 0.71 & 26.52 \\
-\end{longtable}
-
     
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
@@ -1292,151 +1573,127 @@ Reactive & 1.29 & 28.0 & 0.71 & 26.52 \\
 \begin{minipage}[b]{\linewidth}\raggedright
 Policy
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean queue
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mean wait (min)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
 Mean active MCS
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-MCS-hours
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Reward (sum)
+Reward
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
 Queue improvement vs fixed (\%)
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
 Wait improvement vs fixed (\%)
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Reward diff vs fixed
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Fixed / no-agent & 0.0 & 0.0 & -15969.37 & 0.0 & 0.0 & 0.0 \\
-Threshold & 0.95 & 113.5 & -4202.84 & 84.06 & 89.62 & 11766.53 \\
-Reactive & 8.98 & 1077.08 & -24060.17 & 92.24 & 94.25 & -8090.8 \\
+Fixed / no-agent & 16.6 & 12.37 & 0.0 & -15969.37 & 0.0 & 0.0 \\
+Adaptive threshold & 2.65 & 1.28 & 0.95 & -4202.84 & 84.06 & 89.62 \\
+Reactive & 1.29 & 0.71 & 8.98 & -24060.17 & 92.24 & 94.25 \\
 \end{longtable}
 
     
-    Two insights stand out.
+    The reactive rule is useful as a secondary benchmark because it drives
+queues down even more aggressively than the threshold controller.
+However, it does so by keeping many more mobile units active and is
+therefore less suitable as the clean main comparison when cost
+sensitivity matters.
 
-First, adaptive mobile support clearly improves resilience relative to
-the fixed baseline. Second, the \emph{best queue reduction} and the
-\emph{best reward} are not the same thing. The reactive baseline is
-operationally strongest on queue and wait metrics, but the threshold
-baseline is more cost-efficient because it uses far fewer mobile-station
-hours.
+    \subsubsection{C. Reduced multi-seed and stress-suite
+evidence}\label{c.-reduced-multi-seed-and-stress-suite-evidence}
 
-    \subsection{14. Reduced multi-seed evaluation and stress
-scenarios}\label{reduced-multi-seed-evaluation-and-stress-scenarios}
+    \begin{longtable}[]{@{}lllll@{}}
+\toprule\noalign{}
+Policy & Mean queue & Mean wait (min) & Mean active MCS & Reward \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Fixed / no-agent & 17.74 & 13.43 & 0.0 & -13156.33 \\
+Reactive & 2.21 & 1.08 & 7.98 & -17240.75 \\
+Adaptive threshold & 3.65 & 1.82 & 1.09 & -4155.96 \\
+\end{longtable}
 
-To avoid relying only on one illustrative rollout, a reduced current
-baseline-only suite was generated over multiple unseen \texttt{test\_id}
-seeds plus four stress scenarios.
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_46_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The reduced multi-seed evidence supports the same qualitative message as
+the single held-out rollout: fixed capacity is fragile under disruption,
+while adaptive mobile support improves service outcomes. The
+stress-suite heatmaps also show that performance differences persist
+across multiple named disruption patterns rather than depending on only
+one favorable scenario.
+
+    \subsubsection{D. Reference code and artifact
+inventory}\label{d.-reference-code-and-artifact-inventory}
 
     \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-Policy
+File
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-mean\_queue\_length
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-mean\_queue\_wait\_minutes
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-peak\_queue\_length
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-peak\_queue\_wait\_minutes
+Role
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Fixed / no-agent & 17.74 & 13.43 & 89.22 & 71.91 \\
-Reactive & 2.21 & 1.08 & 35.28 & 22.36 \\
-Threshold & 3.65 & 1.82 & 41.83 & 25.59 \\
+README.md & Config \\
+configs/debug/logging\_disabled.yaml & Config \\
+configs/demand/base.yaml & Config \\
+configs/demo/mobile\_mcs\_line\_abc\_demo\_short.yaml & Config \\
+configs/env/mobile\_mcs\_line\_abc.yaml & Config \\
+configs/experiment/mobile\_mcs\_line\_abc.yaml & Config \\
+configs/experiment/mobile\_mcs\_line\_abc\_heldout\_comparison.yaml &
+Config \\
+configs/experiment/mobile\_mcs\_line\_abc\_train\_only.yaml & Config \\
+configs/rl/dqn\_mobile\_sb3.yaml & Config \\
+configs/rl/dqn\_mobile\_simple.yaml & Config \\
+src/evch/\textbf{init}.py & Code \\
+src/evch/baselines/\textbf{init}.py & Code \\
+src/evch/baselines/policies.py & Code \\
+src/evch/config/\textbf{init}.py & Code \\
+src/evch/config/loader.py & Code \\
+src/evch/data/\textbf{init}.py & Code \\
+src/evch/data/city.py & Code \\
+src/evch/data/features.py & Code \\
+src/evch/data/synthetic.py & Code \\
+src/evch/envs/\textbf{init}.py & Code \\
+src/evch/envs/charging\_env.py & Code \\
+src/evch/envs/corridor\_mobile\_env.py & Code \\
+src/evch/envs/demand.py & Code \\
+src/evch/envs/factory.py & Code \\
+src/evch/envs/line\_corridor\_mobile\_env.py & Code \\
+src/evch/envs/mobile\_station\_env.py & Code \\
+src/evch/models/\textbf{init}.py & Code \\
+src/evch/models/common.py & Code \\
+src/evch/rl/\textbf{init}.py & Code \\
+src/evch/rl/evaluation.py & Code \\
+src/evch/rl/simple\_dql.py & Code \\
+src/evch/rl/simple\_dqn.py & Code \\
+src/evch/sim/\textbf{init}.py & Code \\
+src/evch/sim/line\_corridor.py & Code \\
+src/evch/sim/simple\_corridor.py & Code \\
+src/evch/train/\textbf{init}.py & Code \\
+src/evch/train/eval\_suites.py & Code \\
+src/evch/train/evaluate\_policies.py & Code \\
+src/evch/train/run\_mobile\_rl\_comparison.py & Code \\
+src/evch/train/train\_rl.py & Code \\
+src/evch/utils/\textbf{init}.py & Code \\
+src/evch/utils/io.py & Code \\
+src/evch/utils/logging.py & Code \\
+src/evch/utils/seeding.py & Code \\
+src/evch/utils/torch\_runtime.py & Code \\
+src/evch/utils/wandb.py & Code \\
 \end{longtable}
 
-    
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Policy
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-served\_demand
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-unmet\_demand
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-mean\_active\_mobile\_stations
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-mcs\_hours
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-reward
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Fixed / no-agent & 2959.33 & 19366.39 & 0.0 & 0.0 & -13156.33 \\
-Reactive & 2962.44 & 2374.33 & 7.98 & 739.55 & -17240.75 \\
-Threshold & 2961.22 & 3987.33 & 1.09 & 99.5 & -4155.96 \\
-\end{longtable}
-
-    
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_45_0.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
-    The reduced multi-seed evidence tells the same story as the single
-held-out rollout:
-
-\begin{itemize}
-\tightlist
-\item
-  fixed capacity alone is fragile under severe local disruptions,
-\item
-  threshold control is a strong cost-sensitive adaptive baseline,
-\item
-  the reactive rule often reduces queues even further, but with much
-  heavier MCS usage and substantially worse reward once deployment cost
-  is counted.
-\end{itemize}
-
-This is one of the clearest project insights: a resilience intervention
-can look excellent on queue metrics and still be economically
-unattractive under a cost-sensitive reward.
-
-    \subsection{15. Spatial awareness}\label{spatial-awareness}
-
-A spatially aware controller should increase support toward AB when AB
-has higher local service pressure and toward BC when BC is more
-stressed.
-
-The current active artifacts allow this to be checked directly because
-the rollout exports station-level queues, local deficit estimates, and
-allocation bias.
-
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_48_0.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
-    For the threshold baseline, the relationship between local deficit bias
-and allocation bias is clearly positive. That is not perfect one-to-one
-tracking, but it is directionally meaningful and consistent with the
-intended spatial logic of the corridor.
-
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_50_0.png}
-    \end{center}
-    { \hspace*{\fill} \\}
     
     \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
@@ -1445,124 +1702,13 @@ intended spatial logic of the corridor.
   >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
-Policy
+Artifact path
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Corr(local deficit bias, allocation bias)
+Type
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Corr(expected demand bias, allocation bias)
+Exists
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Corr(committed bias, allocation bias)
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Fixed / no-agent & nan & nan & nan \\
-Threshold & 0.288 & 0.374 & 0.762 \\
-Reactive & -0.175 & 0.086 & 0.962 \\
-\end{longtable}
-
-    
-    The spatial-awareness evidence is mixed in an informative way.
-
-\begin{itemize}
-\tightlist
-\item
-  The threshold baseline shows the clearest positive alignment with
-  local service pressure.
-\item
-  The reactive baseline is aggressive and very active, but its
-  deficit-to-allocation correlation is weaker because it tends to flood
-  capacity into the system and keep it active for long periods.
-\item
-  The fixed baseline has no spatial response by construction.
-\end{itemize}
-
-So the project should not claim ``perfect spatial awareness''. A
-stronger statement would be: \textbf{the current simulator and metrics
-can reveal spatial behavior clearly, and the threshold rule shows the
-cleanest interpretable directional response among the available current
-policies.}
-
-    \subsection{16. Missing pieces, failures, and
-limitations}\label{missing-pieces-failures-and-limitations}
-
-Several limitations are important for an examiner to see explicitly.
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  \textbf{No current-compatible RL artifact is available locally.} The
-  active benchmark can be described precisely, but a final
-  RL-vs-baseline quantitative claim is not reproducible from this
-  checkout without retraining or recovering the missing
-  checkpoint/history.
-\item
-  \textbf{Current queue-breach metrics are not instrumented as
-  service-level targets in the active line corridor.} The exported
-  breach columns are therefore zero and should not be over-interpreted.
-\item
-  \textbf{The simulator is stylized.} It is realistic enough to study
-  operational tradeoffs, but it is still a synthetic environment rather
-  than a calibrated production deployment model.
-\item
-  \textbf{Reward sensitivity is real.} The reward sweep and the baseline
-  comparisons both show that cost weights change the preferred policy
-  substantially.
-\item
-  \textbf{Spatial response is meaningful but imperfect.} A controller
-  can reduce total queues without cleanly matching local deficit
-  patterns at every step because demand symmetry, travel lag, recharge
-  delay, and cost all matter.
-\item
-  \textbf{Baselines matter.} The reactive baseline is so strong on queue
-  reduction that any future RL claim should be benchmarked against it,
-  not only against the no-agent baseline.
-\end{enumerate}
-
-    \subsection{17. Conclusion}\label{conclusion}
-
-The project successfully builds a coherent resilience testbed for EV
-charging operations under disruption. The simulator captures local
-queueing pressure, daily demand structure, multiple disruption types,
-and mobile-support logistics in a form that is interpretable and
-reproducible.
-
-On the \textbf{current reproducible artifacts}, adaptive mobile support
-clearly improves resilience relative to fixed-only operation. The
-threshold baseline delivers a strong cost-sensitive tradeoff, while the
-reactive baseline delivers the strongest queue reduction at a much
-higher mobile-support cost. That distinction is valuable because it
-shows why reward design and business priorities matter.
-
-For the original RL research question, the honest answer from this
-checkout is partial: the RL formulation is well specified, but a
-current-compatible RL checkpoint is missing, so the notebook cannot make
-a final defensible claim that the active RL agent outperforms current
-baselines. The next concrete step would be to train or recover an SB3
-DQN policy for the active 27-feature, 5-action environment and evaluate
-it against the threshold and reactive baselines already documented here.
-
-    \subsection{Appendix: Artifact status}\label{appendix-artifact-status}
-
-The table below documents exactly which artifacts were selected for this
-notebook and which important current RL artifacts were missing.
-
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-path
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-type
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-exists
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-note
+Why it is included
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
