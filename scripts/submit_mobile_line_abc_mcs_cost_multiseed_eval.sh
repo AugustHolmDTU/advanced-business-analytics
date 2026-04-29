@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-VALUES=(18.0 24.0 30.0 36.0 42.0)
+VALUES=(6.0 12.0 18.0 24.0 30.0)
 GROUP_NAME="mobile_mcs_line_abc_mcs_cost_multiseed_eval"
 SEED_INDEX_START="${SEED_INDEX_START:-0}"
 SEED_COUNT="${SEED_COUNT:-20}"
