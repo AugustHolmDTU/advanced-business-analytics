@@ -11,13 +11,6 @@ for value in "${VALUES[@]}"; do
   safe_value="${value/./p}"
   run_name="mobile_mcs_line_abc_sweep_mcs_cost_${safe_value}"
   echo "Submitting ${run_name} with active_mobile_station_cost=${value}"
-  (
-    export PROJECT_ROOT="$ROOT_DIR"
-    export SWEEP_KIND="mcs_cost"
-    export REWARD_KEY="active_mobile_station_cost"
-    export REWARD_VALUE="$value"
-    export RUN_NAME="$run_name"
-    export WANDB_GROUP="$GROUP_NAME"
-    bsub < "$ROOT_DIR/bsub/train_mobile_line_abc_reward_sweep_variant.bsub"
-  )
+  bsub -env "all,PROJECT_ROOT=$ROOT_DIR,SWEEP_KIND=mcs_cost,REWARD_KEY=active_mobile_station_cost,REWARD_VALUE=$value,RUN_NAME=$run_name,WANDB_GROUP=$GROUP_NAME" \
+    < "$ROOT_DIR/bsub/train_mobile_line_abc_reward_sweep_variant.bsub"
 done
