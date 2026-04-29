@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from evch.sim.simple_corridor import SimpleCorridorQueueSimulator
+from evch.sim.legacy_corridor import SimpleCorridorQueueSimulator
 
 
 def _base_config() -> dict:

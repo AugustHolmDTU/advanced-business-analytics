@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 
 from evch.envs.charging_env import gym, spaces
-from evch.sim.simple_corridor import ActiveSession, QueuedVehicle, SimpleCorridorQueueSimulator
+from evch.sim.legacy_corridor import ActiveSession, QueuedVehicle, SimpleCorridorQueueSimulator
 
 
 class CorridorMobileStationEnv(gym.Env):  # type: ignore[misc]

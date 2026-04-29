@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from evch.sim.simple_corridor import SimulationResult
+from evch.sim.common import SimulationResult
 
 
 @dataclass(slots=True)

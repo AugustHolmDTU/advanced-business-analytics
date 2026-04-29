@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from evch.sim.common import SimulationResult
+
 
 @dataclass(slots=True)
 class QueuedVehicle:
@@ -37,12 +39,6 @@ class DisruptionEvent:
     demand_multiplier_ab: float
     demand_multiplier_ba: float
     service_time_multiplier: float
-
-
-@dataclass(slots=True)
-class SimulationResult:
-    metrics: pd.DataFrame
-    summary: dict[str, Any]
 
 
 class SimpleCorridorQueueSimulator:

@@ -1,7 +1,7 @@
 from collections import deque
 import unittest
 
-from evch.sim.simple_corridor import ActiveSession, QueuedVehicle
+from evch.sim.legacy_corridor import ActiveSession, QueuedVehicle
 from evch.envs.corridor_mobile_env import CorridorMobileStationEnv
 from evch.envs.factory import make_env
 

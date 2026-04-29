@@ -14,13 +14,17 @@ def repo_root() -> Path:
     return data_root().parents[1]
 
 
-def load_json(path: str | Path) -> dict[str, Any]:
+def load_json(path: str | Path, allow_missing: bool = False) -> dict[str, Any]:
     target = Path(path)
+    if allow_missing and not target.exists():
+        return {}
     return json.loads(target.read_text(encoding="utf-8"))
 
 
-def load_yaml(path: str | Path) -> dict[str, Any]:
+def load_yaml(path: str | Path, allow_missing: bool = False) -> dict[str, Any]:
     target = Path(path)
+    if allow_missing and not target.exists():
+        return {}
     with target.open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle) or {}
 
@@ -42,7 +46,7 @@ def load_core_configs() -> dict[str, dict[str, Any]]:
     return {
         "environment": load_yaml(config_dir / "env_mobile_mcs_line_abc_current.yaml"),
         "rl_simple": load_yaml(config_dir / "rl_dqn_mobile_simple.yaml"),
-        "rl_sb3": load_yaml(config_dir / "rl_dqn_mobile_sb3.yaml"),
+        "rl_sb3": load_yaml(config_dir / "rl_dqn_mobile_sb3.yaml", allow_missing=True),
         "experiment": load_yaml(config_dir / "experiment_mobile_mcs_line_abc_current.yaml"),
         "heldout": load_yaml(config_dir / "experiment_mobile_mcs_line_abc_heldout_comparison.yaml"),
     }
@@ -53,8 +57,8 @@ def load_heldout_runs() -> dict[str, dict[str, Any]]:
     runs: dict[str, dict[str, Any]] = {}
     for policy_name in ("mobile_noop", "mobile_threshold", "mobile_reactive"):
         runs[policy_name] = {
-            "metrics": load_csv(heldout_dir / f"{policy_name}_comparison_timestep_metrics.csv"),
-            "summary": load_json(heldout_dir / f"{policy_name}_comparison_summary.json"),
+            "metrics": load_csv(heldout_dir / f"{policy_name}_comparison_timestep_metrics.csv", allow_empty=True),
+            "summary": load_json(heldout_dir / f"{policy_name}_comparison_summary.json", allow_missing=True),
         }
     return runs
 
@@ -71,7 +75,7 @@ def load_suite_outputs() -> dict[str, pd.DataFrame]:
 
 
 def load_reward_sweep_summary() -> pd.DataFrame:
-    return load_csv(data_root() / "historical" / "reward_sweep_summary.csv")
+    return load_csv(data_root() / "historical" / "reward_sweep_summary.csv", allow_empty=True)
 
 
 def load_generated_reward_sweeps() -> dict[str, pd.DataFrame]:

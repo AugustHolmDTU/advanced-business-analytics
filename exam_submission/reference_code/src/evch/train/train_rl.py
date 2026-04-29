@@ -181,10 +181,10 @@ def _maybe_plot_station_demand_vs_mcs(metrics: pd.DataFrame, path: Path) -> bool
         with contextlib.redirect_stderr(io.StringIO()):
             import matplotlib.pyplot as plt
 
-        from evch.train.run_simple_corridor_sim import _disruption_windows, _shade_disruptions
+        from evch.train.rollout_plotting import disruption_windows, shade_disruptions
 
         fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
-        _shade_disruptions(axes, _disruption_windows(metrics))
+        shade_disruptions(axes, disruption_windows(metrics))
 
         station_specs = (
             ("AB", "arrivals_total_station_ab", "expected_station_arrivals_ab", "num_active_mobile_stations_station_ab"),
@@ -253,10 +253,10 @@ def _maybe_plot_station_allocation_over_time(metrics: pd.DataFrame, path: Path) 
         with contextlib.redirect_stderr(io.StringIO()):
             import matplotlib.pyplot as plt
 
-        from evch.train.run_simple_corridor_sim import _disruption_windows, _shade_disruptions
+        from evch.train.rollout_plotting import disruption_windows, shade_disruptions
 
         fig, axis = plt.subplots(1, 1, figsize=(12, 4.8))
-        _shade_disruptions([axis], _disruption_windows(metrics))
+        shade_disruptions([axis], disruption_windows(metrics))
 
         axis.step(
             metrics["global_hour"],
@@ -876,9 +876,9 @@ def _build_mobile_comparison_rollout(
     disruption_targets = [target for target in LineCorridorQueueSimulator.DISRUPTION_TARGET_CODES if target != "none"]
     for target in disruption_targets:
         frame[f"disruption_target_is_{target}"] = ((frame["disruption_target"] == target) & (frame["disruption_active"] == 1)).astype(np.int32)
-    from evch.train.run_simple_corridor_sim import _add_derived_metrics, _maybe_plot_daily_patterns, _maybe_plot_queue_dynamics
+    from evch.train.rollout_plotting import add_derived_metrics, maybe_plot_daily_patterns, maybe_plot_queue_dynamics
 
-    frame = _add_derived_metrics(frame, step_minutes=int(env.planning_step_minutes))
+    frame = add_derived_metrics(frame, step_minutes=int(env.planning_step_minutes))
     metrics_path = output_dir / "comparison_timestep_metrics.csv"
     summary_path = output_dir / "comparison_rollout_summary.json"
     plot_path = output_dir / "comparison_queue_dynamics.png"
@@ -932,8 +932,8 @@ def _build_mobile_comparison_rollout(
         else 0.0,
     }
     write_json(summary_path, summary)
-    _maybe_plot_queue_dynamics(frame, plot_path)
-    _maybe_plot_daily_patterns(frame, daily_plot_path)
+    maybe_plot_queue_dynamics(frame, plot_path)
+    maybe_plot_daily_patterns(frame, daily_plot_path)
     _maybe_plot_station_demand_vs_mcs(frame, station_plot_path)
     _maybe_plot_station_allocation_over_time(frame, allocation_plot_path)
 
