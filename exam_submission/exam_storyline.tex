@@ -752,6 +752,82 @@ bounded ranges. That keeps the scenarios diverse enough to test
 robustness, while still allowing the examiner to understand what a
 disruption actually means in this benchmark.
 
+The four subsections below switch from the full random benchmark to
+\textbf{scripted one-day examples}. Each example contains exactly one
+disruption type so its operational mechanism is easy to see. The goal is
+not to produce benchmark scores here, but to show how each disruption
+changes the relationship between expected demand, queue length, and
+queue wait.
+
+    \paragraph{3.6.1 Capacity drop}\label{capacity-drop}
+
+A capacity-drop disruption reduces the number of usable fixed plugs at a
+targeted station without changing the incoming demand. It therefore
+represents a service-capability shock rather than a traffic shock.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_12_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The expected-demand line remains on its normal path, while queue length
+and waiting time rise sharply inside the shaded window. That is the
+signature of a resilience problem driven by lost local service capacity
+rather than extra arrivals.
+
+    \paragraph{3.6.2 Station outage}\label{station-outage}
+
+A station-outage disruption is the most severe local service failure in
+the benchmark. The targeted station is forced completely offline for a
+limited period, so all arriving charging demand must either wait or be
+absorbed later when capacity returns.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_15_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    This case produces the steepest queue response because effective local
+capacity falls all the way to zero. The demand path still does not move
+much, which makes the disruption effect especially easy to separate from
+ordinary morning congestion.
+
+    \paragraph{3.6.3 Service-time inflation}\label{service-time-inflation}
+
+A service-time inflation disruption does not remove plugs, but it makes
+each charging session last longer. Operationally, this mimics slower
+charging, faulty chargers operating below normal speed, or supporting
+processes that delay turnover.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_18_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The queue response is milder than a full outage but more persistent,
+because congestion builds through slower turnover rather than an
+immediate hard stop. This is a useful reminder that resilience problems
+can come from degraded service rates as well as from missing plugs.
+
+    \paragraph{3.6.4 Demand surge}\label{demand-surge}
+
+A demand-surge disruption differs from the previous three because it
+changes the arrival side of the system rather than the service side. In
+the scripted example below, eastbound OD flows are multiplied during the
+morning rush, which pushes more charging demand into the corridor before
+any extra fixed capacity is available.
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_21_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    This figure looks different from the previous three because the
+expected-demand line itself increases during the disruption window. That
+contrast is useful in the report: capacity-side disruptions create queue
+spikes without extra demand, while demand surges raise congestion by
+directly increasing the incoming load.
+
     \subsection{4. RL agent and methods}\label{rl-agent-and-methods}
 
 The repository contains two RL paths:
@@ -801,8 +877,8 @@ Simple learner TD loss & Huber / smooth L1 loss on one-step TD
 targets \\
 SB3 candidate backend & sb3\_dqn \\
 SB3 policy class & MlpPolicy with net\_arch {[}256, 256{]} \\
-Current checkpoint status & No current compatible checkpoint found in
-checkout \\
+Current checkpoint status &
+exam\_submission/demo\_outputs/exam\_demo\_mobile\_mcs\_line\_abc/rl/best\_model.pt \\
 \end{longtable}
 
     
@@ -1076,7 +1152,7 @@ The historical reward sweep is useful here because it shows how changing
 these weights changes the learned operating point.
 
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_20_0.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_32_0.png}
     \end{center}
     { \hspace*{\fill} \\}
     
@@ -1212,23 +1288,30 @@ Train reward available & Yes \\
 Train TD loss available & Yes \\
 Eval reward available & Yes \\
 Eval TD loss available & Yes \\
-Current compatible checkpoint available & No \\
+Current compatible checkpoint available & Yes \\
 \end{longtable}
 
     
-    \begin{longtable}[]{@{}ll@{}}
+    \begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
 \toprule\noalign{}
-Checkpoint & Exists \\
+\begin{minipage}[b]{\linewidth}\raggedright
+Checkpoint
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Exists
+\end{minipage} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-No current compatible RL checkpoint found in the checkout & False \\
+exam\_submission/demo\_outputs/exam\_demo\_mobile\_mcs\_line\_abc/rl/best\_model.pt
+& True \\
 \end{longtable}
 
     
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_25_2.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_37_2.png}
     \end{center}
     { \hspace*{\fill} \\}
     
@@ -1256,7 +1339,7 @@ active benchmark.
 
 The demo run is disabled by default so the notebook stays fast and
 deterministic. To run a short local train/eval demonstration, set
-\texttt{RUN\_DEMO\_TRAINING\ =\ True} in this cell.
+\texttt{RUN\_DEMO\_TRAINING\ =\ False} in this cell.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1292,7 +1375,7 @@ secondary context, but it is removed from the main section to keep the
 story clean.
 
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_29_0.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_41_0.png}
     \end{center}
     { \hspace*{\fill} \\}
     
@@ -1386,7 +1469,7 @@ this. The plots below show one-hour rolling averages of expected station
 demand, local queue length, and MCS allocation for AB and BC separately.
 
     \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_35_0.png}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_47_0.png}
     \end{center}
     { \hspace*{\fill} \\}
     
@@ -1551,220 +1634,6 @@ the middle depot. \\
 Time & 26 & sin\_time\_of\_day & Sine encoding of time of day. \\
 Time & 27 & cos\_time\_of\_day & Cosine encoding of time of day. \\
 \end{longtable}
-
-    
-    \subsubsection{B. Additional policy comparison including the reactive
-rule}\label{b.-additional-policy-comparison-including-the-reactive-rule}
-
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_43_0.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Policy
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Mean queue
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Mean wait (min)
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Mean active MCS
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Reward
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Queue improvement vs fixed (\%)
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Wait improvement vs fixed (\%)
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Fixed / no-agent & 16.6 & 12.37 & 0.0 & -15969.37 & 0.0 & 0.0 \\
-Adaptive threshold & 2.65 & 1.28 & 0.95 & -4202.84 & 84.06 & 89.62 \\
-Reactive & 1.29 & 0.71 & 8.98 & -24060.17 & 92.24 & 94.25 \\
-\end{longtable}
-
-    
-    The reactive rule is useful as a secondary benchmark because it drives
-queues down even more aggressively than the threshold controller.
-However, it does so by keeping many more mobile units active and is
-therefore less suitable as the clean main comparison when cost
-sensitivity matters.
-
-    \subsubsection{C. Reduced multi-seed and stress-suite
-evidence}\label{c.-reduced-multi-seed-and-stress-suite-evidence}
-
-    \begin{longtable}[]{@{}lllll@{}}
-\toprule\noalign{}
-Policy & Mean queue & Mean wait (min) & Mean active MCS & Reward \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Fixed / no-agent & 17.74 & 13.43 & 0.0 & -13156.33 \\
-Reactive & 2.21 & 1.08 & 7.98 & -17240.75 \\
-Adaptive threshold & 3.65 & 1.82 & 1.09 & -4155.96 \\
-\end{longtable}
-
-    
-    \begin{center}
-    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_46_1.png}
-    \end{center}
-    { \hspace*{\fill} \\}
-    
-    The reduced multi-seed evidence supports the same qualitative message as
-the single held-out rollout: fixed capacity is fragile under disruption,
-while adaptive mobile support improves service outcomes. The
-stress-suite heatmaps also show that performance differences persist
-across multiple named disruption patterns rather than depending on only
-one favorable scenario.
-
-    \subsubsection{D. Reference code and artifact
-inventory}\label{d.-reference-code-and-artifact-inventory}
-
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-File
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Role
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-README.md & Config \\
-configs/debug/logging\_disabled.yaml & Config \\
-configs/demand/base.yaml & Config \\
-configs/demo/mobile\_mcs\_line\_abc\_demo\_short.yaml & Config \\
-configs/env/mobile\_mcs\_line\_abc.yaml & Config \\
-configs/experiment/mobile\_mcs\_line\_abc.yaml & Config \\
-configs/experiment/mobile\_mcs\_line\_abc\_heldout\_comparison.yaml &
-Config \\
-configs/experiment/mobile\_mcs\_line\_abc\_train\_only.yaml & Config \\
-configs/rl/dqn\_mobile\_sb3.yaml & Config \\
-configs/rl/dqn\_mobile\_simple.yaml & Config \\
-src/evch/\textbf{init}.py & Code \\
-src/evch/baselines/\textbf{init}.py & Code \\
-src/evch/baselines/policies.py & Code \\
-src/evch/config/\textbf{init}.py & Code \\
-src/evch/config/loader.py & Code \\
-src/evch/data/\textbf{init}.py & Code \\
-src/evch/data/city.py & Code \\
-src/evch/data/features.py & Code \\
-src/evch/data/synthetic.py & Code \\
-src/evch/envs/\textbf{init}.py & Code \\
-src/evch/envs/charging\_env.py & Code \\
-src/evch/envs/corridor\_mobile\_env.py & Code \\
-src/evch/envs/demand.py & Code \\
-src/evch/envs/factory.py & Code \\
-src/evch/envs/line\_corridor\_mobile\_env.py & Code \\
-src/evch/envs/mobile\_station\_env.py & Code \\
-src/evch/models/\textbf{init}.py & Code \\
-src/evch/models/common.py & Code \\
-src/evch/rl/\textbf{init}.py & Code \\
-src/evch/rl/evaluation.py & Code \\
-src/evch/rl/simple\_dql.py & Code \\
-src/evch/rl/simple\_dqn.py & Code \\
-src/evch/sim/\textbf{init}.py & Code \\
-src/evch/sim/line\_corridor.py & Code \\
-src/evch/sim/simple\_corridor.py & Code \\
-src/evch/train/\textbf{init}.py & Code \\
-src/evch/train/eval\_suites.py & Code \\
-src/evch/train/evaluate\_policies.py & Code \\
-src/evch/train/run\_mobile\_rl\_comparison.py & Code \\
-src/evch/train/train\_rl.py & Code \\
-src/evch/utils/\textbf{init}.py & Code \\
-src/evch/utils/io.py & Code \\
-src/evch/utils/logging.py & Code \\
-src/evch/utils/seeding.py & Code \\
-src/evch/utils/torch\_runtime.py & Code \\
-src/evch/utils/wandb.py & Code \\
-\end{longtable}
-
-    
-    \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Artifact path
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Type
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Exists
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Why it is included
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-data/configs/env\_mobile\_mcs\_line\_abc\_current.yaml & config & True &
-Current active line-corridor environment config. \\
-data/configs/experiment\_mobile\_mcs\_line\_abc\_current.yaml & config &
-True & Current active line-corridor environment config. \\
-data/configs/rl\_dqn\_mobile\_simple.yaml & config & True & Current
-torch DQN/simple learner config including evaluation cadence. \\
-data/configs/rl\_dqn\_mobile\_sb3.yaml & config & True & Current SB3 DQN
-config; used for algorithm description only because no compatible
-checkpoint was found. \\
-data/configs/experiment\_mobile\_mcs\_line\_abc\_heldout\_comparison.yaml
-& config & True & Experiment split config with validation, test\_id, and
-stress suite definitions. \\
-data/generated/heldout/mobile\_noop\_comparison\_timestep\_metrics.csv &
-generated\_eval & True & Current held-out fixed/no-agent rollout on the
-active line corridor. \\
-data/generated/heldout/mobile\_threshold\_comparison\_timestep\_metrics.csv
-& generated\_eval & True & Current held-out threshold-baseline rollout
-on the active line corridor. \\
-data/generated/heldout/mobile\_reactive\_comparison\_timestep\_metrics.csv
-& generated\_eval & True & Current held-out reactive-baseline rollout on
-the active line corridor. \\
-data/generated/evaluation\_suites\_small/test\_id\_summary.csv &
-generated\_eval & True & Reduced multi-seed test\_id baseline summary
-used for robustness tables. \\
-data/generated/evaluation\_suites\_small/test\_stress\_summary.csv &
-generated\_eval & True & Reduced stress-suite baseline summary used for
-disruption robustness discussion. \\
-data/historical/reward\_sweep\_summary.csv & historical & True &
-Historical reward-sweep runs used only to illustrate reward-calibration
-tradeoffs. \\
-data/historical/legacy\_training\_history\_range\_c24\_q2p5.json &
-historical & True & Historical training history from an older
-absolute-allocation variant; not used for final quantitative claims. \\
-\end{longtable}
-
-    
-    \begin{itemize}
-\tightlist
-\item
-  No current-compatible RL checkpoint was found for the active
-  27-feature / 5-action A-B-C environment.
-\end{itemize}
-
-    
-    \begin{itemize}
-\tightlist
-\item
-  Queue-wait target breach metrics are zero in the active line-corridor
-  outputs because the current environment does not instrument a nonzero
-  queue-wait target.
-\end{itemize}
 
     
 

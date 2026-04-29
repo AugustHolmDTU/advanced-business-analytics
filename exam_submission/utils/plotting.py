@@ -271,5 +271,55 @@ def plot_training_history(history: list[dict[str, Any]], source: str = "historic
     return fig, axes
 
 
+def plot_disruption_scenario(
+    frame: pd.DataFrame,
+    title: str,
+    subtitle: str | None = None,
+    rolling_steps: int = 3,
+) -> tuple[plt.Figure, np.ndarray]:
+    hours = frame["global_hour"].to_numpy()
+    demand = frame["expected_station_arrivals_ab"].to_numpy() + frame["expected_station_arrivals_bc"].to_numpy()
+    queue = pd.Series(frame["queue_length"]).rolling(rolling_steps, min_periods=1).mean().to_numpy()
+    wait = pd.Series(frame["queue_wait_mean_minutes"]).rolling(rolling_steps, min_periods=1).mean().to_numpy()
+
+    fig, axes = plt.subplots(2, 1, figsize=(11.5, 6.8), sharex=True)
+    for axis in axes:
+        _shade_disruptions(axis, frame)
+
+    queue_ax = axes[0]
+    queue_ax.plot(hours, demand, color="#264653", linewidth=2.2, label="Expected charging demand")
+    queue_ax.set_ylabel("Expected charging arrivals per 5-minute step", color="#264653")
+    queue_ax.tick_params(axis="y", labelcolor="#264653")
+    queue_ax.set_title(title)
+
+    queue_ax_right = queue_ax.twinx()
+    queue_ax_right.plot(hours, queue, color="#E76F51", linewidth=2.0, label="Queue length")
+    queue_ax_right.set_ylabel(f"Queue length ({rolling_steps * 5}-minute rolling mean)", color="#E76F51")
+    queue_ax_right.tick_params(axis="y", labelcolor="#E76F51")
+
+    wait_ax = axes[1]
+    wait_ax.plot(hours, demand, color="#264653", linewidth=2.2, label="Expected charging demand")
+    wait_ax.set_ylabel("Expected charging arrivals per 5-minute step", color="#264653")
+    wait_ax.tick_params(axis="y", labelcolor="#264653")
+
+    wait_ax_right = wait_ax.twinx()
+    wait_ax_right.plot(hours, wait, color="#2A9D8F", linewidth=2.0, label="Queue wait")
+    wait_ax_right.set_ylabel(f"Mean queue wait in minutes ({rolling_steps * 5}-minute rolling mean)", color="#2A9D8F")
+    wait_ax_right.tick_params(axis="y", labelcolor="#2A9D8F")
+    wait_ax.set_xlabel("Hour of day")
+
+    handles = [
+        plt.Line2D([0], [0], color="#264653", linewidth=2.2, label="Expected charging demand"),
+        plt.Line2D([0], [0], color="#E76F51", linewidth=2.0, label="Queue length"),
+        plt.Line2D([0], [0], color="#2A9D8F", linewidth=2.0, label="Queue wait"),
+        plt.Rectangle((0, 0), 1, 1, fc="#F4A261", alpha=0.18, label="Disruption window"),
+    ]
+    axes[0].legend(handles=handles, loc="upper left", ncol=2)
+    if subtitle:
+        axes[1].text(0.0, -0.35, subtitle, transform=axes[1].transAxes, fontsize=10, color="#444444")
+    fig.tight_layout()
+    return fig, axes
+
+
 def plot_historical_training(history: list[dict[str, Any]]) -> tuple[plt.Figure, np.ndarray]:
     return plot_training_history(history, source="historical")
