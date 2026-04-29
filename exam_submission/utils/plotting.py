@@ -8,11 +8,11 @@ import pandas as pd
 
 
 POLICY_LABELS = {
-    "mobile_noop": "Fixed / no-agent",
-    "mobile_threshold": "Threshold",
+    "mobile_noop": "No-agent baseline",
+    "mobile_threshold": "RL agent",
     "mobile_reactive": "Reactive",
-    "fixed": "Fixed / no-agent",
-    "threshold": "Threshold",
+    "fixed": "No-agent baseline",
+    "threshold": "RL agent",
     "reactive": "Reactive",
     "rl": "RL agent",
 }
@@ -102,7 +102,7 @@ def _shade_disruptions(ax: plt.Axes, frame: pd.DataFrame) -> None:
         ax.axvspan(start, hours[-1], color="#F4A261", alpha=0.18)
 
 
-def plot_policy_rollout_panel(run_frames: dict[str, pd.DataFrame]) -> tuple[plt.Figure, np.ndarray]:
+def plot_policy_rollout_panel(run_frames: dict[str, pd.DataFrame], title: str | None = None) -> tuple[plt.Figure, np.ndarray]:
     fig, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=True)
     baseline_frame = next(iter(run_frames.values()))
     for axis in axes:
@@ -118,9 +118,11 @@ def plot_policy_rollout_panel(run_frames: dict[str, pd.DataFrame]) -> tuple[plt.
     axes[2].set_ylabel("Active MCS")
     axes[2].set_xlabel("Global hour")
     axes[0].legend(ncol=max(1, min(3, len(run_frames))), loc="upper right")
-    if len(run_frames) == 1:
+    if title is not None:
+        axes[0].set_title(title)
+    elif len(run_frames) == 1:
         policy_name = next(iter(run_frames))
-        axes[0].set_title(f"Held-out appendix-demo rollout for the trained {POLICY_LABELS.get(policy_name, policy_name)}")
+        axes[0].set_title(f"Held-out rollout for {POLICY_LABELS.get(policy_name, policy_name)}")
     else:
         axes[0].set_title("Held-out rollout comparison on one unseen 5-day `test_id` scenario")
     fig.tight_layout()
@@ -289,7 +291,7 @@ def plot_training_history(history: list[dict[str, Any]], source: str = "historic
     elif source == "current_outputs":
         title = "Current training-time RL diagnostics from outputs/mobile_mcs_line_abc/rl/history.json"
     elif source == "appendix_demo":
-        title = "Appendix demo: short local RL-agent training diagnostics"
+        title = "Demo training reward and loss"
     else:
         title = "Historical RL diagnostics from a superseded absolute-allocation variant"
     fig.suptitle(title, y=1.02, fontsize=14)

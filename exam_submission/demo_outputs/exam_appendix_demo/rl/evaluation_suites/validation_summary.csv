@@ -1,2 +1,2 @@
 summary_type,suite_name,policy_alias,mean_queue_length,peak_queue_length,mean_queue_wait_minutes,peak_queue_wait_minutes,queue_wait_target_breach_fraction,queue_wait_excess_minutes,served_demand,unmet_demand,mean_active_mobile_stations,total_activated_mobile_stations,total_adjusted_mobile_stations,mcs_hours,active_mcs_steps,reward
-validation,validation,rl,8.211805555555555,42.0,5.793080920663972,38.095237731933594,0.0,0.0,1486.0,4730.0,0.0,0.0,0.0,0.0,0.0,-2950.3934039904034
+validation,validation,rl,4.047309027777778,31.0,2.3115520332810573,26.28654956817627,0.0,0.0,2262.5,3633.5,0.6818576388888888,0.0,55.5,51.875,622.5,-3079.951573857177

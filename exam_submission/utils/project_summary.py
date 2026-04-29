@@ -263,7 +263,7 @@ def metric_summary_table(run_summaries: dict[str, dict[str, Any]]) -> pd.DataFra
     for policy_name, summary in run_summaries.items():
         label = {
             "mobile_noop": "Fixed / no-agent baseline",
-            "mobile_threshold": "Threshold baseline",
+            "mobile_threshold": "RL agent",
             "mobile_reactive": "Reactive baseline",
         }[policy_name]
         mean_queue = float(summary["mean_queue_length"])

@@ -8,7 +8,7 @@ from typing import Any
 
 import pandas as pd
 
-from exam_submission.utils.plotting import plot_policy_rollout_panel, plot_training_history
+from exam_submission.utils.plotting import POLICY_LABELS, plot_policy_rollout_panel, plot_training_history
 
 
 REPO_ROOT = next(
@@ -75,6 +75,7 @@ def build_appendix_demo_config(
     eval_episodes: int = 2,
     eval_interval_steps: int = 400,
     heldout_seed: int = 12000,
+    heldout_num_days: int = 5,
     validation_seed_start: int = 10000,
     validation_seed_count: int = 2,
 ) -> dict[str, Any]:
@@ -116,7 +117,7 @@ def build_appendix_demo_config(
     split_cfg["test_id"] = {
         "enabled": True,
         "seeds": [int(heldout_seed)],
-        "num_days": 1,
+        "num_days": int(heldout_num_days),
     }
     split_cfg["test_stress"] = {"enabled": False}
     return config
@@ -133,7 +134,7 @@ def _heldout_demo_rollout(config: dict[str, Any], checkpoint_path: str) -> tuple
     heldout_seed = int(seeds[0] if seeds else 12000)
     env_cfg = prepare_env_config(config["environment"], test_cfg)
     policy_specs = build_policy_specs(
-        ["rl"],
+        ["mobile_noop", "rl"],
         checkpoint_path=checkpoint_path,
         seed=int(config.get("seed", 0)),
     )
@@ -165,7 +166,10 @@ def _heldout_demo_rollout(config: dict[str, Any], checkpoint_path: str) -> tuple
                 "mcs_hours",
                 "reward",
             ]
-        ].sort_values("policy")
+        ].copy()
+        summary["policy"] = summary["policy"].map(lambda value: POLICY_LABELS.get(str(value), str(value)))
+        summary["policy"] = pd.Categorical(summary["policy"], categories=["No-agent baseline", "RL agent"], ordered=True)
+        summary = summary.sort_values("policy").reset_index(drop=True)
     return run_frames, summary
 
 
@@ -177,7 +181,7 @@ def run_appendix_demo(**kwargs: Any) -> dict[str, Any]:
     history = list(training_result.get("history", []))
     training_figure, _ = plot_training_history(history, source="appendix_demo")
     heldout_frames, heldout_summary = _heldout_demo_rollout(config, str(training_result["checkpoint_path"]))
-    heldout_figure, _ = plot_policy_rollout_panel(heldout_frames)
+    heldout_figure, _ = plot_policy_rollout_panel(heldout_frames, title="Demo held-out test")
 
     seed_list = config["train_val_test"]["test_id"]["seeds"]
     heldout_seed = int(seed_list[0] if seed_list else 12000)
@@ -187,7 +191,7 @@ def run_appendix_demo(**kwargs: Any) -> dict[str, Any]:
         f"It trains the RL agent for {config['rl']['episodes']} short episodes, "
         "tracks train and periodic evaluation diagnostics, "
         f"and then runs one held-out `test_id` rollout on seed `{heldout_seed}` "
-        "for that trained RL agent."
+        f"across {config['train_val_test']['test_id']['num_days']} days to compare the trained RL agent against the no-agent baseline."
     )
 
     return {

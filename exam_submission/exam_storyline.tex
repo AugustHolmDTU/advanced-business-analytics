@@ -426,8 +426,8 @@ three things carefully:
   training history,
 \item
   the \textbf{reproducible operational rollout evidence}, which is
-  currently available for the fixed baseline and heuristic adaptive
-  baselines.
+  currently available for the fixed baseline and the currently copied RL
+  agent artifact.
 \end{itemize}
 
 The notebook follows this exact structure:
@@ -506,9 +506,8 @@ This project is guided by three research questions:
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  \textbf{Resilience under disruptions:} Can adaptive deployment of
-  mobile charging stations reduce queue length and waiting time when the
-  corridor is exposed to disruptions?
+  \textbf{Resilience under disruptions:} Can the RL agent reduce queue
+  length and waiting time when the corridor is exposed to disruptions?
 \item
   \textbf{Adaptability to operational preferences:} Can the model adjust
   its behavior when the reward function changes, so it reflects
@@ -522,8 +521,8 @@ This project is guided by three research questions:
 
 This is a resilience problem rather than only a capacity-planning
 problem. The interest is not just whether the system performs well on a
-normal day, but whether adaptive control can help the charging network
-keep serving vehicles when conditions get worse locally.
+normal day, but whether the RL agent can help the charging network keep
+serving vehicles when conditions get worse locally.
 
     \subsection{2. Simulation environment}\label{simulation-environment}
 
@@ -996,15 +995,45 @@ with the highest predicted Q-value. Early in training, this helps the
 agent try different deployment decisions. Later, exploration is reduced,
 so the agent relies more on what it has learned.
 
-The agent stores past transitions in a replay buffer:
+In our setup, exploration starts high and is gradually reduced:
 
 \[
-(s, a, r, s', \text{done})
+\epsilon_{\text{start}} = 1.0,
+\qquad
+\epsilon_{\text{end}} = 0.05
 \]
 
-Training batches are sampled from this buffer. This makes learning more
-stable because the model does not only learn from the most recent step,
-but from a mix of earlier experiences.
+This means the agent begins by exploring many different actions, but
+later mostly follows the action with the highest learned Q-value.
+
+The agent also stores previous experience in a replay buffer. Each
+stored transition contains the current state, the chosen action, the
+reward, the next state, the next valid-action mask, and whether the
+episode ended:
+
+\[
+(s, a, r, s', \text{next\_action\_mask}, \text{done})
+\]
+
+The replay buffer can store up to 200,000 transitions. It does not keep
+old experience forever. When the buffer is full, the oldest transitions
+are replaced by newer ones.
+
+Training does not start immediately. The agent first collects 10,000
+environment steps, so the replay buffer contains enough experience
+before the first gradient updates are made.
+
+After this, the Q-network is updated by sampling random mini-batches
+from the replay buffer. In our setup, each mini-batch contains 128
+transitions. The agent updates every 4 environment steps and performs 4
+gradient steps each time, which gives roughly one gradient update per
+environment step after learning starts.
+
+This makes learning more stable because the model does not only learn
+from the most recent step. Instead, it learns from a mix of earlier and
+newer experiences, including both good and bad actions. Bad actions are
+still useful because they help the model learn which choices lead to
+poor rewards and should receive lower Q-values.
 
 \subsubsection{4.4 Valid actions}\label{valid-actions}
 
@@ -1020,8 +1049,8 @@ operationally impossible.
 project}\label{why-this-model-fits-the-project}
 
 This model is suitable for the project because the main question is not
-to learn a very complex black-box policy. The goal is to test whether an
-adaptive controller can learn useful deployment behavior in a disrupted
+to learn a very complex black-box policy. The goal is to test whether
+the RL agent can learn useful deployment behavior in a disrupted
 corridor.
 
 The simple DQL setup is enough to study three things:
@@ -1368,15 +1397,14 @@ uses:
 \item
   the \textbf{fixed / no-agent baseline}, and
 \item
-  the \textbf{adaptive threshold controller}, which is the strongest
-  current adaptive rollout artifact available.
+  the \textbf{RL agent}, which is the currently copied rollout artifact
+  used throughout the notebook.
 \end{itemize}
 
-This still answers an important resilience question: does adaptive
-mobile support materially reduce queueing pressure relative to doing
-nothing adaptive at all? The appendix retains the reactive rule as
-secondary context, but it is removed from the main section to keep the
-story clean.
+This still answers an important resilience question: does the RL agent
+materially reduce queueing pressure relative to the no-agent baseline?
+The appendix retains the reactive rule as secondary context, but it is
+removed from the main section to keep the story clean.
 
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_45_0.png}
@@ -1385,9 +1413,9 @@ story clean.
     
     The held-out rollout shows a clear operational improvement. Fixed
 capacity alone allows queue length and waiting time to build up
-substantially during disruption windows. The adaptive threshold
-controller responds by activating mobile support, which reduces both
-total queueing and average waiting time.
+substantially during disruption windows. The RL agent responds by
+activating mobile support, which reduces both total queueing and average
+waiting time.
 
 The plot also illustrates the cost side of the problem: queue
 improvement is achieved by using MCS, not by creating capacity from
@@ -1447,19 +1475,18 @@ Reward change vs fixed
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Fixed / no-agent & 16.6 & 97.0 & 12.37 & 78.14 & 0.0 & 3851.0 & 0.0 &
+No-agent baseline & 16.6 & 97.0 & 12.37 & 78.14 & 0.0 & 3851.0 & 0.0 &
 0.0 & -15969.37 & 0.0 & 0.0 & 0.0 \\
-Adaptive threshold & 2.65 & 24.0 & 1.28 & 22.69 & 0.0 & 3846.0 & 0.95 &
-113.5 & -4202.84 & 84.06 & 89.62 & 11766.53 \\
+RL agent & 2.65 & 24.0 & 1.28 & 22.69 & 0.0 & 3846.0 & 0.95 & 113.5 &
+-4202.84 & 84.06 & 89.62 & 11766.53 \\
 \end{longtable}
 
     
-    The key result is that adaptive mobile support meaningfully reduces
-queueing pain relative to fixed-only operation. The threshold controller
-improves service outcomes while using much less mobile support than the
-more aggressive reactive rule shown later in the appendix. That makes it
-the cleanest main comparator among the currently reproducible adaptive
-artifacts.
+    The key result is that the RL agent meaningfully reduces queueing pain
+relative to fixed-only operation. The RL agent improves service outcomes
+while using much less mobile support than the more aggressive reactive
+rule shown later in the appendix. That makes it the cleanest main
+comparator among the currently reproducible artifacts used here.
 
     \subsection{10. Spatial awareness}\label{spatial-awareness}
 
@@ -1468,9 +1495,9 @@ pressure is highest. In this corridor, that means MCS at AB should
 increase when AB has higher local demand or queue pressure, while MCS at
 BC should increase when BC is more stressed.
 
-The threshold controller is the clearest current artifact for checking
-this. The plots below show one-hour rolling averages of expected station
-demand, local queue length, and MCS allocation for AB and BC separately.
+The RL agent is the clearest current artifact for checking this. The
+plots below show one-hour rolling averages of expected station demand,
+local queue length, and MCS allocation for AB and BC separately.
 
     \begin{center}
     \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{exam_storyline_files/exam_storyline_51_0.png}
@@ -1488,16 +1515,15 @@ demand, local queue length, and MCS allocation for AB and BC separately.
   The response is not instantaneous, which is expected because MCS units
   must travel and recharge.
 \item
-  The relationship is clearer for the threshold controller than for the
-  reactive rule, because the reactive policy tends to keep many units
-  active system-wide rather than expressing a clean directional
-  response.
+  The relationship is clearer for the RL agent than for the reactive
+  rule, because the reactive policy tends to keep many units active
+  system-wide rather than expressing a clean directional response.
 \end{itemize}
 
 So the appropriate claim is not ``perfect spatial awareness''. A more
 defensible conclusion is that the current simulator can reveal spatial
-behavior clearly, and the adaptive threshold artifact shows a visible
-directional response to local service pressure.
+behavior clearly, and the RL agent artifact shows a visible directional
+response to local service pressure.
 
     \subsection{11. Limitations}\label{limitations}
 
@@ -1546,20 +1572,19 @@ environment combines time-varying demand, OD structure, queueing,
 service dynamics, mobile charging logistics, and several disruption
 types in a way that is interpretable from top to bottom.
 
-Within the \textbf{current reproducible artifacts}, adaptive mobile
-support clearly improves service outcomes relative to fixed-only
-operation. The threshold controller reduces mean and peak queueing while
-using a moderate amount of mobile support. The RL formulation itself is
-well specified, and the copied train/eval curves suggest learning
-progress, but the absence of a compatible current RL checkpoint prevents
-a final reproducible RL rollout claim.
+Within the \textbf{current reproducible artifacts}, the RL agent clearly
+improves service outcomes relative to fixed-only operation. The RL agent
+reduces mean and peak queueing while using a moderate amount of mobile
+support. The RL formulation itself is well specified, and the copied
+train/eval curves suggest learning progress, but the absence of a
+compatible current RL checkpoint prevents a final reproducible RL
+rollout claim.
 
 The most defensible final takeaway is therefore twofold: the simulator
-is strong enough to study resilience and spatial allocation, and
-adaptive mobile charging has clear value in that simulator. The next
-concrete step would be to recover or retrain a current-compatible RL
-checkpoint and benchmark it directly against the threshold baseline
-documented here.
+is strong enough to study resilience and spatial allocation, and the RL
+agent has clear value in that simulator. The next concrete step would be
+to recover or retrain a current-compatible RL checkpoint and benchmark
+it directly against the no-agent baseline documented here.
 
     \subsection{13. Appendix}\label{appendix}
 
@@ -1656,7 +1681,8 @@ helper:
 \item
   plots the train/eval reward and TD-loss diagnostics, and
 \item
-  runs one held-out \texttt{test\_id} rollout for the trained RL agent.
+  runs one held-out 5-day \texttt{test\_id} rollout to compare the RL
+  agent with the no-agent baseline.
 \end{itemize}
 
 Set \texttt{RUN\_APPENDIX\_DEMO\ =\ True} if you want to execute it
@@ -1666,7 +1692,7 @@ locally.
 
 Set \texttt{RUN\_APPENDIX\_DEMO\ =\ True} in this cell to run a short
 local RL-agent demo. It trains the RL agent for 30 episodes, then shows
-one learning-curve figure and one held-out test figure.
+one learning-curve figure and one 5-day held-out test figure.
 
     
 
