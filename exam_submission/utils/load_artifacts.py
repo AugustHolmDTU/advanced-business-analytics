@@ -74,6 +74,14 @@ def load_reward_sweep_summary() -> pd.DataFrame:
     return load_csv(data_root() / "historical" / "reward_sweep_summary.csv")
 
 
+def load_generated_reward_sweeps() -> dict[str, pd.DataFrame]:
+    sweep_dir = data_root() / "generated" / "reward_sweeps"
+    return {
+        "mcs_cost": load_csv(sweep_dir / "mcs_cost_sweep_summary.csv", allow_empty=True),
+        "queue_cost": load_csv(sweep_dir / "queue_cost_sweep_summary.csv", allow_empty=True),
+    }
+
+
 def current_training_history_path() -> Path:
     return repo_root() / "outputs" / "mobile_mcs_line_abc" / "rl" / "history.json"
 
