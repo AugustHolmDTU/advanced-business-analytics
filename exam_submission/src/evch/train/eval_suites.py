@@ -10,7 +10,7 @@ import pandas as pd
 
 from evch.baselines.policies import BASELINE_POLICIES
 from evch.envs.factory import make_env
-from evch.rl.simple_dqn import SimpleDQNAgent
+from evch.rl.simple_dql import SimpleDQLAgent as SimpleDQNAgent
 from evch.utils.io import ensure_dir, write_json
 
 LOGGER = logging.getLogger(__name__)

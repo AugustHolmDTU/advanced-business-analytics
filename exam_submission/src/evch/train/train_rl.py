@@ -10,7 +10,7 @@ import numpy as np
 from evch.config.loader import build_config_parser, load_config
 from evch.envs.factory import make_env
 from evch.rl.evaluation import evaluate_policy
-from evch.rl.simple_dqn import SimpleDQNAgent
+from evch.rl.simple_dql import SimpleDQLAgent as SimpleDQNAgent
 from evch.train.eval_suites import build_seed_list, evaluate_policy_suites, resolve_train_seed_range
 from evch.utils.io import ensure_dir, write_json
 from evch.utils.logging import configure_logging
