@@ -1082,6 +1082,8 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
 
     suite_outputs = None
     if bool(test_id_cfg.get("enabled", False)) or bool(stress_cfg.get("enabled", False)) or (val_enabled and bool(val_seed_list)):
+        # Training gives me one checkpoint, then this call runs the cleaner
+        # validation / test suite bookkeeping around that frozen policy.
         suite_outputs = evaluate_policy_suites(
             config=config,
             checkpoint_path=checkpoint_path,

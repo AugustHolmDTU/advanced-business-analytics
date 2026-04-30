@@ -124,6 +124,8 @@ def _prepare_env_config(base_env_cfg: dict[str, Any], suite_cfg: dict[str, Any] 
 
     num_days = suite_cfg.get("num_days")
     if num_days is not None:
+        # Every suite starts from the same environment template, then only
+        # overrides the episode length and any scripted disruption details.
         sim_cfg = dict(env_cfg.get("simulation", {}))
         sim_cfg["duration_hours"] = 24.0 * int(num_days)
         sim_cfg.pop("duration_days_range", None)
@@ -154,6 +156,8 @@ def _rollout_policy_for_seed(
     disruption_schedule = list(getattr(env, "current_disruption_schedule", []))
     rows: list[dict[str, Any]] = []
     while True:
+        # The suite output is meant to be easy to inspect later, so I keep one
+        # row per environment step and then aggregate after the rollout ends.
         action = int(policy(observation, env, True))
         observation, reward, terminated, truncated, info = env.step(action)
         current_step = int(env.step_index - 1)
@@ -416,6 +420,8 @@ def evaluate_policy_suites(config: dict[str, Any], checkpoint_path: str, run: An
     stress_summary_frame = pd.DataFrame()
     stress_manifest_rows: list[pd.DataFrame] = []
     if bool(stress_cfg.get("enabled", False)):
+        # Stress scenarios are handled one named case at a time so the output
+        # table can stay grouped by scenario in the final CSV.
         stress_rows: list[pd.DataFrame] = []
         for scenario_cfg in stress_cfg.get("scenarios", []):
             scenario_dict = dict(scenario_cfg)

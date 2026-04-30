@@ -7,7 +7,13 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from .artifact_finder import data_root
+
+def submission_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def data_root() -> Path:
+    return submission_root() / "data"
 
 
 def repo_root() -> Path:
@@ -43,6 +49,7 @@ def load_csv(path: str | Path, allow_empty: bool = False) -> pd.DataFrame:
 
 def load_core_configs() -> dict[str, dict[str, Any]]:
     config_dir = data_root() / "configs"
+    # keeping these in one place makes the notebook setup cell a bit cleaner
     return {
         "environment": load_yaml(config_dir / "env_mobile_mcs_line_abc_current.yaml"),
         "rl_simple": load_yaml(config_dir / "rl_dqn_mobile_simple.yaml"),
@@ -52,26 +59,13 @@ def load_core_configs() -> dict[str, dict[str, Any]]:
     }
 
 
-def load_heldout_runs() -> dict[str, dict[str, Any]]:
+def load_heldout_runs() -> dict[str, pd.DataFrame]:
     heldout_dir = data_root() / "generated" / "heldout"
-    runs: dict[str, dict[str, Any]] = {}
+    runs: dict[str, pd.DataFrame] = {}
     for policy_name in ("mobile_noop", "mobile_threshold", "mobile_reactive"):
-        runs[policy_name] = {
-            "metrics": load_csv(heldout_dir / f"{policy_name}_comparison_timestep_metrics.csv", allow_empty=True),
-            "summary": load_json(heldout_dir / f"{policy_name}_comparison_summary.json", allow_missing=True),
-        }
+        # reactive is optional now, so an empty frame is fine if it is missing
+        runs[policy_name] = load_csv(heldout_dir / f"{policy_name}_comparison_timestep_metrics.csv", allow_empty=True)
     return runs
-
-
-def load_suite_outputs() -> dict[str, pd.DataFrame]:
-    suite_dir = data_root() / "generated" / "evaluation_suites_small"
-    return {
-        "test_id_summary": load_csv(suite_dir / "test_id_summary.csv"),
-        "paired_test_results": load_csv(suite_dir / "paired_test_results.csv"),
-        "test_stress_summary": load_csv(suite_dir / "test_stress_summary.csv"),
-        "scenario_manifest": load_csv(suite_dir / "scenario_manifest.csv"),
-        "validation_summary": load_csv(suite_dir / "validation_summary.csv", allow_empty=True),
-    }
 
 
 def load_reward_sweep_summary() -> pd.DataFrame:
@@ -97,18 +91,14 @@ def copied_training_history_path() -> Path:
 def load_training_history() -> tuple[list[dict[str, Any]], str]:
     copied_path = copied_training_history_path()
     if copied_path.exists():
+        # prefer the copied history so the submission stays self-contained
         payload = load_json(copied_path)
         return list(payload.get("history", [])), "submission_copy"
 
     current_path = current_training_history_path()
     if current_path.exists():
+        # fallback in case someone deleted the copied file but still has outputs/
         payload = load_json(current_path)
         return list(payload.get("history", [])), "current_outputs"
 
-    payload = load_json(data_root() / "historical" / "legacy_training_history_range_c24_q2p5.json")
-    return list(payload.get("history", [])), "historical"
-
-
-def load_legacy_training_history() -> list[dict[str, Any]]:
-    payload = load_json(data_root() / "historical" / "legacy_training_history_range_c24_q2p5.json")
-    return list(payload.get("history", []))
+    raise FileNotFoundError("No copied or current training history was available for exam_submission.")

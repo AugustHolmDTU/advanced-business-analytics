@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import copy
 import importlib
+import json
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,8 +31,8 @@ def _activate_project_src() -> None:
         sys.path.remove(project_src_str)
     sys.path.insert(0, project_src_str)
 
-    # The notebook normally prefers the copied `reference_code/src` tree.
-    # For the optional demo, we need the full project package instead.
+    # the main notebook mostly stays inside exam_submission/,
+    # but this demo needs the full project package to actually train.
     for module_name in list(sys.modules):
         if module_name == "evch" or module_name.startswith("evch."):
             del sys.modules[module_name]
@@ -55,15 +57,50 @@ def _load_project_symbols() -> dict[str, Any]:
 
 
 def _demo_config_paths(repo_root: Path) -> list[str]:
-    base = repo_root / "exam_submission" / "reference_code" / "configs"
+    base = repo_root / "exam_submission" / "data" / "configs"
     return [
-        str(base / "env" / "mobile_mcs_line_abc.yaml"),
-        str(base / "demand" / "base.yaml"),
-        str(base / "rl" / "dqn_mobile_simple.yaml"),
-        str(base / "debug" / "logging_disabled.yaml"),
-        str(base / "experiment" / "mobile_mcs_line_abc_train_only.yaml"),
-        str(base / "demo" / "mobile_mcs_line_abc_demo_short.yaml"),
+        str(base / "env_mobile_mcs_line_abc_current.yaml"),
+        str(base / "demand_base.yaml"),
+        str(base / "rl_dqn_mobile_simple.yaml"),
+        str(base / "logging_disabled.yaml"),
+        str(base / "experiment_mobile_mcs_line_abc_train_only.yaml"),
+        str(base / "demo_mobile_mcs_line_abc_short.yaml"),
     ]
+
+
+def _flatten_demo_outputs(config: dict[str, Any], training_result: dict[str, Any]) -> dict[str, Any]:
+    output_root = Path(config["experiment"]["output_root"])
+    experiment_name = str(config["experiment"]["name"])
+    nested_rl_dir = output_root / experiment_name / "rl"
+    target_files = {
+        "best_model.pt": output_root / "best_model.pt",
+        "history.json": output_root / "history.json",
+        "training_summary.json": output_root / "training_summary.json",
+    }
+
+    for filename, target_path in target_files.items():
+        source_path = nested_rl_dir / filename
+        if source_path.exists():
+            shutil.move(str(source_path), str(target_path))
+
+    summary_path = target_files["training_summary.json"]
+    if summary_path.exists():
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+        payload["checkpoint_path"] = str(target_files["best_model.pt"])
+        summary_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    suite_dir = nested_rl_dir / "evaluation_suites"
+    if suite_dir.exists():
+        shutil.rmtree(suite_dir)
+
+    # after flattening, the extra folders do not tell us anything useful.
+    for path in [nested_rl_dir, nested_rl_dir.parent]:
+        if path.exists() and not any(path.iterdir()):
+            path.rmdir()
+
+    training_result = dict(training_result)
+    training_result["checkpoint_path"] = str(target_files["best_model.pt"])
+    return training_result
 
 
 def build_appendix_demo_config(
@@ -105,6 +142,7 @@ def build_appendix_demo_config(
     config["rl"]["eval_during_training_episodes"] = int(eval_episodes)
 
     split_cfg = config.setdefault("train_val_test", {})
+    # keep this tiny enough to rerun locally, but still shaped like the real setup
     split_cfg["validation"] = {
         "enabled": True,
         "periodic_enabled": True,
@@ -155,6 +193,7 @@ def _heldout_demo_rollout(config: dict[str, Any], checkpoint_path: str) -> tuple
 
     summary = pd.DataFrame(summary_rows)
     if not summary.empty:
+        # the raw aliases are fine in code, but ugly in a report table
         policy_display_names = {
             "fixed": "No-agent baseline",
             "mobile_noop": "No-agent baseline",
@@ -188,6 +227,8 @@ def run_appendix_demo(**kwargs: Any) -> dict[str, Any]:
     training_figure, _ = plot_training_history(history, source="appendix_demo")
     heldout_frames, heldout_summary = _heldout_demo_rollout(config, str(training_result["checkpoint_path"]))
     heldout_figure, _ = plot_policy_rollout_panel(heldout_frames, title="Demo held-out test")
+    # flatten at the end so the saved demo files are easy to spot in one folder
+    training_result = _flatten_demo_outputs(config, training_result)
 
     seed_list = config["train_val_test"]["test_id"]["seeds"]
     heldout_seed = int(seed_list[0] if seed_list else 12000)

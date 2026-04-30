@@ -1,2 +1,0 @@
-"""Train and evaluation entrypoints."""
-

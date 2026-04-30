@@ -115,6 +115,7 @@ def _shade_disruptions(ax: plt.Axes, frame: pd.DataFrame) -> None:
 def plot_policy_rollout_panel(run_frames: dict[str, pd.DataFrame], title: str | None = None) -> tuple[plt.Figure, np.ndarray]:
     fig, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=True)
     baseline_frame = next(iter(run_frames.values()))
+    # all policies use the same seeded scenario here, so one disruption mask is enough
     for axis in axes:
         _shade_disruptions(axis, baseline_frame)
     for policy_name, frame in run_frames.items():
@@ -140,101 +141,6 @@ def plot_policy_rollout_panel(run_frames: dict[str, pd.DataFrame], title: str | 
     return fig, axes
 
 
-def plot_station_rollout_panel(run_frames: dict[str, pd.DataFrame]) -> tuple[plt.Figure, np.ndarray]:
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
-    baseline_frame = next(iter(run_frames.values()))
-    for axis in axes.ravel():
-        _shade_disruptions(axis, baseline_frame)
-    for policy_name, frame in run_frames.items():
-        color = POLICY_COLORS[policy_name]
-        label = POLICY_LABELS[policy_name]
-        axes[0, 0].plot(frame["global_hour"], frame["queue_length_station_ab"], color=color, linewidth=1.8, label=label)
-        axes[0, 1].plot(frame["global_hour"], frame["queue_length_station_bc"], color=color, linewidth=1.8, label=label)
-        axes[1, 0].plot(frame["global_hour"], frame["num_active_mobile_stations_station_ab"], color=color, linewidth=1.8, label=label)
-        axes[1, 1].plot(frame["global_hour"], frame["num_active_mobile_stations_station_bc"], color=color, linewidth=1.8, label=label)
-    axes[0, 0].set_title("Queue at station AB")
-    axes[0, 1].set_title("Queue at station BC")
-    axes[1, 0].set_title("Active MCS at AB")
-    axes[1, 1].set_title("Active MCS at BC")
-    for axis in axes[1, :]:
-        axis.set_xlabel("Global hour")
-    for axis in axes[:, 0]:
-        axis.set_ylabel("Level")
-    axes[0, 0].legend(ncol=3, loc="upper right")
-    fig.tight_layout()
-    return fig, axes
-
-
-def plot_spatial_awareness(frame: pd.DataFrame, policy_name: str) -> tuple[plt.Figure, np.ndarray]:
-    color = POLICY_COLORS[policy_name]
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-    _shade_disruptions(axes[0, 0], frame)
-    _shade_disruptions(axes[0, 1], frame)
-    _shade_disruptions(axes[1, 0], frame)
-    axes[0, 0].plot(frame["global_hour"], frame["num_active_mobile_stations_station_ab"], color="#2A9D8F", linewidth=2, label="MCS at AB")
-    axes[0, 0].plot(frame["global_hour"], frame["num_active_mobile_stations_station_bc"], color="#E76F51", linewidth=2, label="MCS at BC")
-    axes[0, 0].set_title(f"{POLICY_LABELS[policy_name]}: MCS allocation by station")
-    axes[0, 0].legend()
-
-    axes[0, 1].plot(frame["global_hour"], frame["queue_length_station_ab"], color="#2A9D8F", linewidth=2, label="Queue AB")
-    axes[0, 1].plot(frame["global_hour"], frame["queue_length_station_bc"], color="#E76F51", linewidth=2, label="Queue BC")
-    axes[0, 1].set_title("Local queue pressure by station")
-    axes[0, 1].legend()
-
-    axes[1, 0].plot(frame["global_hour"], frame["allocation_bias_ab_minus_bc"], color=color, linewidth=2, label="Allocation bias AB-BC")
-    axes[1, 0].plot(frame["global_hour"], frame["local_deficit_bias_ab_minus_bc"], color="#264653", linewidth=1.6, alpha=0.85, label="Local deficit bias AB-BC")
-    axes[1, 0].set_title("Allocation bias versus local deficit bias")
-    axes[1, 0].legend()
-
-    axes[1, 1].scatter(
-        frame["local_deficit_bias_ab_minus_bc"],
-        frame["allocation_bias_ab_minus_bc"],
-        s=12,
-        alpha=0.35,
-        color=color,
-        edgecolors="none",
-    )
-    axes[1, 1].axhline(0, color="#999999", linewidth=1)
-    axes[1, 1].axvline(0, color="#999999", linewidth=1)
-    axes[1, 1].set_title("Scatter: local deficit bias vs allocation bias")
-    axes[1, 1].set_xlabel("Local deficit bias (AB - BC)")
-    axes[1, 1].set_ylabel("Allocation bias (AB - BC)")
-
-    for axis in axes[1, :]:
-        if axis is not axes[1, 1]:
-            axis.set_xlabel("Global hour")
-    for axis in axes[:, 0]:
-        axis.set_ylabel("Level")
-    fig.tight_layout()
-    return fig, axes
-
-
-def plot_reward_sweep(summary: pd.DataFrame) -> tuple[plt.Figure, np.ndarray]:
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
-    scatter = axes[0].scatter(
-        summary["final_mean_active_mobile_stations"],
-        summary["final_mean_queue_length"],
-        c=summary["active_mcs_cost"],
-        s=90,
-        cmap="viridis",
-    )
-    for _, row in summary.iterrows():
-        axes[0].text(row["final_mean_active_mobile_stations"] + 0.03, row["final_mean_queue_length"] + 0.03, row["run"], fontsize=8)
-    axes[0].set_title("Historical reward sweep: queue versus MCS usage")
-    axes[0].set_xlabel("Final mean active mobile stations")
-    axes[0].set_ylabel("Final mean queue length")
-    fig.colorbar(scatter, ax=axes[0], label="Active MCS cost")
-
-    axes[1].plot(summary["active_mcs_cost"], summary["final_mean_queue_length"], marker="o", linewidth=2, label="Mean queue length")
-    axes[1].plot(summary["active_mcs_cost"], summary["final_mean_queue_wait_minutes"], marker="s", linewidth=2, label="Mean queue wait")
-    axes[1].set_title("Higher mobile-station cost changes the learned operating point")
-    axes[1].set_xlabel("Active MCS cost weight")
-    axes[1].set_ylabel("Final episode metric")
-    axes[1].legend()
-    fig.tight_layout()
-    return fig, axes
-
-
 def plot_training_history(history: list[dict[str, Any]], source: str = "historical") -> tuple[plt.Figure, np.ndarray]:
     frame = pd.DataFrame(history)
     fig, axes = plt.subplots(2, 1, figsize=(11.5, 7.5), sharex=True)
@@ -242,6 +148,7 @@ def plot_training_history(history: list[dict[str, Any]], source: str = "historic
     axes[0].set_title("Train and evaluation reward")
     axes[0].set_ylabel("Reward")
 
+    # some older histories do not have periodic eval metrics, so this should fail soft
     has_eval_reward = "eval_mean_reward" in frame and frame["eval_mean_reward"].notna().any()
     has_eval_loss = "eval_td_loss" in frame and frame["eval_td_loss"].notna().any()
 
@@ -365,7 +272,3 @@ def plot_disruption_scenario(
         axes[1].text(0.0, -0.42, subtitle, transform=axes[1].transAxes, fontsize=10, color="#444444")
     fig.subplots_adjust(top=0.84, bottom=0.18, left=0.10, right=0.90, hspace=0.16)
     return fig, axes
-
-
-def plot_historical_training(history: list[dict[str, Any]]) -> tuple[plt.Figure, np.ndarray]:
-    return plot_training_history(history, source="historical")

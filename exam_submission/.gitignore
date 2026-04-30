@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+demo_outputs/
+exam_storyline.aux
+exam_storyline.log
+exam_storyline.out
+exam_storyline.pdf
+exam_storyline.synctex.gz
+exam_storyline.tex
+exam_storyline_files/
