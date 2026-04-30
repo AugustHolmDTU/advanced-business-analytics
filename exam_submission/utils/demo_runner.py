@@ -230,17 +230,6 @@ def run_appendix_demo(**kwargs: Any) -> dict[str, Any]:
     # flatten at the end so the saved demo files are easy to spot in one folder
     training_result = _flatten_demo_outputs(config, training_result)
 
-    seed_list = config["train_val_test"]["test_id"]["seeds"]
-    heldout_seed = int(seed_list[0] if seed_list else 12000)
-    description = (
-        "This appendix demo calls `run_appendix_demo()` from "
-        "`exam_submission/utils/demo_runner.py`. "
-        f"It trains the RL agent for {config['rl']['episodes']} short episodes, "
-        "tracks train and periodic evaluation diagnostics, "
-        f"and then runs one held-out `test_id` rollout on seed `{heldout_seed}` "
-        f"across {config['train_val_test']['test_id']['num_days']} days to compare the trained RL agent against the no-agent baseline."
-    )
-
     return {
         "config": config,
         "training_result": training_result,
@@ -249,5 +238,4 @@ def run_appendix_demo(**kwargs: Any) -> dict[str, Any]:
         "heldout_frames": heldout_frames,
         "heldout_summary": heldout_summary,
         "heldout_figure": heldout_figure,
-        "description": description,
     }

@@ -44,6 +44,7 @@ Current helper/code files:
 
 - `utils/demo_runner.py`
 - `utils/load_artifacts.py`
+- `utils/notebook_context.py`
 - `utils/plotting.py`
 - `utils/project_summary.py`
 - `src/evch/sim/common.py`
@@ -53,6 +54,7 @@ Current helper/code files:
 
 The main notebook flow uses:
 
+- `exam_submission.utils.notebook_context`
 - `exam_submission.utils.load_artifacts`
 - `exam_submission.utils.plotting`
 - `exam_submission.utils.project_summary`
