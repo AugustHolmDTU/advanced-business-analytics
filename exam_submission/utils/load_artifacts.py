@@ -61,10 +61,15 @@ def load_core_configs() -> dict[str, dict[str, Any]]:
 
 def load_heldout_runs() -> dict[str, pd.DataFrame]:
     heldout_dir = data_root() / "generated" / "heldout"
+    filename_by_policy = {
+        "mobile_noop": "heldout_no_agent_baseline_timestep_metrics.csv",
+        "mobile_threshold": "heldout_rl_agent_timestep_metrics.csv",
+        "mobile_reactive": "heldout_reactive_timestep_metrics.csv",
+    }
     runs: dict[str, pd.DataFrame] = {}
-    for policy_name in ("mobile_noop", "mobile_threshold", "mobile_reactive"):
+    for policy_name, filename in filename_by_policy.items():
         # reactive is optional now, so an empty frame is fine if it is missing
-        runs[policy_name] = load_csv(heldout_dir / f"{policy_name}_comparison_timestep_metrics.csv", allow_empty=True)
+        runs[policy_name] = load_csv(heldout_dir / filename, allow_empty=True)
     return runs
 
 
@@ -75,8 +80,8 @@ def load_reward_sweep_summary() -> pd.DataFrame:
 def load_generated_reward_sweeps() -> dict[str, pd.DataFrame]:
     sweep_dir = data_root() / "generated" / "reward_sweeps"
     return {
-        "mcs_cost": load_csv(sweep_dir / "mcs_cost_sweep_summary.csv", allow_empty=True),
-        "queue_cost": load_csv(sweep_dir / "queue_cost_sweep_summary.csv", allow_empty=True),
+        "mcs_cost": load_csv(sweep_dir / "reward_sweep_mcs_cost.csv", allow_empty=True),
+        "queue_cost": load_csv(sweep_dir / "reward_sweep_queue_cost.csv", allow_empty=True),
     }
 
 
@@ -85,7 +90,7 @@ def current_training_history_path() -> Path:
 
 
 def copied_training_history_path() -> Path:
-    return data_root() / "generated" / "training" / "history_current.json"
+    return data_root() / "generated" / "training" / "training_history.json"
 
 
 def load_training_history() -> tuple[list[dict[str, Any]], str]:

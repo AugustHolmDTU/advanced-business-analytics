@@ -34,11 +34,11 @@ Current config files:
 
 Current generated artifacts:
 
-- `data/generated/heldout/mobile_noop_comparison_timestep_metrics.csv`
-- `data/generated/heldout/mobile_threshold_comparison_timestep_metrics.csv`
-- `data/generated/reward_sweeps/mcs_cost_sweep_summary.csv`
-- `data/generated/reward_sweeps/queue_cost_sweep_summary.csv`
-- `data/generated/training/history_current.json`
+- `data/generated/heldout/heldout_no_agent_baseline_timestep_metrics.csv`
+- `data/generated/heldout/heldout_rl_agent_timestep_metrics.csv`
+- `data/generated/reward_sweeps/reward_sweep_mcs_cost.csv`
+- `data/generated/reward_sweeps/reward_sweep_queue_cost.csv`
+- `data/generated/training/training_history.json`
 
 Current helper/code files:
 

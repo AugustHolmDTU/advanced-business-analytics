@@ -205,7 +205,7 @@ def plot_training_history(history: list[dict[str, Any]], source: str = "historic
     axes[1].legend(loc="upper right")
 
     if source == "submission_copy":
-        title = "Current training-time RL diagnostics from exam_submission/data/generated/training/history_current.json"
+        title = "Current training-time RL diagnostics from exam_submission/data/generated/training/training_history.json"
     elif source == "current_outputs":
         title = "Current training-time RL diagnostics from outputs/mobile_mcs_line_abc/rl/history.json"
     elif source == "appendix_demo":
