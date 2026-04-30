@@ -348,3 +348,50 @@ def evaluate_policy_suites(config: dict[str, Any], checkpoint_path: str, output_
     })
     outputs["suite_outputs_path"] = str(suite_output_dir / "suite_outputs.json")
     return outputs
+
+
+HELDOUT_FILENAMES: dict[str, str] = {
+    "mobile_noop":      "heldout_no_agent_baseline_timestep_metrics.csv",
+    "mobile_threshold": "heldout_rl_agent_timestep_metrics.csv",
+    "mobile_reactive":  "heldout_reactive_timestep_metrics.csv",
+    "rl":               "heldout_rl_agent_timestep_metrics.csv",
+    "fixed_only":       "heldout_no_agent_baseline_timestep_metrics.csv",
+}
+
+
+def run_heldout_comparison(
+    config: dict[str, Any],
+    checkpoint_path: str,
+    output_dir: Path,
+) -> dict[str, str]:
+    """Run each configured policy on the first test_id seed and save per-timestep CSVs.
+
+    The output filenames match what load_heldout_runs() in utils/load_artifacts.py
+    expects, so the results can be copied to data/generated/heldout/ to update the
+    notebook's pre-generated comparison artifacts.
+    """
+    evaluation_cfg = dict(config.get("evaluation", {}))
+    policy_names = list(evaluation_cfg.get("policies", ["rl", "mobile_noop"]))
+    policy_specs = build_policy_specs(policy_names, checkpoint_path=checkpoint_path, seed=int(config.get("seed", 0)))
+
+    test_id_cfg = dict(config.get("train_val_test", {}).get("test_id", {}))
+    test_id_seeds = build_seed_list(test_id_cfg.get("seeds", test_id_cfg))
+    if not test_id_seeds:
+        LOGGER.warning("run_heldout_comparison: no test_id seeds configured, skipping.")
+        return {}
+
+    seed = int(test_id_seeds[0])
+    env_cfg = _prepare_env_config(config["environment"], test_id_cfg)
+    ensure_dir(output_dir)
+
+    saved: dict[str, str] = {}
+    for spec in policy_specs:
+        filename = HELDOUT_FILENAMES.get(spec["policy_name"])
+        if filename is None:
+            continue
+        result = _rollout_policy_for_seed(env_cfg, config["demand"], spec["policy"], seed=seed, scenario_id="heldout")
+        path = output_dir / filename
+        result["frame"].to_csv(path, index=False)
+        LOGGER.info("Saved heldout rollout for %s → %s", spec["policy_name"], path)
+        saved[spec["policy_name"]] = str(path)
+    return saved

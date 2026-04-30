@@ -11,7 +11,7 @@ from evch.config.loader import build_config_parser, load_config
 from evch.envs.factory import make_env
 from evch.rl.evaluation import evaluate_policy
 from evch.rl.simple_dql import SimpleDQLAgent as SimpleDQNAgent
-from evch.train.eval_suites import build_seed_list, evaluate_policy_suites, resolve_train_seed_range
+from evch.train.eval_suites import build_seed_list, evaluate_policy_suites, resolve_train_seed_range, run_heldout_comparison
 from evch.utils.io import ensure_dir, write_json
 from evch.utils.logging import configure_logging
 from evch.utils.seeding import set_global_seed
@@ -169,6 +169,12 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
             output_dir=ensure_dir(output_dir / "evaluation_suites"),
         )
 
+    heldout_paths = run_heldout_comparison(
+        config=config,
+        checkpoint_path=checkpoint_path,
+        output_dir=ensure_dir(output_dir / "heldout_rollout"),
+    )
+
     LOGGER.info("Finished RL training with backend=%s checkpoint=%s", backend, checkpoint_path)
     return {
         "backend": backend,
@@ -179,6 +185,7 @@ def run_training(config: dict[str, Any]) -> dict[str, Any]:
         "training_summary_path": str(training_summary_path),
         "runtime": runtime_info,
         "evaluation_suites": suite_outputs,
+        "heldout_paths": heldout_paths,
     }
 
 
