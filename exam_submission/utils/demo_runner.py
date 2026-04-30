@@ -10,14 +10,9 @@ from typing import Any
 
 import pandas as pd
 
-from exam_submission.utils.plotting import POLICY_LABELS, plot_policy_rollout_panel, plot_training_history
+from .plotting import POLICY_LABELS, plot_policy_rollout_panel, plot_training_history
 
-
-REPO_ROOT = next(
-    path.parent if path.name == "exam_submission" else path
-    for path in [Path.cwd(), *Path.cwd().parents]
-    if path.name == "exam_submission" or (path / "exam_submission").exists()
-)
+REPO_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_SRC = REPO_ROOT / "src"
 
 
@@ -31,7 +26,7 @@ def _activate_project_src() -> None:
         sys.path.remove(project_src_str)
     sys.path.insert(0, project_src_str)
 
-    # the main notebook mostly stays inside exam_submission/,
+    # the main notebook mostly stays in the local folder,
     # but this demo needs the full project package to actually train.
     for module_name in list(sys.modules):
         if module_name == "evch" or module_name.startswith("evch."):
@@ -57,14 +52,15 @@ def _load_project_symbols() -> dict[str, Any]:
 
 
 def _demo_config_paths(repo_root: Path) -> list[str]:
-    base = repo_root / "exam_submission" / "data" / "configs"
+    base = repo_root / "configs"
+    demo_cfg = base / "experiment" / "demo_mobile_mcs_line_abc_short.yaml"
     return [
-        str(base / "env_mobile_mcs_line_abc_current.yaml"),
-        str(base / "demand_base.yaml"),
-        str(base / "rl_dqn_mobile_simple.yaml"),
-        str(base / "logging_disabled.yaml"),
-        str(base / "experiment_mobile_mcs_line_abc_train_only.yaml"),
-        str(base / "demo_mobile_mcs_line_abc_short.yaml"),
+        str(base / "env" / "mobile_mcs_line_abc.yaml"),
+        str(base / "demand" / "base.yaml"),
+        str(base / "rl" / "dqn_mobile_simple.yaml"),
+        str(base / "debug" / "logging_disabled.yaml"),
+        str(base / "experiment" / "mobile_mcs_line_abc_train_only.yaml"),
+        str(demo_cfg),
     ]
 
 
@@ -106,7 +102,7 @@ def _flatten_demo_outputs(config: dict[str, Any], training_result: dict[str, Any
 def build_appendix_demo_config(
     *,
     experiment_name: str = "exam_appendix_demo",
-    output_root: str = "exam_submission/demo_outputs",
+    output_root: str = "demo_outputs",
     train_episodes: int = 30,
     max_steps_per_episode: int = 288,
     eval_episodes: int = 2,

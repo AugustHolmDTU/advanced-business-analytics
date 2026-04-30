@@ -16,3 +16,4 @@ data:
   num_days: 40
   val_split: 0.2
   include_prev_observation: true
+

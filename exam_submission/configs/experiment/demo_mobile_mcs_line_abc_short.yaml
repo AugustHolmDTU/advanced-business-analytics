@@ -1,6 +1,6 @@
 experiment:
   name: exam_demo_mobile_mcs_line_abc
-  output_root: exam_submission/demo_outputs
+  output_root: demo_outputs
   save_plots: false
 
 comparison_rollout:

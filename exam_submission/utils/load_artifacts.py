@@ -16,8 +16,8 @@ def data_root() -> Path:
     return submission_root() / "data"
 
 
-def repo_root() -> Path:
-    return data_root().parents[1]
+def config_root() -> Path:
+    return submission_root() / "configs"
 
 
 def load_json(path: str | Path, allow_missing: bool = False) -> dict[str, Any]:
@@ -48,14 +48,12 @@ def load_csv(path: str | Path, allow_empty: bool = False) -> pd.DataFrame:
 
 
 def load_core_configs() -> dict[str, dict[str, Any]]:
-    config_dir = data_root() / "configs"
-    # keeping these in one place makes the notebook setup cell a bit cleaner
+    cfg = config_root()
     return {
-        "environment": load_yaml(config_dir / "env_mobile_mcs_line_abc_current.yaml"),
-        "rl_simple": load_yaml(config_dir / "rl_dqn_mobile_simple.yaml"),
-        "rl_agent": load_yaml(config_dir / "rl_agent_current.yaml", allow_missing=True),
-        "experiment": load_yaml(config_dir / "experiment_mobile_mcs_line_abc_current.yaml"),
-        "heldout": load_yaml(config_dir / "experiment_mobile_mcs_line_abc_heldout_comparison.yaml"),
+        "environment": load_yaml(cfg / "env" / "mobile_mcs_line_abc.yaml"),
+        "rl_simple": load_yaml(cfg / "rl" / "dqn_mobile_simple.yaml"),
+        "experiment": load_yaml(cfg / "experiment" / "mobile_mcs_line_abc.yaml"),
+        "heldout": load_yaml(cfg / "experiment" / "mobile_mcs_line_abc_heldout_comparison.yaml"),
     }
 
 
@@ -73,10 +71,6 @@ def load_heldout_runs() -> dict[str, pd.DataFrame]:
     return runs
 
 
-def load_reward_sweep_summary() -> pd.DataFrame:
-    return load_csv(data_root() / "historical" / "reward_sweep_summary.csv", allow_empty=True)
-
-
 def load_generated_reward_sweeps() -> dict[str, pd.DataFrame]:
     sweep_dir = data_root() / "generated" / "reward_sweeps"
     return {
@@ -86,7 +80,7 @@ def load_generated_reward_sweeps() -> dict[str, pd.DataFrame]:
 
 
 def current_training_history_path() -> Path:
-    return repo_root() / "outputs" / "mobile_mcs_line_abc" / "rl" / "history.json"
+    return submission_root() / "demo_outputs" / "history.json"
 
 
 def copied_training_history_path() -> Path:

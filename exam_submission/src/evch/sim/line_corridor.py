@@ -180,8 +180,6 @@ class LineCorridorQueueSimulator:
             raise ValueError("simulation.traffic.peak_width_hours must be positive")
 
         self.trip_definitions = {
-            # local trips only touch one station.
-            # the long corridor trips pass both, so i split them 50/50.
             "od_ab": CorridorTripDefinition("od_ab", 0, 1, (1.0, 0.0)),
             "od_ba": CorridorTripDefinition("od_ba", 1, 0, (1.0, 0.0)),
             "od_bc": CorridorTripDefinition("od_bc", 1, 2, (0.0, 1.0)),
@@ -277,7 +275,6 @@ class LineCorridorQueueSimulator:
         station_expected_passing = np.zeros(2, dtype=np.float64)
         station_expected_charging = np.zeros(2, dtype=np.float64)
         for trip_key, expected in expected_by_trip.items():
-            # these weights are the small bridge from OD traffic to station load
             weights = np.asarray(self.trip_definitions[trip_key].station_weights, dtype=np.float64)
             station_expected_passing += expected * weights
             station_expected_charging += expected * self.stop_probability * weights
@@ -315,7 +312,6 @@ class LineCorridorQueueSimulator:
             if charging <= 0:
                 continue
             weights = np.asarray(self.trip_definitions[trip_key].station_weights, dtype=np.float64)
-            # first decide how many charge, then split them over AB and BC
             station_counts = assignment_rng.multinomial(charging, weights / max(weights.sum(), 1e-6))
             for station_index, count in enumerate(station_counts):
                 arrivals.extend(
@@ -418,8 +414,6 @@ class LineCorridorQueueSimulator:
         demand_multipliers = {trip_key: 1.0 for trip_key in self.TRIP_KEYS}
         service_time_multipliers = np.ones(2, dtype=np.float32)
 
-        # each disruption is really just one of three levers:
-        # plugs, demand, or service speed.
         if disruption_type == "capacity_drop":
             target_num_plugs = int(np.clip(round(severity), 0, int(self.num_plugs_by_station.max())))
             if target == "all_stations":

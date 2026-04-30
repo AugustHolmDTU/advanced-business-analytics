@@ -9,21 +9,21 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from IPython.display import Markdown, display
 
-from exam_submission.utils.demo_runner import run_appendix_demo
-from exam_submission.utils.load_artifacts import (
+from .demo_runner import run_appendix_demo
+from .load_artifacts import (
     load_core_configs,
     load_generated_reward_sweeps,
     load_heldout_runs,
     load_training_history,
 )
-from exam_submission.utils.plotting import (
+from .plotting import (
     plot_corridor_schematic,
     plot_demand_profile,
     plot_disruption_scenario,
     plot_training_history,
     set_report_style,
 )
-from exam_submission.utils.project_summary import (
+from .project_summary import (
     action_table,
     environment_table,
     expected_daily_profile,
@@ -33,15 +33,11 @@ from exam_submission.utils.project_summary import (
 
 
 def _repo_root() -> Path:
-    return next(
-        path.parent if path.name == "exam_submission" else path
-        for path in [Path.cwd(), *Path.cwd().parents]
-        if path.name == "exam_submission" or (path / "exam_submission").exists()
-    )
+    return Path(__file__).resolve().parents[1]
 
 
 def _activate_submission_src(repo_root: Path) -> None:
-    submission_src = repo_root / "exam_submission" / "src"
+    submission_src = repo_root / "src"
     submission_src_str = str(submission_src)
     if submission_src_str not in sys.path:
         sys.path.insert(0, submission_src_str)
@@ -105,7 +101,6 @@ def bootstrap_notebook(namespace: dict[str, Any] | None = None) -> dict[str, Any
     configs = load_core_configs()
     env_cfg = configs["environment"]
     rl_simple_cfg = configs["rl_simple"]
-    rl_agent_cfg = configs["rl_agent"]
     experiment_cfg = configs["experiment"]
     heldout_cfg = configs["heldout"]
     generated_reward_sweeps = load_generated_reward_sweeps()
