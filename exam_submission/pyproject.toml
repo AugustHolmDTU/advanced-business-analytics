@@ -28,7 +28,6 @@ dev = [
 
 [project.scripts]
 evch-train-rl = "evch.train.train_rl:main"
-evch-eval = "evch.train.evaluate_policies:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/evch"]

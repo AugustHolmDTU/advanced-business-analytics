@@ -177,16 +177,6 @@ def bootstrap_notebook(namespace: dict[str, Any] | None = None) -> dict[str, Any
     main_policies = ["mobile_noop", "mobile_threshold"]
     main_policy_labels = {"mobile_noop": "No-agent baseline", "mobile_threshold": "RL agent"}
     main_colors = {"mobile_noop": "#4C566A", "mobile_threshold": "#2A9D8F"}
-    all_policy_labels = {
-        "mobile_noop": "No-agent baseline",
-        "mobile_threshold": "RL agent",
-        "mobile_reactive": "Reactive",
-    }
-    all_colors = {
-        "mobile_noop": "#4C566A",
-        "mobile_threshold": "#2A9D8F",
-        "mobile_reactive": "#E76F51",
-    }
 
     def build_environment_overview_table() -> pd.DataFrame:
         base = environment_table(env_cfg).copy()
