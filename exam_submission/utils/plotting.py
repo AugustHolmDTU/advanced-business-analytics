@@ -191,17 +191,6 @@ def plot_training_history(history: list[dict[str, Any]], source: str = "historic
             markersize=4,
             label="Eval TD loss",
         )
-    else:
-        axes[1].text(
-            0.5,
-            0.12,
-            "No evaluation TD-loss series was available in the selected history artifact.",
-            ha="center",
-            va="center",
-            fontsize=11,
-            transform=axes[1].transAxes,
-            bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "edgecolor": "#bbbbbb"},
-        )
     axes[1].legend(loc="upper right")
 
     if source == "submission_copy":

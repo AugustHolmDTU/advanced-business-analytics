@@ -174,9 +174,9 @@ def bootstrap_notebook(namespace: dict[str, Any] | None = None) -> dict[str, Any
         for idx, case_key in enumerate(disruption_case_specs)
     }
 
-    main_policies = ["mobile_noop", "mobile_threshold"]
-    main_policy_labels = {"mobile_noop": "No-agent baseline", "mobile_threshold": "RL agent"}
-    main_colors = {"mobile_noop": "#4C566A", "mobile_threshold": "#2A9D8F"}
+    main_policies = ["mobile_noop", "rl"]
+    main_policy_labels = {"mobile_noop": "No-agent baseline", "rl": "RL agent"}
+    main_colors = {"mobile_noop": "#4C566A", "rl": "#2A9D8F"}
 
     def build_environment_overview_table() -> pd.DataFrame:
         base = environment_table(env_cfg).copy()
@@ -276,9 +276,9 @@ def bootstrap_notebook(namespace: dict[str, Any] | None = None) -> dict[str, Any
 
     def build_main_results_table() -> pd.DataFrame:
         fixed = heldout_frames["mobile_noop"]
-        adaptive = heldout_frames["mobile_threshold"]
+        adaptive = heldout_frames["rl"]
         rows = []
-        for key, frame in [("mobile_noop", fixed), ("mobile_threshold", adaptive)]:
+        for key, frame in [("mobile_noop", fixed), ("rl", adaptive)]:
             rows.append(
                 {
                     "Policy": main_policy_labels[key],

@@ -61,7 +61,7 @@ def load_heldout_runs() -> dict[str, pd.DataFrame]:
     heldout_dir = data_root() / "generated" / "heldout"
     filename_by_policy = {
         "mobile_noop": "heldout_no_agent_baseline_timestep_metrics.csv",
-        "mobile_threshold": "heldout_rl_agent_timestep_metrics.csv",
+        "rl": "heldout_rl_agent_timestep_metrics.csv",
         "mobile_reactive": "heldout_reactive_timestep_metrics.csv",
     }
     runs: dict[str, pd.DataFrame] = {}

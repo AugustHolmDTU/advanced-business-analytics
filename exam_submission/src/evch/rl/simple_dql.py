@@ -129,6 +129,40 @@ class SimpleDQLAgent:
         self.optimizer.step()
         return float(loss.item())
 
+    def evaluate_td_loss(
+        self,
+        env: Any,
+        episodes: int,
+        seed: int,
+        episode_seeds: list[int] | None = None,
+    ) -> float:
+        transitions: list[Transition] = []
+        seeds = list(episode_seeds) if episode_seeds is not None else [seed + ep for ep in range(episodes)]
+        for episode_seed in seeds:
+            observation, _ = env.reset(seed=int(episode_seed))
+            while True:
+                action = self.act(observation, deterministic=True, env=env)
+                next_observation, reward, terminated, truncated, _info = env.step(action)
+                next_action_mask = self._valid_action_mask(env)
+                if next_action_mask is None:
+                    next_action_mask = np.ones(self.action_dim, dtype=bool)
+                transitions.append(Transition(
+                    observation=observation.copy(),
+                    action=action,
+                    reward=float(reward),
+                    next_observation=next_observation.copy(),
+                    next_action_mask=next_action_mask.copy(),
+                    done=bool(terminated or truncated),
+                ))
+                observation = next_observation
+                if terminated or truncated:
+                    break
+        if not transitions:
+            return 0.0
+        with torch.no_grad():
+            loss = self._td_loss_tensor(transitions)
+        return float(loss.item())
+
     def train(
         self,
         env: Any,
@@ -204,6 +238,16 @@ class SimpleDQLAgent:
                 if hasattr(eval_env, "close"):
                     eval_env.close()
                 record["eval_mean_reward"] = float(eval_summary["mean_reward"])
+                loss_env = eval_env_factory(eval_seed)
+                eval_td_loss = self.evaluate_td_loss(
+                    loss_env,
+                    episodes=max(eval_episodes, 1),
+                    seed=eval_seed,
+                    episode_seeds=eval_episode_seeds,
+                )
+                if hasattr(loss_env, "close"):
+                    loss_env.close()
+                record["eval_td_loss"] = float(eval_td_loss)
                 while eval_interval_steps > 0 and self.total_steps >= next_eval_step:
                     next_eval_step += eval_interval_steps
 

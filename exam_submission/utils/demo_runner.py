@@ -135,6 +135,7 @@ def build_appendix_demo_config(
     config["rl"]["max_steps_per_episode"] = int(max_steps_per_episode)
     config["rl"]["evaluation_episodes"] = int(eval_episodes)
     config["rl"]["eval_interval_steps"] = int(eval_interval_steps)
+    config["rl"]["eval_interval_episodes"] = max(1, train_episodes // 6)
     config["rl"]["eval_during_training_episodes"] = int(eval_episodes)
 
     split_cfg = config.setdefault("train_val_test", {})
@@ -223,6 +224,19 @@ def run_appendix_demo(**kwargs: Any) -> dict[str, Any]:
     training_figure, _ = plot_training_history(history, source="appendix_demo")
     heldout_frames, heldout_summary = _heldout_demo_rollout(config, str(training_result["checkpoint_path"]))
     heldout_figure, _ = plot_policy_rollout_panel(heldout_frames, title="Demo held-out test")
+
+    seed_list = config["train_val_test"]["test_id"]["seeds"]
+    heldout_seed = int(seed_list[0] if seed_list else 12000)
+    description = (
+        "This appendix demo calls `run_appendix_demo()` from "
+        "`exam_submission/utils/demo_runner.py`. "
+        f"It trains the RL agent for {config['rl']['episodes']} short episodes, "
+        "tracks train and periodic evaluation diagnostics, "
+        f"and then runs one held-out `test_id` rollout on seed `{heldout_seed}` "
+        f"across {config['train_val_test']['test_id']['num_days']} days to compare "
+        "the trained RL agent against the no-agent baseline."
+    )
+
     # flatten at the end so the saved demo files are easy to spot in one folder
     training_result = _flatten_demo_outputs(config, training_result)
 
@@ -231,6 +245,8 @@ def run_appendix_demo(**kwargs: Any) -> dict[str, Any]:
         "training_result": training_result,
         "history": history,
         "training_figure": training_figure,
+        "description": description,
+        "validation_evaluation": training_result.get("evaluation"),
         "heldout_frames": heldout_frames,
         "heldout_summary": heldout_summary,
         "heldout_figure": heldout_figure,
