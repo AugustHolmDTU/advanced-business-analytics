@@ -266,11 +266,39 @@ def bootstrap_notebook(namespace: dict[str, Any] | None = None) -> dict[str, Any
     def build_training_setup_table() -> pd.DataFrame:
         simple = rl_simple_cfg["rl"]
         rows = [
-            ("Training episodes", "Randomized 2-6 day episodes sampled from training seeds 0-9999."),
-            ("Periodic evaluation", f"{simple['eval_during_training_episodes']} held-out episodes every {simple['eval_interval_steps']} environment steps without exploration or learning updates."),
-            ("Validation split", "Configured held-out validation seeds starting at 10000; useful for policy checks even without hyperparameter tuning."),
-            ("Held-out rollout", "A fixed unseen `test_id` scenario used for the main time-series comparison in this report."),
-            ("Test stress suite", "Named one-day scripted disruptions used for robustness checks; kept in the appendix to avoid clutter."),
+            (
+                "Training episodes",
+                "Randomized 2-6 day episodes sampled from training seeds 0-9999.",
+            ),
+            (
+                "Periodic evaluation",
+                (
+                    f"{simple['eval_during_training_episodes']} held-out validation episodes "
+                    f"every {simple['eval_interval_steps']} environment steps, evaluated without "
+                    "exploration or learning updates."
+                ),
+            ),
+            (
+                "Validation split",
+                (
+                    "Held-out validation seeds starting at 10000, used to check policy progress "
+                    "during training."
+                ),
+            ),
+            (
+                "Test split",
+                (
+                    "500 unseen test seeds starting at 20000, with 3-5 day scenarios and "
+                    "disruption-heavy sampling."
+                ),
+            ),
+            (
+                "Held-out rollout",
+                (
+                    "One fixed rollout generated from the unseen test split, used for the main "
+                    "time-series comparison between the no-agent baseline and the RL agent."
+                ),
+            ),
         ]
         return pd.DataFrame(rows, columns=["Component", "How it is used in this report"])
 
