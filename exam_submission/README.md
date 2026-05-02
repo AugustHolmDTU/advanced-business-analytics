@@ -1,12 +1,12 @@
 # Exam Submission
 
-`exam_storyline.ipynb` is the main report notebook.
+`notebook.ipynb` is the main report notebook.
 
 This folder is also trimmed so it can run on its own. It only keeps the code, configs, and copied artifacts that are used in the notebook or in the local train/evaluate path for the line-corridor RL setup.
 
 ## What Is In Here
 
-- `exam_storyline.ipynb`
+- `notebook.ipynb`
   - the report notebook
 - `configs/`
   - the small config set still used
@@ -56,7 +56,7 @@ This folder is also trimmed so it can run on its own. It only keeps the code, co
 From inside `exam_submission/`:
 
 ```bash
-jupyter notebook exam_storyline.ipynb
+jupyter notebook notebook.ipynb
 ```
 
 The notebook setup cell now imports everything from `utils.notebook_context`, so there is no dependency on the parent repo.

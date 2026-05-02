@@ -16,7 +16,7 @@ The active project question is:
 
 The current hand-in is centered on:
 
-- [exam_submission/exam_storyline.ipynb](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/exam_submission/exam_storyline.ipynb)
+- [exam_submission/notebook.ipynb](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/exam_submission/notebook.ipynb)
 
 This notebook is intended to function as the technical report. It is markdown-heavy, report-structured, and designed to run top-to-bottom.
 
@@ -215,7 +215,7 @@ Start with:
 - [README.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/README.md)
 - [context.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/context.md)
 - [exam_submission/README.md](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/exam_submission/README.md)
-- [exam_submission/exam_storyline.ipynb](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/exam_submission/exam_storyline.ipynb)
+- [exam_submission/notebook.ipynb](/Users/nicolaigarderhansen/Desktop/DTU/Kandidat/2.%20Sem/42578/advanced-business-analytics/exam_submission/notebook.ipynb)
 
 Then inspect:
 
