@@ -397,11 +397,6 @@
     \maketitle
     
     
-
-    
-    \section{Resilient EV Charging Under
-Disruption}\label{resilient-ev-charging-under-disruption}
-
 This notebook is the technical report for the project on resilience in
 EV charging operations. It is written as a structured report rather than
 an exploration log.
@@ -442,31 +437,31 @@ The notebook follows this structure:
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  \hyperref[motivation-problem-definition]{Motivation / problem definition}
+  \hyperlink{toc-motivation}{Motivation / problem definition}
 \item
-  \hyperref[simulation-environment]{Simulation environment}
+  \hyperlink{toc-simulation-environment}{Simulation environment}
 \item
-  \hyperref[simulation-design]{Simulation design}
+  \hyperlink{toc-simulation-design}{Simulation design}
 \item
-  \hyperref[rl-agent-and-methods]{RL agent and methods}
+  \hyperlink{toc-rl-agent-methods}{RL agent and methods}
 \item
-  \hyperref[reward-calibration]{Reward calibration}
+  \hyperlink{toc-reward-calibration}{Reward calibration}
 \item
-  \hyperref[training-setup]{Training setup}
+  \hyperlink{toc-training-setup}{Training setup}
 \item
-  \hyperref[training-the-model]{Training the model}
+  \hyperlink{toc-training-the-model}{Training the model}
 \item
-  \hyperref[simulation-comparison-rollout]{Simulation comparison rollout}
+  \hyperlink{toc-simulation-comparison-rollout}{Simulation comparison rollout}
 \item
-  \hyperref[summary-metrics-table]{Summary metrics table}
+  \hyperlink{toc-summary-metrics-table}{Summary metrics table}
 \item
-  \hyperref[spatial-awareness]{Spatial awareness}
+  \hyperlink{toc-spatial-awareness}{Spatial awareness}
 \item
-  \hyperref[discussion]{Discussion}
+  \hyperlink{toc-discussion}{Discussion}
 \item
-  \hyperref[conclusion]{Conclusion}
+  \hyperlink{toc-conclusion}{Conclusion}
 \item
-  \hyperref[appendix]{Appendix}
+  \hyperlink{toc-appendix}{Appendix}
 \end{enumerate}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
@@ -480,7 +475,8 @@ The notebook follows this structure:
 \end{Verbatim}
 \end{tcolorbox}
 
-    \subsection{Motivation / problem
+    \hypertarget{toc-motivation}{}
+    \section{Motivation / problem
 definition}\label{motivation-problem-definition}
 
 Fast-charging infrastructure for electric vehicles is expensive,
@@ -541,7 +537,8 @@ problem. The interest is not just whether the system performs well on a
 normal day, but whether the RL agent can help the charging network keep
 serving vehicles when conditions get worse locally.
 
-    \subsection{Simulation environment}\label{simulation-environment}
+    \hypertarget{toc-simulation-environment}{}
+    \section{Simulation environment}\label{simulation-environment}
 
 The environment is a synthetic A-B-C corridor with three cities arranged
 on a line and two fixed fast-charging stations. It is intentionally
@@ -642,7 +639,8 @@ Full MCS recharge time & 60 minutes \\
 depot is in the middle, while congestion may emerge on either side of
 the corridor.
 
-    \subsection{Simulation design}\label{simulation-design}
+    \hypertarget{toc-simulation-design}{}
+    \section{Simulation design}\label{simulation-design}
 
 This section builds the simulation environment step by step. The goal is
 not to copy every detail of a real EV charging network, but to create a
@@ -668,14 +666,14 @@ The final simulator combines six layers:
   disruption events that stress the system.
 \end{enumerate}
 
-    \subsubsection{Base corridor}\label{base-corridor}
+    \subsection{Base corridor}\label{base-corridor}
 
 The starting point is the simplest spatial setting that still has local
 congestion: three cities on a line and one fixed charging station on
 each link. This gives two service points, AB and BC, that can become
 stressed differently.
 
-    \subsubsection{Time-varying demand}\label{time-varying-demand}
+    \subsection{Time-varying demand}\label{time-varying-demand}
 
 Traffic demand is not constant during the day. The simulator therefore
 uses a deterministic daily demand profile as the expected traffic level,
@@ -743,7 +741,7 @@ sampled around this expected demand curve, so the simulation still
 contains randomness even though the underlying daily pattern is
 deterministic.
 
-    \subsubsection{OD structure}\label{od-structure}
+    \subsection{OD structure}\label{od-structure}
 
 The total expected traffic is split into origin-destination (OD) flows.
 Instead of treating all vehicles as one generic arrival stream, the
@@ -777,7 +775,7 @@ systems do not grow perfectly smoothly.
     \end{center}
     { \hspace*{\fill} \\}
     
-    \subsubsection{Queueing and service}\label{queueing-and-service}
+    \subsection{Queueing and service}\label{queueing-and-service}
 
 Not every passing vehicle needs to charge. For each OD flow, the number
 of vehicles that stop for charging is sampled as:
@@ -803,7 +801,7 @@ S \sim \mathrm{clip}\left(\mathcal{N}(30, 8^2), 15, 50\right)
 so the average charging session lasts 30 minutes, but very short and
 very long sessions are bounded.
 
-    \subsubsection{Mobile charging
+    \subsection{Mobile charging
 stations}\label{mobile-charging-stations}
 
 Mobile charging stations are added only after the fixed charging system
@@ -844,7 +842,7 @@ produce final performance scores here, but to show how each disruption
 changes the relationship between expected demand, queue length, and
 queue wait.
 
-    \subsubsection{Disruptions}\label{disruptions}
+    \subsection{Disruptions}\label{disruptions}
 
 Disruptions are the main stress mechanism in the environment. A
 disruption starts at time \(t_s\), lasts for \(d\) hours, and changes
@@ -858,7 +856,7 @@ t_s \leq t < t_s + d
 
 The environment includes four disruption types.
 
-    \paragraph{Capacity drop}\label{capacity-drop}
+    \subsubsection{Capacity drop}\label{capacity-drop}
 
 A capacity drop reduces the number of usable fixed plugs at one station:
 
@@ -904,7 +902,7 @@ to keep up with demand when capacity is reduced. The question is whether
 the RL agent can use mobile charging stations to reduce this congestion
 and keep waiting times down.
 
-    \paragraph{Station outage}\label{station-outage}
+    \subsubsection{Station outage}\label{station-outage}
 
 A station outage is the strongest version of a capacity-side disruption.
 The affected station is temporarily forced to zero fixed plugs:
@@ -941,7 +939,7 @@ capacity falls all the way to zero. The demand path still does not move
 much, which makes the disruption effect especially easy to separate from
 ordinary morning congestion.
 
-    \paragraph{Service-time inflation}\label{service-time-inflation}
+    \subsubsection{Service-time inflation}\label{service-time-inflation}
 
 Service-time inflation keeps the plugs available, but makes each
 charging session take longer:
@@ -981,7 +979,7 @@ even though the charging station is still operating.
 because congestion builds through slower turnover rather than an
 immediate hard stop.
 
-    \paragraph{Demand surge}\label{demand-surge}
+    \subsubsection{Demand surge}\label{demand-surge}
 
 A demand surge changes the arrival side of the system. During the
 disruption window, selected OD flows are multiplied:
@@ -1023,7 +1021,8 @@ contrast is useful in the report: capacity-side disruptions create queue
 spikes without extra demand, while demand surges raise congestion by
 directly increasing the incoming load.
 
-    \subsection{RL agent and methods}\label{rl-agent-and-methods}
+    \hypertarget{toc-rl-agent-methods}{}
+    \section{RL agent and methods}\label{rl-agent-and-methods}
 
 \begin{figure}
 \centering
@@ -1065,7 +1064,7 @@ recharge delays. Therefore, the learning problem is not only about how
 many chargers are needed, but also where they should be sent before
 queues become too large.
 
-\subsubsection{RL-agent decision idea}\label{rl-agent-decision-idea}
+\subsection{RL-agent decision idea}\label{rl-agent-decision-idea}
 
 The agent learns an action-value function:
 
@@ -1107,7 +1106,7 @@ loss, also called smooth L1 loss:
 \mathcal{L} = \mathrm{Huber}\left(Q(s,a), y\right)
 \]
 
-\subsubsection{Neural network}\label{neural-network}
+\subsection{Neural network}\label{neural-network}
 
 The Q-function is represented by a small multilayer neural network. The
 input is the observation vector from the environment, and the output is
@@ -1132,7 +1131,7 @@ In the environment setup, the model has:
 The output layer has five values, one for each action. During
 evaluation, the agent chooses the valid action with the highest Q-value.
 
-\subsubsection{Exploration and replay
+\subsection{Exploration and replay
 buffer}\label{exploration-and-replay-buffer}
 
 During training, the agent uses epsilon-greedy exploration. This means
@@ -1186,7 +1185,7 @@ described in the
 \href{https://docs.pytorch.org/rl/0.4/tutorials/rb_tutorial.html}{TorchRL
 replay-buffer tutorial}.
 
-\subsubsection{Valid actions}\label{valid-actions}
+\subsection{Valid actions}\label{valid-actions}
 
 Some actions may not be possible in every state. For example, the agent
 cannot recall mobile charging stations from AB if none are committed
@@ -1196,7 +1195,7 @@ The agent uses this mask both when exploring and when choosing the best
 action. This prevents the model from learning from actions that are
 operationally impossible.
 
-\subsubsection{Why this model fits the
+\subsection{Why this model fits the
 project}\label{why-this-model-fits-the-project}
 
 This model is suitable for the project because the main question is not
@@ -1225,7 +1224,7 @@ easier to explain and connect back to the resilience problem.
 With that said, future work could explore more complex architectures and
 go through a more thorough hyperparameter search.
 
-    \subsubsection{State space}\label{state-space}
+    \subsection{State space}\label{state-space}
 
 The observation is 27-dimensional. The model is given local queue
 pressure, recent flow, effective local capacity, mobile-station
@@ -1280,7 +1279,7 @@ Time-of-day & 2 & Sine and cosine encodings of time within the day. \\
 \end{longtable}
 
     
-    \subsubsection{Action space}\label{action-space}
+    \subsection{Action space}\label{action-space}
 
 The environment action space has five commands: hold, move one unit
 toward AB, move one unit toward BC, recall one unit from AB, and recall
@@ -1321,7 +1320,7 @@ depot. \\
 \end{longtable}
 
     
-    \subsubsection{Reward function}\label{reward-function}
+    \subsection{Reward function}\label{reward-function}
 
 The reward combines service-quality incentives and operating-cost
 penalties.
@@ -1420,7 +1419,8 @@ the experiments. Later, the reward-calibration section changes selected
 weights to test how the RL agent reacts to different assumptions about
 queue cost and MCS deployment cost.
 
-    \subsection{Reward calibration}\label{reward-calibration}
+    \hypertarget{toc-reward-calibration}{}
+    \section{Reward calibration}\label{reward-calibration}
 
 Reward calibration is a core modeling choice in this project. Mobile
 charging can reduce queues, but it also represents operating cost. In
@@ -1460,7 +1460,8 @@ The useful result is the overall trend: the reward function gives a
 practical way to tune the trade-off between customer waiting time and
 MCS operating cost.
 
-    \subsection{Training setup}\label{training-setup}
+    \hypertarget{toc-training-setup}{}
+    \section{Training setup}\label{training-setup}
 
 The training setup separates three things: the episodes used for
 learning, the held-out scenarios used during training evaluation, and
@@ -1564,7 +1565,8 @@ baseline and the RL agent. \\
 \end{longtable}
 
     
-    \subsection{Training the model}\label{training-the-model}
+    \hypertarget{toc-training-the-model}{}
+    \section{Training the model}\label{training-the-model}
 
 The RL agent was trained using the full training pipeline on the HPC
 setup. During training, the agent interacts with randomized episodes
@@ -1645,7 +1647,8 @@ peak. The final test of usefulness is still the held-out rollout, but
 the training diagnostics support that the agent did not simply behave
 randomly throughout training.
 
-    \subsection{Simulation comparison
+    \hypertarget{toc-simulation-comparison-rollout}{}
+    \section{Simulation comparison
 rollout}\label{simulation-comparison-rollout}
 
 This section presents the main rollout result of the report. The RL
@@ -1726,7 +1729,8 @@ flexible capacity to prevent the largest queue and waiting-time spikes,
 while the no-agent baseline has no way to respond when fixed capacity is
 not enough.
 
-    \subsection{Summary metrics table}\label{summary-metrics-table}
+    \hypertarget{toc-summary-metrics-table}{}
+    \section{Summary metrics table}\label{summary-metrics-table}
 
 The rollout plot shows the time pattern, while the table below
 summarizes the same comparison with aggregate metrics. The purpose is to
@@ -1811,7 +1815,8 @@ serving a similar volume with much lower queueing and waiting. The
 improvement comes with MCS usage: the RL agent averages 0.95 active
 mobile stations and uses 113.5 MCS hours during the rollout.
 
-    \subsection{Spatial awareness}\label{spatial-awareness}
+    \hypertarget{toc-spatial-awareness}{}
+    \section{Spatial awareness}\label{spatial-awareness}
 
 A spatially aware controller should allocate support where local
 pressure is highest. In this corridor, that means MCS at AB should
@@ -1863,7 +1868,8 @@ tracking at every time step, but that MCS allocation generally rises on
 the same side as local queue pressure. This supports the claim that the
 RL agent has learned spatially meaningful behavior.
 
-    \subsection{Discussion}\label{discussion}
+    \hypertarget{toc-discussion}{}
+    \section{Discussion}\label{discussion}
 
 The results show that the RL agent can reduce queue length and waiting
 time in the simulated A-B-C corridor. The strongest evidence is the
@@ -1874,7 +1880,7 @@ shows that the RL approach works in this controlled environment, not
 that it is already a production-ready control system for a real charging
 network.
 
-\subsubsection{What the improvement actually
+\subsection{What the improvement actually
 represents}\label{what-the-improvement-actually-represents}
 
 The main improvement is not that the RL agent serves many more vehicles.
@@ -1889,7 +1895,7 @@ though the total number of started sessions is almost the same. That is
 exactly the resilience effect we want to test: not simply higher
 throughput, but better control when the system is under pressure.
 
-\subsubsection{Baseline choice}\label{baseline-choice}
+\subsection{Baseline choice}\label{baseline-choice}
 
 Choosing a baseline is not as simple as in supervised learning. There is
 no obvious equivalent to a majority-class predictor or a default label.
@@ -1919,7 +1925,7 @@ often make sensible deployment decisions. In future work, comparing the
 RL agent against a strong constrained heuristic would be a useful next
 step.
 
-\subsubsection{Reward calibration and operational
+\subsection{Reward calibration and operational
 trade-offs}\label{reward-calibration-and-operational-trade-offs}
 
 The reward calibration experiments show that the agent's behavior
@@ -1939,7 +1945,7 @@ This is also why reward design is not just a technical detail. It
 defines what kind of operational behavior the RL agent is asked to
 learn.
 
-\subsubsection{Spatial response and its
+\subsection{Spatial response and its
 limits}\label{spatial-response-and-its-limits}
 
 The spatial-awareness results show that the RL agent does not only
@@ -1960,7 +1966,7 @@ The important point is that the allocation is directionally meaningful.
 The agent reacts to where pressure occurs, rather than only increasing
 MCS use system-wide.
 
-\subsubsection{Simplification of the real
+\subsection{Simplification of the real
 world}\label{simplification-of-the-real-world}
 
 The main limitation is that the simulator is synthetic. It captures
@@ -1991,7 +1997,7 @@ with the environment and use the full system state when making
 decisions. This allows it to handle situations where simple rules become
 too rigid or too difficult to design by hand.
 
-\subsubsection{Seed separation and
+\subsection{Seed separation and
 robustness}\label{seed-separation-and-robustness}
 
 The project separates training, validation, and test scenarios using
@@ -2010,7 +2016,7 @@ This does not prove full real-world generalization, but it makes the
 simulation evidence more credible than evaluating only on the same
 episodes used during training.
 
-\subsubsection{Overall interpretation}\label{overall-interpretation}
+\subsection{Overall interpretation}\label{overall-interpretation}
 
 The project should be read as evidence that RL-based mobile charging
 control is a promising approach for disruption resilience. In the
@@ -2030,7 +2036,8 @@ this kind of learning-based control is likely to become more valuable,
 because the best deployment decisions will become less obvious to humans
 and harder to encode with simple fixed rules.
 
-    \subsection{Conclusion}\label{conclusion}
+    \hypertarget{toc-conclusion}{}
+    \section{Conclusion}\label{conclusion}
 
 This project studied whether mobile charging stations can improve
 resilience in an EV charging corridor exposed to disruptions. The
@@ -2088,9 +2095,10 @@ reviewed, edited, and verified the generated material, and we take full
 responsibility for all code, analysis, results, and conclusions
 presented in this submission.
 
-    \subsection{Appendix}\label{appendix}
+    \hypertarget{toc-appendix}{}
+    \section{Appendix}\label{appendix}
 
-    \subsubsection{Full 27-feature observation
+    \subsection{Full 27-feature observation
 table}\label{a.-full-27-feature-observation-table}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
@@ -2171,7 +2179,7 @@ Time & 27 & cos\_time\_of\_day & Cosine encoding of time of day. \\
 \end{longtable}
 
     
-    \subsubsection{Short local demo}\label{b.-short-local-demo}
+    \subsection{Short local demo}\label{b.-short-local-demo}
 
 Run the cell below to launch a short local demo. It trains briefly and
 then shows the demo outputs. (Should take around 5 minutes)
